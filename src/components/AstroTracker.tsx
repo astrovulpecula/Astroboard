@@ -602,6 +602,72 @@ export default function AstroTracker() {
                 
                 return <ImageCarousel images={allImages} />;
               })()}
+
+              {/* Global Metrics */}
+              {(() => {
+                // Calculate global metrics
+                const totalObjects = objects.length;
+                const totalProjects = objects.reduce((acc, obj) => acc + obj.projects.length, 0);
+                
+                // Calculate total hours and lights
+                let totalHours = 0;
+                let totalLights = 0;
+                const uniqueDates = new Set<string>();
+                let totalSessions = 0;
+                
+                objects.forEach(obj => {
+                  obj.projects.forEach(proj => {
+                    proj.sessions.forEach((session: any) => {
+                      totalHours += (session.lights || 0) * (session.exposureSec || 0) / 3600;
+                      totalLights += session.lights || 0;
+                      uniqueDates.add(session.date);
+                      totalSessions++;
+                    });
+                  });
+                });
+                
+                const totalNights = uniqueDates.size;
+                
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <Card className="p-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-blue-500/10">
+                          <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
+                          <div className="text-2xl font-bold">{totalObjects} / {totalProjects}</div>
+                        </div>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-purple-500/10">
+                          <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
+                          <div className="text-2xl font-bold">{totalHours.toFixed(1)}h / {totalLights}</div>
+                        </div>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-green-500/10">
+                          <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Noches y Sesiones</div>
+                          <div className="text-2xl font-bold">{totalNights} / {totalSessions}</div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                );
+              })()}
               
               <div className="flex items-center justify-between">
                 <SectionTitle icon={Telescope} title="Objetos astronómicos" />
