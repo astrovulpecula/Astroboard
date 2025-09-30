@@ -50,6 +50,53 @@ const Card = ({ children, className = "", onClick }: { children: React.ReactNode
   </div>
 );
 
+type ImageItem = {
+  src: string;
+  title: string;
+  type?: string;
+};
+
+const ImageCarousel = ({ images }: { images: ImageItem[] }) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  useEffect(() => {
+    if (images.length === 0) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % images.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [images.length]);
+  
+  return (
+    <Card className="p-4 mb-4">
+      <div className="relative h-48 overflow-hidden rounded-xl">
+        <img 
+          src={images[currentImageIndex].src} 
+          alt={images[currentImageIndex].title}
+          className="w-full h-full object-cover transition-opacity duration-500"
+        />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+          <div className="text-white text-sm font-medium">{images[currentImageIndex].title}</div>
+          {images[currentImageIndex].type && (
+            <div className="text-white/80 text-xs">{images[currentImageIndex].type}</div>
+          )}
+        </div>
+        <div className="absolute bottom-4 right-4 flex gap-1">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentImageIndex(i)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                i === currentImageIndex ? "bg-white" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; title: string }) => (
   <div className="flex items-center gap-2 mb-3">
     {Icon && <Icon className="w-5 h-5" />}
@@ -540,12 +587,6 @@ export default function AstroTracker() {
             <div className="grid gap-4">
               {/* Image Carousel */}
               {(() => {
-                type ImageItem = {
-                  src: string;
-                  title: string;
-                  type?: string;
-                };
-                
                 const allImages: ImageItem[] = objects.flatMap(obj => [
                   obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
                   ...obj.projects.flatMap(proj => 
@@ -557,46 +598,9 @@ export default function AstroTracker() {
                   )
                 ]).filter((item): item is ImageItem => item !== null);
                 
-                const [currentImageIndex, setCurrentImageIndex] = useState(0);
-                
-                useEffect(() => {
-                  if (allImages.length === 0) return;
-                  const interval = setInterval(() => {
-                    setCurrentImageIndex(prev => (prev + 1) % allImages.length);
-                  }, 4000);
-                  return () => clearInterval(interval);
-                }, [allImages.length]);
-                
                 if (allImages.length === 0) return null;
                 
-                return (
-                  <Card className="p-4 mb-4">
-                    <div className="relative h-48 overflow-hidden rounded-xl">
-                      <img 
-                        src={allImages[currentImageIndex].src} 
-                        alt={allImages[currentImageIndex].title}
-                        className="w-full h-full object-cover transition-opacity duration-500"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                        <div className="text-white text-sm font-medium">{allImages[currentImageIndex].title}</div>
-                        {allImages[currentImageIndex].type && (
-                          <div className="text-white/80 text-xs">{allImages[currentImageIndex].type}</div>
-                        )}
-                      </div>
-                      <div className="absolute bottom-4 right-4 flex gap-1">
-                        {allImages.map((_, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setCurrentImageIndex(i)}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                              i === currentImageIndex ? "bg-white" : "bg-white/50"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </Card>
-                );
+                return <ImageCarousel images={allImages} />;
               })()}
               
               <div className="flex items-center justify-between">
