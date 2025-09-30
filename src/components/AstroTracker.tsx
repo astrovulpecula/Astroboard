@@ -500,7 +500,16 @@ export default function AstroTracker() {
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src={astroTrackerLogo} alt="Astro Tracker" className="w-8 h-8" />
+              <button 
+                onClick={() => {
+                  setView("objects");
+                  setSelectedObjectId(null);
+                  setSelectedProjectId(null);
+                }}
+                className="hover:opacity-80 transition-opacity"
+              >
+                <img src={astroTrackerLogo} alt="Astro Tracker" className="w-8 h-8" />
+              </button>
               <div>
                 <div className="font-semibold">Astrotracker · Dashboard</div>
                 <div className="text-xs text-slate-500">{view === "objects" ? "Objetos" : view === "projects" ? "Proyectos" : "Detalle"}</div>
@@ -529,6 +538,67 @@ export default function AstroTracker() {
         <main className="max-w-7xl mx-auto px-4 py-6">
           {view === "objects" && (
             <div className="grid gap-4">
+              {/* Image Carousel */}
+              {(() => {
+                type ImageItem = {
+                  src: string;
+                  title: string;
+                  type?: string;
+                };
+                
+                const allImages: ImageItem[] = objects.flatMap(obj => [
+                  obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
+                  ...obj.projects.flatMap(proj => 
+                    Object.entries(proj.images || {}).map(([key, src]) => ({
+                      src: src as string,
+                      title: `${obj.id} - ${proj.name}`,
+                      type: key
+                    }))
+                  )
+                ]).filter((item): item is ImageItem => item !== null);
+                
+                const [currentImageIndex, setCurrentImageIndex] = useState(0);
+                
+                useEffect(() => {
+                  if (allImages.length === 0) return;
+                  const interval = setInterval(() => {
+                    setCurrentImageIndex(prev => (prev + 1) % allImages.length);
+                  }, 4000);
+                  return () => clearInterval(interval);
+                }, [allImages.length]);
+                
+                if (allImages.length === 0) return null;
+                
+                return (
+                  <Card className="p-4 mb-4">
+                    <div className="relative h-48 overflow-hidden rounded-xl">
+                      <img 
+                        src={allImages[currentImageIndex].src} 
+                        alt={allImages[currentImageIndex].title}
+                        className="w-full h-full object-cover transition-opacity duration-500"
+                      />
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                        <div className="text-white text-sm font-medium">{allImages[currentImageIndex].title}</div>
+                        {allImages[currentImageIndex].type && (
+                          <div className="text-white/80 text-xs">{allImages[currentImageIndex].type}</div>
+                        )}
+                      </div>
+                      <div className="absolute bottom-4 right-4 flex gap-1">
+                        {allImages.map((_, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setCurrentImageIndex(i)}
+                            className={`w-2 h-2 rounded-full transition-all ${
+                              i === currentImageIndex ? "bg-white" : "bg-white/50"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
+              
               <div className="flex items-center justify-between">
                 <SectionTitle icon={Telescope} title="Objetos astronómicos" />
                 <div className="flex items-center gap-2">
