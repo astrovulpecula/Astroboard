@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
+import astroTrackerLogo from "@/assets/astro-tracker-logo.png";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60";
@@ -499,7 +500,7 @@ export default function AstroTracker() {
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Telescope className="w-5 h-5" />
+              <img src={astroTrackerLogo} alt="Astro Tracker" className="w-8 h-8" />
               <div>
                 <div className="font-semibold">Astrotracker · Dashboard</div>
                 <div className="text-xs text-slate-500">{view === "objects" ? "Objetos" : view === "projects" ? "Proyectos" : "Detalle"}</div>
