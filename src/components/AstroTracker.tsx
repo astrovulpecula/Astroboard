@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle } from "lucide-react";
+import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle, Settings } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import logoLight from "@/assets/logo-light.png";
@@ -335,6 +335,12 @@ export default function AstroTracker() {
   const [theme, setTheme] = useState("light");
   const [editingProjectName, setEditingProjectName] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [defaultTheme, setDefaultTheme] = useState("light");
+  const [jsonPath, setJsonPath] = useState("");
+  const [camera, setCamera] = useState("");
+  const [telescope, setTelescope] = useState("");
+  const [focalLength, setFocalLength] = useState("");
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -343,6 +349,39 @@ export default function AstroTracker() {
       return "light";
     });
   };
+
+  // Load settings from localStorage on mount
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('astroTrackerSettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        if (settings.defaultTheme) {
+          setDefaultTheme(settings.defaultTheme);
+          setTheme(settings.defaultTheme);
+        }
+        if (settings.jsonPath) setJsonPath(settings.jsonPath);
+        if (settings.camera) setCamera(settings.camera);
+        if (settings.telescope) setTelescope(settings.telescope);
+        if (settings.focalLength) setFocalLength(settings.focalLength);
+      } catch (e) {
+        console.error('Error loading settings:', e);
+      }
+    }
+  }, []);
+
+  // Save settings to localStorage
+  const saveSettings = useCallback(() => {
+    const settings = {
+      defaultTheme,
+      jsonPath,
+      camera,
+      telescope,
+      focalLength
+    };
+    localStorage.setItem('astroTrackerSettings', JSON.stringify(settings));
+    setShowSettings(false);
+  }, [defaultTheme, jsonPath, camera, telescope, focalLength]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -619,6 +658,9 @@ export default function AstroTracker() {
               </label>
               <IconBtn title={theme === "light" ? "Cambiar a oscuro" : theme === "dark" ? "Cambiar a Astro" : "Cambiar a claro"} onClick={cycleTheme}>
                 {theme === "light" ? <Moon className="w-4 h-4" /> : theme === "dark" ? <Star className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </IconBtn>
+              <IconBtn title="Configuración" onClick={() => setShowSettings(true)}>
+                <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
           </div>
@@ -1242,6 +1284,82 @@ export default function AstroTracker() {
               </div>
             </div>
           </form>
+        </Modal>
+        
+        <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración" wide>
+          <div className="grid gap-6">
+            {/* Tema por defecto */}
+            <div className="grid gap-3">
+              <Label>Tema de página by default</Label>
+              <select 
+                value={defaultTheme} 
+                onChange={(e) => setDefaultTheme(e.target.value)} 
+                className={INPUT_CLS}
+              >
+                <option value="light">Claro</option>
+                <option value="dark">Oscuro</option>
+                <option value="astro">Astro</option>
+              </select>
+            </div>
+
+            {/* Localización del archivo JSON */}
+            <div className="grid gap-3">
+              <Label>Localización del archivo JSON</Label>
+              <input 
+                type="text"
+                value={jsonPath}
+                onChange={(e) => setJsonPath(e.target.value)}
+                placeholder="/ruta/al/archivo.json"
+                className={INPUT_CLS}
+              />
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                Especifica la ruta del directorio donde se encuentra el archivo JSON. La aplicación intentará cargarlo automáticamente al iniciar.
+              </div>
+            </div>
+
+            {/* Equipo astronofotográfico */}
+            <div className="grid gap-3">
+              <Label>Equipo astronofotográfico</Label>
+              <div className="grid gap-3">
+                <label className="grid gap-1">
+                  <span className="text-sm">Cámara</span>
+                  <input 
+                    type="text"
+                    value={camera}
+                    onChange={(e) => setCamera(e.target.value)}
+                    placeholder="Ej: ZWO ASI294MC Pro"
+                    className={INPUT_CLS}
+                  />
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-sm">Telescopio</span>
+                  <input 
+                    type="text"
+                    value={telescope}
+                    onChange={(e) => setTelescope(e.target.value)}
+                    placeholder="Ej: Sky-Watcher 80ED"
+                    className={INPUT_CLS}
+                  />
+                </label>
+                <label className="grid gap-1">
+                  <span className="text-sm">Distancia focal (mm)</span>
+                  <input 
+                    type="number"
+                    value={focalLength}
+                    onChange={(e) => setFocalLength(e.target.value)}
+                    placeholder="Ej: 600"
+                    className={INPUT_CLS}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Botones */}
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <Btn outline onClick={() => setShowSettings(false)}>Cancelar</Btn>
+              <Btn onClick={saveSettings}>Guardar configuración</Btn>
+            </div>
+          </div>
         </Modal>
       </div>
     </div>
