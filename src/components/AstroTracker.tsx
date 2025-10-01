@@ -1003,20 +1003,20 @@ export default function AstroTracker() {
                           const sessionTime = s.lights * s.exposureSec;
                           const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
                           return (
-                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40 h-[57px]">
-                              <td className="p-3 whitespace-nowrap">{i + 1}</td>
-                              <td className="p-3 whitespace-nowrap">{s.date}</td>
-                              <td className="p-3 whitespace-nowrap">{s.filter ?? "–"}</td>
-                              <td className="p-3 whitespace-nowrap">{s.exposureSec}</td>
-                              <td className="p-3 whitespace-nowrap">{s.lights}</td>
-                              <td className="p-3 whitespace-nowrap">{cumulativeLightsVal}</td>
-                              <td className="p-3 whitespace-nowrap">{hh(sessionTime)}</td>
-                              <td className="p-3 whitespace-nowrap">{hh(cumulativeTime)}</td>
-                              <td className="p-3 whitespace-nowrap">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
-                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
-                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
-                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
-                              <td className="p-3 whitespace-nowrap">{i === 0 ? 0 : inc}</td>
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{i + 1}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.date}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.filter ?? "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.exposureSec}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.lights}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{cumulativeLightsVal}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{hh(sessionTime)}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{hh(cumulativeTime)}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{i === 0 ? 0 : inc}</td>
                             </tr>
                           );
                         })}
@@ -1039,8 +1039,8 @@ export default function AstroTracker() {
                           const sessionTime = s.lights * s.exposureSec;
                           const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
                           return (
-                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40 h-[57px]">
-                              <td className="p-3 whitespace-nowrap">
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
+                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">
                                 <div className="inline-flex gap-2">
                                   <Dialog>
                                     <DialogTrigger asChild>
