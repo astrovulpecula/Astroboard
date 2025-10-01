@@ -254,7 +254,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 70, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#94a3b8" />
@@ -275,7 +275,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 70, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#94a3b8" />
@@ -297,7 +297,7 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={d} margin={{ top: 10, right: 20, left: 70, bottom: 10 }}>
+        <BarChart data={d} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="date" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} stroke="#94a3b8" />
@@ -978,7 +978,7 @@ export default function AstroTracker() {
                   <div className="overflow-x-auto flex-1">
                     <table className="text-sm">
                       <thead>
-                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40 h-[57px]">
                           <th className="p-3 whitespace-nowrap">#</th>
                           <th className="p-3 whitespace-nowrap">Fecha</th>
                           <th className="p-3 whitespace-nowrap">Filtro</th>
@@ -1026,7 +1026,7 @@ export default function AstroTracker() {
                   <div className="border-l bg-slate-50/50 dark:bg-slate-900/40">
                     <table className="text-sm">
                       <thead>
-                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40 h-[57px]">
                           <th className="p-3 whitespace-nowrap sticky right-0">Acciones</th>
                         </tr>
                       </thead>
