@@ -53,6 +53,9 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --card-bg: rgba(255, 255, 255, 0.7);
+    --card-border: rgb(226 232 240);
   }
 
   .dark {
@@ -91,6 +94,9 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --card-bg: transparent;
+    --card-border: rgba(255, 255, 255, 0.2);
   }
 }
 
