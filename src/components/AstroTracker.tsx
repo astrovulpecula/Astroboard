@@ -24,7 +24,7 @@ const cumulativeLights = (sessions: any[], i: number) => sessions.slice(0, i + 1
 const sample = [{
   id: "M31", commonName: "Galaxia de Andrómeda", constellation: "Andrómeda", type: "Galaxia", createdAt: new Date().toISOString(), image: undefined,
   projects: [{
-    id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), status: "active", images: {},
+    id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), images: {},
     sessions: [
       { id: uid("ses"), date: toISODate("22/09/25"), lights: 48, exposureSec: 180, filter: "RGB", snrR: 49.54, snrG: 50.77, snrB: 48.36, notes: "Noche estable." },
       { id: uid("ses"), date: toISODate("23/09/25"), lights: 60, exposureSec: 180, filter: "RGB", snrR: 51.91, snrG: 53.46, snrB: 50.89, notes: "Ligera bruma." }
@@ -122,7 +122,7 @@ const Btn = ({ children, onClick, outline, type = "button" }: { children: React.
   );
 };
 
-const IconBtn = ({ title, onClick, children }: { title: string; onClick: (e?: any) => void; children: React.ReactNode }) => (
+const IconBtn = ({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) => (
   <button title={title} onClick={onClick} className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition">
     {children}
   </button>
@@ -394,19 +394,11 @@ export default function AstroTracker() {
 
   const addProj = useCallback((base: any) => {
     if (!obj) return;
-    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), status: "active", sessions: [], images: {} };
+    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), sessions: [], images: {} };
     setObjects(objects.map((o) => o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o));
     setSelectedProjectId(np.id);
     setMProj(false);
     setView("project");
-  }, [objects, obj]);
-
-  const updateProj = useCallback((pid: string, updates: any) => {
-    if (!obj) return;
-    setObjects(objects.map((o) => o.id !== obj.id ? o : { 
-      ...o, 
-      projects: o.projects.map((p) => p.id === pid ? { ...p, ...updates } : p) 
-    }));
   }, [objects, obj]);
 
   const addSes = useCallback((base: any) => {
@@ -815,83 +807,20 @@ export default function AstroTracker() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
-                  const [editingName, setEditingName] = useState(false);
-                  const [newName, setNewName] = useState(p.name);
-                  
-                  const statusConfig: { [key: string]: { label: string; color: string } } = {
-                    active: { label: "Activo", color: "bg-green-500" },
-                    paused: { label: "Pausado", color: "bg-yellow-500" },
-                    completed: { label: "Terminado", color: "bg-slate-900 dark:bg-slate-100" }
-                  };
-                  
-                  const currentStatus = p.status || "active";
-                  const statusInfo = statusConfig[currentStatus];
-                  
-                  return (
-                    <Card key={p.id} className="p-4" onClick={() => { setSelectedProjectId(p.id); setView("project"); }}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          {editingName ? (
-                            <input 
-                              value={newName} 
-                              onChange={(e) => setNewName(e.target.value)}
-                              onBlur={() => {
-                                if (newName.trim()) {
-                                  updateProj(p.id, { name: newName.trim() });
-                                }
-                                setEditingName(false);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  if (newName.trim()) {
-                                    updateProj(p.id, { name: newName.trim() });
-                                  }
-                                  setEditingName(false);
-                                }
-                                if (e.key === 'Escape') {
-                                  setNewName(p.name);
-                                  setEditingName(false);
-                                }
-                              }}
-                              className="text-base font-semibold border rounded px-2 py-1 w-full"
-                              autoFocus
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-base font-semibold">{p.name}</h4>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setEditingName(true); }}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                                title="Editar nombre"
-                              >
-                                <Pencil className="w-3 h-3 text-slate-400" />
-                              </button>
-                            </div>
-                          )}
-                          <div className="mt-1 text-xs text-slate-500">Creado: {new Date(p.createdAt).toLocaleDateString()}</div>
-                          <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">{p.sessions.length} sesión(es)</div>
-                          
-                          <div className="mt-2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <select 
-                              value={currentStatus}
-                              onChange={(e) => updateProj(p.id, { status: e.target.value })}
-                              className={`text-xs px-2 py-1 rounded-full font-medium ${statusInfo.color} ${currentStatus === 'completed' ? 'text-white dark:text-slate-900' : 'text-white'} border-0`}
-                            >
-                              <option value="active">Activo</option>
-                              <option value="paused">Pausado</option>
-                              <option value="completed">Terminado</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <IconBtn title="Eliminar" onClick={(e) => { e.stopPropagation(); delProj(p.id); }}><Trash2 className="w-4 h-4" /></IconBtn>
-                        </div>
+                {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => (
+                  <Card key={p.id} className="p-4" onClick={() => { setSelectedProjectId(p.id); setView("project"); }}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="text-base font-semibold">{p.name}</h4>
+                        <div className="mt-1 text-xs text-slate-500">Creado: {new Date(p.createdAt).toLocaleDateString()}</div>
+                        <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">{p.sessions.length} sesión(es)</div>
                       </div>
-                    </Card>
-                  );
-                })}
+                      <div className="flex items-center gap-2">
+                        <IconBtn title="Eliminar" onClick={() => delProj(p.id)}><Trash2 className="w-4 h-4" /></IconBtn>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
             </div>
           )}
@@ -905,30 +834,17 @@ export default function AstroTracker() {
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Sesiones:</strong> {new Set(ss.map((s: any) => s.date)).size}</span>
               </div>
 
-              <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="hidden md:grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="p-4"><div className="text-sm text-slate-500">Objeto</div><div className="text-xl font-semibold">{obj.id}</div><div className="text-sm text-slate-500">{obj.commonName}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Exposición total</div><div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Lights acumulados</div><div className="text-xl font-semibold">{ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Sesiones</div><div className="text-xl font-semibold">{new Set(ss.map((s: any) => s.date)).size} noche(s)</div><div className="text-xs text-slate-500">Última: {ss.length ? ss[ss.length - 1].date : "–"}</div></Card>
-                <Card className="p-4">
-                  <div className="text-sm text-slate-500">Estado</div>
-                  <div className="mt-2">
-                    {(() => {
-                      const statusConfig: { [key: string]: { label: string; color: string } } = {
-                        active: { label: "Activo", color: "bg-green-500" },
-                        paused: { label: "Pausado", color: "bg-yellow-500" },
-                        completed: { label: "Terminado", color: "bg-slate-900 dark:bg-slate-100" }
-                      };
-                      const currentStatus = proj.status || "active";
-                      const statusInfo = statusConfig[currentStatus];
-                      return (
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color} ${currentStatus === 'completed' ? 'text-white dark:text-slate-900' : 'text-white'}`}>
-                          {statusInfo.label}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </Card>
+              </div>
+
+              <SectionTitle title="Imágenes del proyecto" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ImageCard title={`Imagen inicial ${tabLabel}`} keyName={`initial${keyPrefix}`} />
+                <ImageCard title={`Imagen final ${tabLabel.replace("/", " ")}`} keyName={`final${keyPrefix}`} />
               </div>
 
               <div className="flex items-center justify-between">
@@ -938,7 +854,7 @@ export default function AstroTracker() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
                 {tabs.map((t) => (
                   <div key={t.id} className={`px-3 py-2 -mb-px border-b-2 ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}>
                     {editingTabId === t.id ? (
@@ -969,13 +885,7 @@ export default function AstroTracker() {
                     )}
                   </div>
                 ))}
-                <button onClick={() => setShow(true)} className="ml-auto text-sm underline shrink-0">+ Personalizada</button>
-              </div>
-
-              {/* Imágenes del filtro activo */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ImageCard title={`Imagen inicial ${act.name}`} keyName={`initial${act.id}`} />
-                <ImageCard title={`Imagen final ${act.name}`} keyName={`final${act.id}`} />
+                <button onClick={() => setShow(true)} className="ml-auto text-sm underline">+ Personalizada</button>
               </div>
 
               <Card className="overflow-x-auto">
