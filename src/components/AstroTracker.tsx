@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil } from "lucide-react";
+import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import astroTrackerLogo from "@/assets/astro-tracker-logo.png";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
@@ -253,7 +254,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#94a3b8" />
@@ -274,7 +275,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#94a3b8" />
@@ -296,7 +297,7 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={d} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
+        <BarChart data={d} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="date" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} stroke="#94a3b8" />
@@ -972,51 +973,96 @@ export default function AstroTracker() {
                 <ImageCard title={`Imagen final ${act.name}`} keyName={`final${act.name.replace(/\//g, "")}`} />
               </div>
 
-              <Card className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
-                      <th className="p-3">Fecha</th>
-                      <th className="p-3">Filtro</th>
-                      <th className="p-3">Tiempo</th>
-                      <th className="p-3">SNR (X̄)</th>
-                      <th className="p-3 hidden md:table-cell">Lights</th>
-                      <th className="p-3 hidden md:table-cell">Exposición (s)</th>
-                      <th className="p-3 hidden md:table-cell">SNR - R</th>
-                      <th className="p-3 hidden md:table-cell">SNR - G</th>
-                      <th className="p-3 hidden md:table-cell">SNR - B</th>
-                      <th className="p-3 hidden md:table-cell">Incremento</th>
-                      <th className="p-3 text-right hidden md:table-cell">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((s: any, i: number, a: any[]) => {
-                      const m = mean(s);
-                      const pm = a[i - 1] ? mean(a[i - 1]) : null;
-                      const inc = Number.isFinite(m) && Number.isFinite(pm) ? +((m) - (pm)).toFixed(3) : 0;
-                      return (
-                        <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                          <td className="p-3">{s.date}</td>
-                          <td className="p-3">{s.filter ?? "–"}</td>
-                          <td className="p-3">{hh(s.lights * s.exposureSec)}</td>
-                          <td className="p-3">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
-                          <td className="p-3 hidden md:table-cell">{s.lights}</td>
-                          <td className="p-3 hidden md:table-cell">{s.exposureSec}</td>
-                          <td className="p-3 hidden md:table-cell">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
-                          <td className="p-3 hidden md:table-cell">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
-                          <td className="p-3 hidden md:table-cell">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
-                          <td className="p-3 hidden md:table-cell">{i === 0 ? 0 : inc}</td>
-                          <td className="p-3 text-right hidden md:table-cell">
-                            <div className="inline-flex gap-2">
-                              <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-4 h-4" /></IconBtn>
-                              <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-4 h-4" /></IconBtn>
-                            </div>
-                          </td>
+              <Card className="relative">
+                <div className="flex">
+                  <div className="overflow-x-auto flex-1">
+                    <table className="text-sm">
+                      <thead>
+                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                          <th className="p-3 whitespace-nowrap">#</th>
+                          <th className="p-3 whitespace-nowrap">Fecha</th>
+                          <th className="p-3 whitespace-nowrap">Filtro</th>
+                          <th className="p-3 whitespace-nowrap">Exposición (s)</th>
+                          <th className="p-3 whitespace-nowrap">Lights sesión</th>
+                          <th className="p-3 whitespace-nowrap">Lights acumulados</th>
+                          <th className="p-3 whitespace-nowrap">Tiempo sesión</th>
+                          <th className="p-3 whitespace-nowrap">Tiempo acumulado</th>
+                          <th className="p-3 whitespace-nowrap">SNR (X̄)</th>
+                          <th className="p-3 whitespace-nowrap">SNR-R</th>
+                          <th className="p-3 whitespace-nowrap">SNR-G</th>
+                          <th className="p-3 whitespace-nowrap">SNR-B</th>
+                          <th className="p-3 whitespace-nowrap">Incremento</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {filtered.map((s: any, i: number, a: any[]) => {
+                          const m = mean(s);
+                          const pm = a[i - 1] ? mean(a[i - 1]) : null;
+                          const inc = Number.isFinite(m) && Number.isFinite(pm) ? +((m) - (pm)).toFixed(3) : 0;
+                          const cumulativeLightsVal = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0), 0);
+                          const sessionTime = s.lights * s.exposureSec;
+                          const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
+                          return (
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
+                              <td className="p-3 whitespace-nowrap">{i + 1}</td>
+                              <td className="p-3 whitespace-nowrap">{s.date}</td>
+                              <td className="p-3 whitespace-nowrap">{s.filter ?? "–"}</td>
+                              <td className="p-3 whitespace-nowrap">{s.exposureSec}</td>
+                              <td className="p-3 whitespace-nowrap">{s.lights}</td>
+                              <td className="p-3 whitespace-nowrap">{cumulativeLightsVal}</td>
+                              <td className="p-3 whitespace-nowrap">{hh(sessionTime)}</td>
+                              <td className="p-3 whitespace-nowrap">{hh(cumulativeTime)}</td>
+                              <td className="p-3 whitespace-nowrap">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
+                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
+                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
+                              <td className="p-3 whitespace-nowrap">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
+                              <td className="p-3 whitespace-nowrap">{i === 0 ? 0 : inc}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="border-l bg-slate-50/50 dark:bg-slate-900/40">
+                    <table className="text-sm">
+                      <thead>
+                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                          <th className="p-3 whitespace-nowrap sticky right-0">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filtered.map((s: any) => (
+                          <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
+                            <td className="p-3 whitespace-nowrap">
+                              <div className="inline-flex gap-2">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" title="Comentarios">
+                                      <MessageCircle className="w-4 h-4" />
+                                    </button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Comentarios de sesión</DialogTitle>
+                                      <DialogDescription>
+                                        Fecha: {s.date} - Filtro: {s.filter}
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
+                                      {s.notes || "Sin comentarios"}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                                <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-4 h-4" /></IconBtn>
+                                <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-4 h-4" /></IconBtn>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </Card>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
