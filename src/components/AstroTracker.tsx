@@ -923,6 +923,9 @@ export default function AstroTracker() {
                 </Card>
               </div>
 
+              <SectionTitle title="Imagen final del proyecto" />
+              <ImageCard title="Imagen final" keyName="finalProject" />
+
               <div className="flex items-center justify-between">
                 <SectionTitle icon={Database} title="Sesiones" />
                 <div className="flex items-center gap-2">
