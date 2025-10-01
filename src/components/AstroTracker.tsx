@@ -331,6 +331,8 @@ export default function AstroTracker() {
   const [filterType, setFilterType] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [theme, setTheme] = useState("light");
+  const [editingProjectName, setEditingProjectName] = useState<string | null>(null);
+  const [newProjectName, setNewProjectName] = useState("");
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -805,93 +807,88 @@ export default function AstroTracker() {
             </div>
           )}
 
-          {view === "projects" && obj && (() => {
-            const [editingName, setEditingName] = useState<string | null>(null);
-            const [newName, setNewName] = useState("");
-
-            return (
-              <div className="grid gap-4">
-                <div className="flex items-center justify-between">
-                  <SectionTitle icon={FolderOpen} title={`Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`} />
-                  <div className="flex items-center gap-2">
-                    <Btn outline onClick={() => setView("objects")}><ChevronLeft className="w-4 h-4" /> Volver</Btn>
-                    <Btn onClick={() => setMProj(true)}><Plus className="w-4 h-4" /> Nuevo</Btn>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
-                    const statusColors = {
-                      active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
-                      paused: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
-                      completed: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
-                    };
-                    const statusLabels = { active: "Activo", paused: "Pausado", completed: "Terminado" };
-
-                    return (
-                      <Card key={p.id} className="p-4" onClick={() => { setSelectedProjectId(p.id); setView("project"); }}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            {editingName === p.id ? (
-                              <input 
-                                value={newName} 
-                                onChange={(e) => setNewName(e.target.value)}
-                                onBlur={() => {
-                                  if (newName.trim()) updateProj(p.id, { name: newName.trim() });
-                                  setEditingName(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    if (newName.trim()) updateProj(p.id, { name: newName.trim() });
-                                    setEditingName(null);
-                                  }
-                                  if (e.key === 'Escape') setEditingName(null);
-                                }}
-                                className="px-2 py-1 border rounded text-sm w-full"
-                                autoFocus
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-base font-semibold">{p.name}</h4>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingName(p.id);
-                                    setNewName(p.name);
-                                  }}
-                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-                                  title="Editar nombre"
-                                >
-                                  <Pencil className="w-3 h-3 text-slate-400" />
-                                </button>
-                              </div>
-                            )}
-                            <div className="mt-1 text-xs text-slate-500">Creado: {new Date(p.createdAt).toLocaleDateString()}</div>
-                            <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">{p.sessions.length} sesión(es)</div>
-                            <div className="mt-2">
-                              <select 
-                                value={p.status || "active"} 
-                                onChange={(e) => { e.stopPropagation(); updateProj(p.id, { status: e.target.value }); }}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`text-xs px-2 py-1 rounded-full border ${statusColors[p.status || "active"]}`}
-                              >
-                                <option value="active">{statusLabels.active}</option>
-                                <option value="paused">{statusLabels.paused}</option>
-                                <option value="completed">{statusLabels.completed}</option>
-                              </select>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <IconBtn title="Eliminar" onClick={(e) => { e?.stopPropagation(); delProj(p.id); }}><Trash2 className="w-4 h-4" /></IconBtn>
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+          {view === "projects" && obj && (
+            <div className="grid gap-4">
+              <div className="flex items-center justify-between">
+                <SectionTitle icon={FolderOpen} title={`Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`} />
+                <div className="flex items-center gap-2">
+                  <Btn outline onClick={() => setView("objects")}><ChevronLeft className="w-4 h-4" /> Volver</Btn>
+                  <Btn onClick={() => setMProj(true)}><Plus className="w-4 h-4" /> Nuevo</Btn>
                 </div>
               </div>
-            );
-          })()}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
+                  const statusColors = {
+                    active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
+                    paused: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+                    completed: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/30"
+                  };
+                  const statusLabels = { active: "Activo", paused: "Pausado", completed: "Terminado" };
+
+                  return (
+                    <Card key={p.id} className="p-4" onClick={() => { setSelectedProjectId(p.id); setView("project"); }}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          {editingProjectName === p.id ? (
+                            <input 
+                              value={newProjectName} 
+                              onChange={(e) => setNewProjectName(e.target.value)}
+                              onBlur={() => {
+                                if (newProjectName.trim()) updateProj(p.id, { name: newProjectName.trim() });
+                                setEditingProjectName(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  if (newProjectName.trim()) updateProj(p.id, { name: newProjectName.trim() });
+                                  setEditingProjectName(null);
+                                }
+                                if (e.key === 'Escape') setEditingProjectName(null);
+                              }}
+                              className="px-2 py-1 border rounded text-sm w-full"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-semibold">{p.name}</h4>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingProjectName(p.id);
+                                  setNewProjectName(p.name);
+                                }}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                                title="Editar nombre"
+                              >
+                                <Pencil className="w-3 h-3 text-slate-400" />
+                              </button>
+                            </div>
+                          )}
+                          <div className="mt-1 text-xs text-slate-500">Creado: {new Date(p.createdAt).toLocaleDateString()}</div>
+                          <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">{p.sessions.length} sesión(es)</div>
+                          <div className="mt-2">
+                            <select 
+                              value={p.status || "active"} 
+                              onChange={(e) => { e.stopPropagation(); updateProj(p.id, { status: e.target.value }); }}
+                              onClick={(e) => e.stopPropagation()}
+                              className={`text-xs px-2 py-1 rounded-full border ${statusColors[p.status || "active"]}`}
+                            >
+                              <option value="active">{statusLabels.active}</option>
+                              <option value="paused">{statusLabels.paused}</option>
+                              <option value="completed">{statusLabels.completed}</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <IconBtn title="Eliminar" onClick={(e) => { e?.stopPropagation(); delProj(p.id); }}><Trash2 className="w-4 h-4" /></IconBtn>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {view === "project" && obj && proj && (
             <div className="grid gap-4 mt-2">
