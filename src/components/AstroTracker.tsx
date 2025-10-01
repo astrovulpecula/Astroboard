@@ -338,9 +338,9 @@ export default function AstroTracker() {
   const [showSettings, setShowSettings] = useState(false);
   const [defaultTheme, setDefaultTheme] = useState("light");
   const [jsonPath, setJsonPath] = useState("");
-  const [camera, setCamera] = useState("");
-  const [telescope, setTelescope] = useState("");
-  const [focalLength, setFocalLength] = useState("");
+  const [cameras, setCameras] = useState<string[]>([""]);
+  const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([{ name: "", focalLength: "" }]);
+  const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -353,6 +353,8 @@ export default function AstroTracker() {
   // Load settings from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem('astroTrackerSettings');
+    const hasData = localStorage.getItem('astroTrackerData');
+    
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
@@ -361,12 +363,16 @@ export default function AstroTracker() {
           setTheme(settings.defaultTheme);
         }
         if (settings.jsonPath) setJsonPath(settings.jsonPath);
-        if (settings.camera) setCamera(settings.camera);
-        if (settings.telescope) setTelescope(settings.telescope);
-        if (settings.focalLength) setFocalLength(settings.focalLength);
+        if (settings.cameras) setCameras(settings.cameras);
+        if (settings.telescopes) setTelescopes(settings.telescopes);
       } catch (e) {
         console.error('Error loading settings:', e);
       }
+    }
+    
+    // Show initial file prompt if no data exists
+    if (!hasData || hasData === '[]') {
+      setShowInitialFilePrompt(true);
     }
   }, []);
 
@@ -375,13 +381,12 @@ export default function AstroTracker() {
     const settings = {
       defaultTheme,
       jsonPath,
-      camera,
-      telescope,
-      focalLength
+      cameras: cameras.filter(c => c.trim() !== ""),
+      telescopes: telescopes.filter(t => t.name.trim() !== "")
     };
     localStorage.setItem('astroTrackerSettings', JSON.stringify(settings));
     setShowSettings(false);
-  }, [defaultTheme, jsonPath, camera, telescope, focalLength]);
+  }, [defaultTheme, jsonPath, cameras, telescopes]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -1305,52 +1310,124 @@ export default function AstroTracker() {
             {/* Localización del archivo JSON */}
             <div className="grid gap-3">
               <Label>Localización del archivo JSON</Label>
-              <input 
-                type="text"
-                value={jsonPath}
-                onChange={(e) => setJsonPath(e.target.value)}
-                placeholder="/ruta/al/archivo.json"
-                className={INPUT_CLS}
-              />
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  value={jsonPath}
+                  onChange={(e) => setJsonPath(e.target.value)}
+                  placeholder="Selecciona un archivo JSON"
+                  className={INPUT_CLS + " flex-1"}
+                  readOnly
+                />
+                <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 bg-white dark:bg-slate-800 transition-colors">
+                  <FolderOpen className="w-4 h-4" />
+                  <span className="text-sm font-medium">Buscar</span>
+                  <input 
+                    type="file" 
+                    accept="application/json" 
+                    className="hidden" 
+                    onChange={async (e) => { 
+                      const f = e.target.files?.[0]; 
+                      if (!f) return; 
+                      setJsonPath(f.name);
+                      const text = await f.text(); 
+                      try { 
+                        const json = JSON.parse(text); 
+                        if (Array.isArray(json)) { 
+                          setObjects(json);
+                          localStorage.setItem('astroTrackerData', JSON.stringify(json));
+                          setShowInitialFilePrompt(false);
+                        } else alert("Formato no válido"); 
+                      } catch { 
+                        alert("JSON no válido"); 
+                      } 
+                      e.target.value = ""; 
+                    }} 
+                  />
+                </label>
+              </div>
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                Especifica la ruta del directorio donde se encuentra el archivo JSON. La aplicación intentará cargarlo automáticamente al iniciar.
+                Selecciona el archivo JSON con tus datos. La aplicación lo cargará automáticamente al iniciar.
               </div>
             </div>
 
             {/* Equipo astronofotográfico */}
             <div className="grid gap-3">
               <Label>Equipo astronofotográfico</Label>
-              <div className="grid gap-3">
-                <label className="grid gap-1">
-                  <span className="text-sm">Cámara</span>
-                  <input 
-                    type="text"
-                    value={camera}
-                    onChange={(e) => setCamera(e.target.value)}
-                    placeholder="Ej: ZWO ASI294MC Pro"
-                    className={INPUT_CLS}
-                  />
-                </label>
-                <label className="grid gap-1">
-                  <span className="text-sm">Telescopio</span>
-                  <input 
-                    type="text"
-                    value={telescope}
-                    onChange={(e) => setTelescope(e.target.value)}
-                    placeholder="Ej: Sky-Watcher 80ED"
-                    className={INPUT_CLS}
-                  />
-                </label>
-                <label className="grid gap-1">
-                  <span className="text-sm">Distancia focal (mm)</span>
-                  <input 
-                    type="number"
-                    value={focalLength}
-                    onChange={(e) => setFocalLength(e.target.value)}
-                    placeholder="Ej: 600"
-                    className={INPUT_CLS}
-                  />
-                </label>
+              
+              {/* Cámaras */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Cámaras</span>
+                {cameras.map((camera, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input 
+                      type="text"
+                      value={camera}
+                      onChange={(e) => {
+                        const newCameras = [...cameras];
+                        newCameras[index] = e.target.value;
+                        setCameras(newCameras);
+                      }}
+                      placeholder="Ej: ZWO ASI294MC Pro"
+                      className={INPUT_CLS + " flex-1"}
+                    />
+                    {cameras.length > 1 && (
+                      <IconBtn 
+                        title="Eliminar" 
+                        onClick={() => setCameras(cameras.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </IconBtn>
+                    )}
+                  </div>
+                ))}
+                <Btn outline onClick={() => setCameras([...cameras, ""])}>
+                  <Plus className="w-4 h-4" /> Añadir cámara
+                </Btn>
+              </div>
+
+              {/* Telescopios */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Telescopios</span>
+                {telescopes.map((telescope, index) => (
+                  <div key={index} className="grid gap-2">
+                    <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        value={telescope.name}
+                        onChange={(e) => {
+                          const newTelescopes = [...telescopes];
+                          newTelescopes[index] = { ...newTelescopes[index], name: e.target.value };
+                          setTelescopes(newTelescopes);
+                        }}
+                        placeholder="Ej: Sky-Watcher 80ED"
+                        className={INPUT_CLS + " flex-1"}
+                      />
+                      {telescopes.length > 1 && (
+                        <IconBtn 
+                          title="Eliminar" 
+                          onClick={() => setTelescopes(telescopes.filter((_, i) => i !== index))}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </IconBtn>
+                      )}
+                    </div>
+                    <input 
+                      type="number"
+                      value={telescope.focalLength}
+                      onChange={(e) => {
+                        const newTelescopes = [...telescopes];
+                        newTelescopes[index] = { ...newTelescopes[index], focalLength: e.target.value };
+                        setTelescopes(newTelescopes);
+                      }}
+                      placeholder="Distancia focal (mm)"
+                      className={INPUT_CLS + " w-48"}
+                    />
+                  </div>
+                ))}
+                <Btn outline onClick={() => setTelescopes([...telescopes, { name: "", focalLength: "" }])}>
+                  <Plus className="w-4 h-4" /> Añadir telescopio
+                </Btn>
               </div>
             </div>
 
@@ -1359,6 +1436,49 @@ export default function AstroTracker() {
               <Btn outline onClick={() => setShowSettings(false)}>Cancelar</Btn>
               <Btn onClick={saveSettings}>Guardar configuración</Btn>
             </div>
+          </div>
+        </Modal>
+        
+        {/* Modal inicial para cargar archivo JSON */}
+        <Modal open={showInitialFilePrompt} onClose={() => setShowInitialFilePrompt(false)} title="Bienvenido a StarBoard">
+          <div className="grid gap-4">
+            <p className="text-slate-600 dark:text-slate-400">
+              Para comenzar, necesitas importar un archivo JSON con tus datos o crear un nuevo proyecto.
+            </p>
+            <label className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 bg-white dark:bg-slate-800 transition-colors justify-center">
+              <Upload className="w-5 h-5" />
+              <span className="font-medium">Importar archivo JSON</span>
+              <input 
+                type="file" 
+                accept="application/json" 
+                className="hidden" 
+                onChange={async (e) => { 
+                  const f = e.target.files?.[0]; 
+                  if (!f) return; 
+                  const text = await f.text(); 
+                  try { 
+                    const json = JSON.parse(text); 
+                    if (Array.isArray(json)) { 
+                      setObjects(json);
+                      localStorage.setItem('astroTrackerData', JSON.stringify(json));
+                      setShowInitialFilePrompt(false);
+                      setJsonPath(f.name);
+                    } else alert("Formato no válido"); 
+                  } catch { 
+                    alert("JSON no válido"); 
+                  } 
+                  e.target.value = ""; 
+                }} 
+              />
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+              <span className="text-sm text-slate-500">o</span>
+              <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+            </div>
+            <Btn onClick={() => { setShowInitialFilePrompt(false); setMObj(true); }}>
+              <Plus className="w-4 h-4" /> Crear primer objeto
+            </Btn>
           </div>
         </Modal>
       </div>
