@@ -254,7 +254,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 20, left: 50, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#94a3b8" />
@@ -275,7 +275,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 20, left: 50, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#94a3b8" />
@@ -297,7 +297,7 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={d} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+        <BarChart data={d} margin={{ top: 10, right: 20, left: 50, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="date" tickMargin={8} stroke="#94a3b8" />
           <YAxis tickMargin={8} stroke="#94a3b8" />
@@ -1031,34 +1031,44 @@ export default function AstroTracker() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filtered.map((s: any) => (
-                          <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                            <td className="p-3 whitespace-nowrap">
-                              <div className="inline-flex gap-2">
-                                <Dialog>
-                                  <DialogTrigger asChild>
-                                    <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" title="Comentarios">
-                                      <MessageCircle className="w-4 h-4" />
-                                    </button>
-                                  </DialogTrigger>
-                                  <DialogContent>
-                                    <DialogHeader>
-                                      <DialogTitle>Comentarios de sesión</DialogTitle>
-                                      <DialogDescription>
-                                        Fecha: {s.date} - Filtro: {s.filter}
-                                      </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
-                                      {s.notes || "Sin comentarios"}
-                                    </div>
-                                  </DialogContent>
-                                </Dialog>
-                                <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-4 h-4" /></IconBtn>
-                                <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-4 h-4" /></IconBtn>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
+                        {filtered.map((s: any, i: number, a: any[]) => {
+                          const m = mean(s);
+                          const pm = a[i - 1] ? mean(a[i - 1]) : null;
+                          const inc = Number.isFinite(m) && Number.isFinite(pm) ? +((m) - (pm)).toFixed(3) : 0;
+                          const cumulativeLightsVal = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0), 0);
+                          const sessionTime = s.lights * s.exposureSec;
+                          const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
+                          return (
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40 h-[57px]">
+                              <td className="p-3 whitespace-nowrap">
+                                <div className="inline-flex gap-2">
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" title="Comentarios">
+                                        <MessageCircle className="w-4 h-4" />
+                                      </button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                      <DialogHeader>
+                                        <DialogTitle>Comentarios de sesión</DialogTitle>
+                                        <DialogDescription>
+                                          Fecha: {s.date} - Filtro: {s.filter}
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      {s.notes && (
+                                        <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
+                                          {s.notes}
+                                        </div>
+                                      )}
+                                    </DialogContent>
+                                  </Dialog>
+                                  <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-4 h-4" /></IconBtn>
+                                  <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-4 h-4" /></IconBtn>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
