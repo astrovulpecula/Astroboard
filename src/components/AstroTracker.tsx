@@ -817,6 +817,104 @@ export default function AstroTracker() {
                   <Btn onClick={() => setMProj(true)}><Plus className="w-4 h-4" /> Nuevo</Btn>
                 </div>
               </div>
+
+              {/* Highlights/Statistics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {(() => {
+                  // Calcular todas las estadísticas del objeto
+                  const allSessions = obj.projects.flatMap((p: any) => p.sessions || []);
+                  const totalLights = allSessions.reduce((sum: number, s: any) => sum + (s.lights || 0), 0);
+                  const totalSeconds = allSessions.reduce((sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0), 0);
+                  const uniqueNights = new Set(allSessions.map((s: any) => s.date)).size;
+                  const numProjects = obj.projects.length;
+                  
+                  // Contar fotos por filtro
+                  const filterCounts: Record<string, number> = {};
+                  allSessions.forEach((s: any) => {
+                    const filter = s.filter || "Sin filtro";
+                    filterCounts[filter] = (filterCounts[filter] || 0) + (s.lights || 0);
+                  });
+                  
+                  // Contar proyectos por estado
+                  const statusCounts = {
+                    active: obj.projects.filter((p: any) => (p.status || "active") === "active").length,
+                    paused: obj.projects.filter((p: any) => p.status === "paused").length,
+                    completed: obj.projects.filter((p: any) => p.status === "completed").length
+                  };
+
+                  const lastSession = allSessions.length > 0 
+                    ? allSessions.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]
+                    : null;
+
+                  return (
+                    <>
+                      <Card className="p-4">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">Objeto</div>
+                        <div className="text-2xl font-bold mt-1">{obj.id}</div>
+                        {obj.commonName && <div className="text-sm text-slate-600 dark:text-slate-300 mt-1">{obj.commonName}</div>}
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">Exposición total</div>
+                        <div className="text-2xl font-bold mt-1">{hh(totalSeconds)}</div>
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">Lights acumulados</div>
+                        <div className="text-2xl font-bold mt-1">{totalLights}</div>
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">Sesiones</div>
+                        <div className="text-2xl font-bold mt-1">{uniqueNights} noche(s)</div>
+                        {lastSession && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Última: {lastSession.date}</div>}
+                      </Card>
+
+                      <Card className="p-4">
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Estado</div>
+                        <div className="px-3 py-2 rounded-lg border bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/40 text-sm font-semibold">
+                          {statusCounts.active > 0 ? "Activo" : statusCounts.paused > 0 ? "Pausado" : "Terminado"}
+                        </div>
+                      </Card>
+
+                      {/* Filtros utilizados */}
+                      <Card className="p-4 sm:col-span-2 lg:col-span-2">
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Filtros utilizados</div>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(filterCounts).map(([filter, count]) => (
+                            <div key={filter} className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm">
+                              <span className="font-semibold">{filter}:</span> {count}
+                            </div>
+                          ))}
+                          {Object.keys(filterCounts).length === 0 && (
+                            <div className="text-sm text-slate-400">Sin filtros registrados</div>
+                          )}
+                        </div>
+                      </Card>
+
+                      {/* Proyectos por estado */}
+                      <Card className="p-4 sm:col-span-2 lg:col-span-2">
+                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Proyectos: {numProjects}</div>
+                        <div className="flex gap-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                            <span className="text-sm">Activos: <strong>{statusCounts.active}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <span className="text-sm">Pausados: <strong>{statusCounts.paused}</strong></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full bg-slate-500"></div>
+                            <span className="text-sm">Terminados: <strong>{statusCounts.completed}</strong></span>
+                          </div>
+                        </div>
+                      </Card>
+                    </>
+                  );
+                })()}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
                   const statusColors = {
