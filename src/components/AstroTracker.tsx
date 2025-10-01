@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import starboardLogo from "@/assets/starboard-logo.png";
+import logoLight from "@/assets/logo-light.png";
+import logoDark from "@/assets/logo-dark.png";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60";
@@ -592,7 +593,11 @@ export default function AstroTracker() {
                 }}
                 className="hover:opacity-80 transition-opacity"
               >
-                <img src={starboardLogo} alt="StarBoard" className="h-8" />
+                <img 
+                  src={theme === 'dark' ? logoDark : logoLight} 
+                  alt="StarBoard" 
+                  className="h-14 w-14" 
+                />
               </button>
               <div>
                 <div className="font-semibold">StarBoard</div>
