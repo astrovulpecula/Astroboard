@@ -204,12 +204,12 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   );
 }
 
-function FSession({ onSubmit, initial }: { onSubmit: (session: any) => void; initial?: any }) {
+function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[] }) {
   const init = initial || {};
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
-  const [filter, setFilter] = useState(init.filter || "RGB");
+  const [filter, setFilter] = useState(init.filter || (availableFilters[0] || "RGB"));
   const [snrR, setSnrR] = useState(init.snrR ?? "");
   const [snrG, setSnrG] = useState(init.snrG ?? "");
   const [snrB, setSnrB] = useState(init.snrB ?? "");
@@ -219,7 +219,12 @@ function FSession({ onSubmit, initial }: { onSubmit: (session: any) => void; ini
     <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); onSubmit({ date, lights: num(lights), exposureSec: num(exposureSec, 1), filter, snrR: snrR !== "" ? parseFloat(snrR) : undefined, snrG: snrG !== "" ? parseFloat(snrG) : undefined, snrB: snrB !== "" ? parseFloat(snrB) : undefined, notes }); }}>
       <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1"><Label>Fecha</Label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} /></label>
-        <label className="grid gap-1"><Label>Filtro</Label><input value={filter} onChange={(e) => setFilter(e.target.value)} className={INPUT_CLS} placeholder="RGB / L / Ha" /></label>
+        <label className="grid gap-1">
+          <Label>Filtro</Label>
+          <select value={filter} onChange={(e) => setFilter(e.target.value)} className={INPUT_CLS}>
+            {availableFilters.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </label>
         <label className="grid gap-1"><Label>Lights</Label><input type="number" value={lights} min={0} onChange={(e) => setLights(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>Exposición por light (s)</Label><input type="number" value={exposureSec} min={1} onChange={(e) => setExposureSec(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
       </div>
@@ -438,6 +443,8 @@ export default function AstroTracker() {
   const [active, setActive] = useState("rgb");
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabName, setEditingTabName] = useState("");
   
   const createTab = () => {
     const name = tabName.trim(); 
@@ -453,6 +460,23 @@ export default function AstroTracker() {
     setTabs((p) => p.filter((t) => t.id !== id)); 
     if (active === id) setActive("rgb"); 
   };
+  
+  const startEditTab = (tab: TabType) => {
+    setEditingTabId(tab.id);
+    setEditingTabName(tab.name);
+  };
+  
+  const saveTabName = (id: string) => {
+    const name = editingTabName.trim();
+    if (!name) {
+      setEditingTabId(null);
+      return;
+    }
+    setTabs((p) => p.map(t => t.id === id ? { ...t, name } : t));
+    setEditingTabId(null);
+  };
+  
+  const availableFilters = useMemo(() => tabs.map(t => t.name), [tabs]);
   
   const filt = useCallback((t: TabType | undefined) => {
     const up = (x: string) => (x || "").toUpperCase();
@@ -830,10 +854,31 @@ export default function AstroTracker() {
 
               <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
                 {tabs.map((t) => (
-                  <button key={t.id} onClick={() => setActive(t.id)} className={`px-3 py-2 -mb-px border-b-2 ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}>
-                    {t.name}
-                    {t.custom && <span onClick={(e) => { e.stopPropagation(); rm(t.id); }} className="ml-2 text-slate-400 hover:text-red-500">×</span>}
-                  </button>
+                  <div key={t.id} className={`px-3 py-2 -mb-px border-b-2 ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}>
+                    {editingTabId === t.id ? (
+                      <input 
+                        value={editingTabName} 
+                        onChange={(e) => setEditingTabName(e.target.value)}
+                        onBlur={() => saveTabName(t.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveTabName(t.id);
+                          if (e.key === 'Escape') setEditingTabId(null);
+                        }}
+                        className="px-2 py-1 border rounded text-sm w-24"
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <button onClick={() => setActive(t.id)} className="flex items-center gap-2">
+                        <span>{t.name}</span>
+                        <Pencil 
+                          className="w-3 h-3 opacity-0 hover:opacity-100 transition-opacity" 
+                          onClick={(e) => { e.stopPropagation(); startEditTab(t); }} 
+                        />
+                        {t.custom && <span onClick={(e) => { e.stopPropagation(); rm(t.id); }} className="text-slate-400 hover:text-red-500">×</span>}
+                      </button>
+                    )}
+                  </div>
                 ))}
                 <button onClick={() => setShow(true)} className="ml-auto text-sm underline">+ Personalizada</button>
               </div>
@@ -909,10 +954,10 @@ export default function AstroTracker() {
           <FProject onSubmit={addProj} />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
-          <FSession onSubmit={addSes} />
+          <FSession onSubmit={addSes} availableFilters={availableFilters} />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
-          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} />}
+          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} />}
         </Modal>
         <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); createTab(); }}>
