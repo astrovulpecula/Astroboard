@@ -244,7 +244,61 @@ function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session:
   );
 }
 
-const readDataURL = (f: File) => new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsDataURL(f); });
+const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Redimensionar si es necesario
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No se pudo obtener el contexto del canvas'));
+          return;
+        }
+        
+        // Dibujar la imagen redimensionada
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Comprimir a WebP (o JPEG si WebP no está disponible)
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Error al comprimir la imagen'));
+              return;
+            }
+            const blobReader = new FileReader();
+            blobReader.onloadend = () => resolve(String(blobReader.result));
+            blobReader.onerror = reject;
+            blobReader.readAsDataURL(blob);
+          },
+          'image/webp',
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error('Error al cargar la imagen'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
@@ -557,7 +611,7 @@ export default function AstroTracker() {
           <div className="flex gap-2">
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
               <Upload className="w-4 h-4" /> Reemplazar
-              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await readDataURL(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
+              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
             </label>
             <Btn outline onClick={() => upImgs({ [keyName]: undefined })}><Trash2 className="w-4 h-4" /> Quitar</Btn>
           </div>
@@ -567,7 +621,7 @@ export default function AstroTracker() {
           <div className="text-center text-sm text-slate-500">
             <Upload className="w-5 h-5 mx-auto mb-1" />Subir {title.toLowerCase()}
           </div>
-          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await readDataURL(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
+          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
         </label>
       )}
     </Card>
@@ -824,7 +878,7 @@ export default function AstroTracker() {
                               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
                                 <label className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => e.stopPropagation()}>
                                   <Upload className="w-4 h-4" />
-                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await readDataURL(f); upObjImg(o.id, url); e.target.value = ""; }} />
+                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
                                 </label>
                                 <button className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => { e.stopPropagation(); upObjImg(o.id, null); }}>
                                   <Trash2 className="w-4 h-4" />
@@ -835,7 +889,7 @@ export default function AstroTracker() {
                             <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition" onClick={(e) => e.stopPropagation()}>
                               <Upload className="w-5 h-5 text-slate-400 mb-1" />
                               <span className="text-xs text-slate-500">Subir</span>
-                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await readDataURL(f); upObjImg(o.id, url); e.target.value = ""; }} />
+                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
                             </label>
                           )}
                         </div>
