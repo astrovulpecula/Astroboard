@@ -532,41 +532,41 @@ export default function AstroTracker() {
     <div className={theme === "dark" ? "dark" : ""} data-theme={theme}>
       <style>{`
         [data-theme="astro"] {
-          --gradient-start: #ff6b9d;
-          --gradient-mid: #c44569;
-          --gradient-end: #6a0dad;
-          --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(252, 182, 159, 0.3) 100%);
-          --card-border: rgba(255, 107, 157, 0.3);
+          --gradient-start: #ffa07a;
+          --gradient-mid: #ff6b4a;
+          --gradient-end: #1e3a8a;
+          --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
+          --card-border: rgba(255, 160, 122, 0.3);
         }
         [data-theme="astro"] .astro-bg {
-          background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #ff6b9d 50%, #c44569 75%, #6a0dad 100%);
+          background: linear-gradient(135deg, #ffe4d6 0%, #ffa07a 25%, #ff6b4a 50%, #3b5998 75%, #1e3a8a 100%);
         }
         [data-theme="astro"] [data-card] {
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(252, 182, 159, 0.3) 100%);
-          border-color: rgba(255, 107, 157, 0.3);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
+          border-color: rgba(255, 160, 122, 0.3);
         }
         [data-theme="astro"] .astro-btn {
-          background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+          background: linear-gradient(135deg, #ffa07a 0%, #ff6b4a 100%);
           color: white;
           border: none;
         }
         [data-theme="astro"] .astro-btn:hover {
-          background: linear-gradient(135deg, #ff5a8c 0%, #b33558 100%);
+          background: linear-gradient(135deg, #ff8f69 0%, #ff5a39 100%);
         }
         [data-theme="astro"] .astro-text {
-          background: linear-gradient(135deg, #ff6b9d 0%, #6a0dad 100%);
+          background: linear-gradient(135deg, #ffa07a 0%, #1e3a8a 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
         [data-theme="astro"] .astro-border {
-          border-color: rgba(255, 107, 157, 0.4);
+          border-color: rgba(255, 160, 122, 0.4);
         }
         [data-theme="astro"] h1, 
         [data-theme="astro"] h2, 
         [data-theme="astro"] h3, 
         [data-theme="astro"] h4 {
-          background: linear-gradient(135deg, #c44569 0%, #6a0dad 100%);
+          background: linear-gradient(135deg, #ff6b4a 0%, #1e3a8a 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -576,8 +576,8 @@ export default function AstroTracker() {
           --card-border: rgb(226 232 240);
         }
         [data-theme="light"].dark {
-          --card-bg: rgba(15, 23, 42, 0.6);
-          --card-border: rgb(30 41 59);
+          --card-bg: transparent;
+          --card-border: rgba(255, 255, 255, 0.2);
         }
       `}</style>
       <div className={`min-h-screen ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}>
