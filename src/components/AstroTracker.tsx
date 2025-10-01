@@ -659,7 +659,7 @@ export default function AstroTracker() {
               </Btn>
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
                 <Upload className="w-4 h-4" /> Importar
-                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); try { const json = JSON.parse(text); if (Array.isArray(json)) { setObjects(json); setView("objects"); setSelectedObjectId(null); setSelectedProjectId(null); } else alert("Formato no válido"); } catch { alert("JSON no válido"); } e.target.value = ""; }} />
+                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); let json; try { json = JSON.parse(text); } catch { alert("JSON no válido"); e.target.value = ""; return; } if (Array.isArray(json)) { setObjects(json); setView("objects"); setSelectedObjectId(null); setSelectedProjectId(null); } else { alert("Formato no válido"); } e.target.value = ""; }} />
               </label>
               <IconBtn title={theme === "light" ? "Cambiar a oscuro" : theme === "dark" ? "Cambiar a Astro" : "Cambiar a claro"} onClick={cycleTheme}>
                 {theme === "light" ? <Moon className="w-4 h-4" /> : theme === "dark" ? <Star className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -1331,18 +1331,27 @@ export default function AstroTracker() {
                       if (!f) return; 
                       setJsonPath(f.name);
                       const text = await f.text(); 
+                      let json;
                       try { 
-                        const json = JSON.parse(text); 
-                        if (Array.isArray(json)) { 
-                          setObjects(json);
-                          localStorage.setItem('astroTrackerData', JSON.stringify(json));
-                          setShowInitialFilePrompt(false);
-                        } else alert("Formato no válido"); 
+                        json = JSON.parse(text); 
                       } catch { 
                         alert("JSON no válido"); 
+                        e.target.value = ""; 
+                        return;
                       } 
+                      if (Array.isArray(json)) { 
+                        setObjects(json);
+                        try {
+                          localStorage.setItem('astroTrackerData', JSON.stringify(json));
+                        } catch (err) {
+                          console.warn('No se pudo guardar en localStorage:', err);
+                        }
+                        setShowInitialFilePrompt(false);
+                      } else { 
+                        alert("Formato no válido"); 
+                      }
                       e.target.value = ""; 
-                    }} 
+                    }}
                   />
                 </label>
               </div>
@@ -1456,19 +1465,28 @@ export default function AstroTracker() {
                   const f = e.target.files?.[0]; 
                   if (!f) return; 
                   const text = await f.text(); 
+                  let json;
                   try { 
-                    const json = JSON.parse(text); 
-                    if (Array.isArray(json)) { 
-                      setObjects(json);
-                      localStorage.setItem('astroTrackerData', JSON.stringify(json));
-                      setShowInitialFilePrompt(false);
-                      setJsonPath(f.name);
-                    } else alert("Formato no válido"); 
+                    json = JSON.parse(text); 
                   } catch { 
                     alert("JSON no válido"); 
+                    e.target.value = ""; 
+                    return;
                   } 
+                  if (Array.isArray(json)) { 
+                    setObjects(json);
+                    try {
+                      localStorage.setItem('astroTrackerData', JSON.stringify(json));
+                    } catch (err) {
+                      console.warn('No se pudo guardar en localStorage:', err);
+                    }
+                    setShowInitialFilePrompt(false);
+                    setJsonPath(f.name);
+                  } else { 
+                    alert("Formato no válido"); 
+                  }
                   e.target.value = ""; 
-                }} 
+                }}
               />
             </label>
             <div className="flex items-center gap-2">
