@@ -482,6 +482,8 @@ export default function AstroTracker() {
     const up = (x: string) => (x || "").toUpperCase();
     if (t?.preset === "rgb") return ss.filter((s: any) => up(s.filter) === "RGB");
     if (t?.preset === "haoiii") return ss.filter((s: any) => { const f = up(s.filter); return f.includes("HA") || f.includes("OIII"); });
+    // Para pestañas personalizadas, filtrar por el nombre exacto de la pestaña
+    if (t?.custom) return ss.filter((s: any) => up(s.filter) === up(t.name));
     return ss;
   }, [ss]);
   
