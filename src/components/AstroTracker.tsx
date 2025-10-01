@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import astroTrackerLogo from "@/assets/astro-tracker-logo.png";
+import starboardLogo from "@/assets/starboard-logo.png";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60";
@@ -592,11 +592,11 @@ export default function AstroTracker() {
                 }}
                 className="hover:opacity-80 transition-opacity"
               >
-                <img src={astroTrackerLogo} alt="Astro Tracker" className="w-8 h-8" />
+                <img src={starboardLogo} alt="StarBoard" className="h-8" />
               </button>
               <div>
-                <div className="font-semibold">Astrotracker · Dashboard</div>
-                <div className="text-xs text-slate-500">{view === "objects" ? "Objetos" : view === "projects" ? "Proyectos" : "Detalle"}</div>
+                <div className="font-semibold">StarBoard</div>
+                <div className="text-xs text-slate-500">{view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : "Sesiones"}</div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -819,7 +819,7 @@ export default function AstroTracker() {
               </div>
 
               {/* Highlights/Statistics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {(() => {
                   // Calcular todas las estadísticas del objeto
                   const allSessions = obj.projects.flatMap((p: any) => p.sessions || []);
@@ -870,12 +870,6 @@ export default function AstroTracker() {
                         {lastSession && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Última: {lastSession.date}</div>}
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Estado</div>
-                        <div className="px-3 py-2 rounded-lg border bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/40 text-sm font-semibold">
-                          {statusCounts.active > 0 ? "Activo" : statusCounts.paused > 0 ? "Pausado" : "Terminado"}
-                        </div>
-                      </Card>
 
                       {/* Filtros utilizados */}
                       <Card className="p-4 sm:col-span-2 lg:col-span-2">
