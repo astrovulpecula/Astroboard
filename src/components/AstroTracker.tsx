@@ -871,10 +871,13 @@ export default function AstroTracker() {
                     ) : (
                       <button onClick={() => setActive(t.id)} className="flex items-center gap-2">
                         <span>{t.name}</span>
-                        <Pencil 
-                          className="w-3 h-3 opacity-0 hover:opacity-100 transition-opacity" 
-                          onClick={(e) => { e.stopPropagation(); startEditTab(t); }} 
-                        />
+                        <button 
+                          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" 
+                          onClick={(e) => { e.stopPropagation(); startEditTab(t); }}
+                          title="Editar nombre"
+                        >
+                          <Pencil className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                        </button>
                         {t.custom && <span onClick={(e) => { e.stopPropagation(); rm(t.id); }} className="text-slate-400 hover:text-red-500">×</span>}
                       </button>
                     )}
