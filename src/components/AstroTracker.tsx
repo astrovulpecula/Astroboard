@@ -380,15 +380,15 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
 const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(() => s.map((x) => {
-    const moonData = x.moonPhase ? calculateMoonPhase(x.date) : null;
+    const moonData = calculateMoonPhase(x.date);
     return { 
       date: x.date, 
-      illumination: moonData ? moonData.illumination : null 
+      illumination: moonData.illumination 
     };
   }), [s]);
   
   const avgIllumination = useMemo(() => {
-    const validValues = data.filter(d => d.illumination !== null).map(d => d.illumination!);
+    const validValues = data.map(d => d.illumination);
     return validValues.length > 0 ? validValues.reduce((a, b) => a + b, 0) / validValues.length : 0;
   }, [data]);
   
@@ -400,13 +400,20 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         % medio de iluminación: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis 
+            dataKey="date" 
+            tickMargin={8} 
+            stroke="#ffffff" 
+            angle={-45}
+            textAnchor="end"
+            height={60}
+          />
           <YAxis tickMargin={8} domain={[0, 100]} stroke="#ffffff" label={{ value: '% Iluminación', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
           <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} formatter={(v) => `${v}%`} />
-          <Bar dataKey="illumination" fill="#fbbf24" name="Iluminación lunar" />
-        </BarChart>
+          <Line type="monotone" dataKey="illumination" stroke="#fbbf24" strokeWidth={3} dot={{ fill: '#fbbf24', r: 4 }} name="Iluminación lunar" />
+        </LineChart>
       </ResponsiveContainer>
     </Card>
   );
@@ -1322,11 +1329,16 @@ export default function AstroTracker() {
                       const cumulativeLightsVal = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0), 0);
                       const sessionTime = s.lights * s.exposureSec;
                       const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
+                      
+                      // Calcular fase lunar si no existe
+                      const moonData = s.date ? calculateMoonPhase(s.date) : null;
+                      const moonDisplay = moonData ? `${moonData.emoji} ${moonData.name} (${moonData.illumination}%)` : "–";
+                      
                       return (
                         <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
                           <td className="p-3 whitespace-nowrap align-middle">{i + 1}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.date}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.moonPhase ?? "–"}</td>
+                          <td className="p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.lights}</td>
