@@ -24,14 +24,19 @@ const mean = (s: any) => {
 const totalExposureSec = (sessions: any[]) => sessions.reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0);
 const cumulativeLights = (sessions: any[], i: number) => sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0), 0);
 
+const sampleSessions = [
+  { id: uid("ses"), date: toISODate("22/09/25"), lights: 48, exposureSec: 180, filter: "RGB", snrR: 49.54, snrG: 50.77, snrB: 48.36, notes: "Noche estable.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("22/09/25"))) },
+  { id: uid("ses"), date: toISODate("23/09/25"), lights: 60, exposureSec: 180, filter: "RGB", snrR: 51.91, snrG: 53.46, snrB: 50.89, notes: "Ligera bruma.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("23/09/25"))) }
+];
+
 const sample = [{
   id: "M31", commonName: "Galaxia de Andrómeda", constellation: "Andrómeda", type: "Galaxia", createdAt: new Date().toISOString(), image: undefined,
   projects: [{
     id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), status: "active", images: {},
-    sessions: [
-      { id: uid("ses"), date: toISODate("22/09/25"), lights: 48, exposureSec: 180, filter: "RGB", snrR: 49.54, snrG: 50.77, snrB: 48.36, notes: "Noche estable.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("22/09/25"))) },
-      { id: uid("ses"), date: toISODate("23/09/25"), lights: 60, exposureSec: 180, filter: "RGB", snrR: 51.91, snrG: 53.46, snrB: 50.89, notes: "Ligera bruma.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("23/09/25"))) }
-    ]
+    sessions: sampleSessions,
+    panels: {
+      1: sampleSessions
+    }
   }]
 }];
 
@@ -625,6 +630,7 @@ export default function AstroTracker() {
   const [cameras, setCameras] = useState<string[]>([""]);
   const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([{ name: "", focalLength: "" }]);
   const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
+  const [selectedPanel, setSelectedPanel] = useState(1);
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -747,7 +753,12 @@ export default function AstroTracker() {
 
   const addProj = useCallback((base: any) => {
     if (!obj) return;
-    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), status: "active", sessions: [], images: {} };
+    // Crear estructura de paneles con sesiones
+    const panels: any = {};
+    for (let i = 1; i <= (base.numPanels || 1); i++) {
+      panels[i] = [];
+    }
+    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), status: "active", sessions: [], panels, images: {} };
     setObjects(objects.map((o) => o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o));
     setSelectedProjectId(np.id);
     setMProj(false);
@@ -765,19 +776,53 @@ export default function AstroTracker() {
   const addSes = useCallback((base: any) => {
     if (!obj || !proj) return;
     const s = { ...base, id: uid("ses") };
-    setObjects(objects.map((o) => o.id !== obj.id ? o : { ...o, projects: o.projects.map((p) => p.id === proj.id ? { ...p, sessions: [...p.sessions, s] } : p) }));
+    setObjects(objects.map((o: any) => o.id !== obj.id ? o : { 
+      ...o, 
+      projects: o.projects.map((p: any) => p.id === proj.id ? { 
+        ...p, 
+        sessions: [...p.sessions, s],
+        panels: {
+          ...(p.panels || {}),
+          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), s]
+        }
+      } : p) 
+    }));
     setMSes(false);
-  }, [objects, obj, proj]);
+  }, [objects, obj, proj, selectedPanel]);
 
   const editSession = useCallback((sid: string, data: any) => {
     if (!obj || !proj) return;
-    setObjects(objects.map((o) => o.id !== obj.id ? o : { ...o, projects: o.projects.map((p) => p.id !== proj.id ? p : { ...p, sessions: p.sessions.map((s) => s.id === sid ? { ...s, ...data } : s) }) }));
+    setObjects(objects.map((o: any) => o.id !== obj.id ? o : { 
+      ...o, 
+      projects: o.projects.map((p: any) => p.id !== proj.id ? p : { 
+        ...p, 
+        sessions: p.sessions.map((s: any) => s.id === sid ? { ...s, ...data } : s),
+        panels: Object.fromEntries(
+          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+            panelNum,
+            sessions.map((s: any) => s.id === sid ? { ...s, ...data } : s)
+          ])
+        )
+      }) 
+    }));
   }, [objects, obj, proj]);
 
   const deleteSession = useCallback((sid: string) => {
     if (!confirm("¿Eliminar sesión?")) return;
     if (!obj || !proj) return;
-    setObjects(objects.map((o) => o.id !== obj.id ? o : { ...o, projects: o.projects.map((p) => p.id !== proj.id ? p : { ...p, sessions: p.sessions.filter((s) => s.id !== sid) }) }));
+    setObjects(objects.map((o: any) => o.id !== obj.id ? o : { 
+      ...o, 
+      projects: o.projects.map((p: any) => p.id !== proj.id ? p : { 
+        ...p, 
+        sessions: p.sessions.filter((s: any) => s.id !== sid),
+        panels: Object.fromEntries(
+          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+            panelNum,
+            sessions.filter((s: any) => s.id !== sid)
+          ])
+        )
+      }) 
+    }));
   }, [objects, obj, proj]);
 
   const delProj = useCallback((pid: string) => {
@@ -798,7 +843,12 @@ export default function AstroTracker() {
     setObjects(objects.map((o) => o.id !== obj.id ? o : { ...o, projects: o.projects.map((p) => p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...patch } }) }));
   }, [objects, obj, proj]);
 
-  const ss = useMemo(() => proj?.sessions.slice().sort((a: any, b: any) => a.date.localeCompare(b.date)) || [], [proj]);
+  const ss = useMemo(() => {
+    if (!proj) return [];
+    const p: any = proj;
+    // Obtener sesiones del panel seleccionado
+    return (p.panels?.[selectedPanel] || []).slice().sort((a: any, b: any) => a.date.localeCompare(b.date));
+  }, [proj, selectedPanel]);
   
   const [tabs, setTabs] = useState<TabType[]>([{ id: "rgb", name: "RGB", preset: "rgb" }, { id: "haoiii", name: "Ha/OIII", preset: "haoiii" }]);
   const [active, setActive] = useState("rgb");
@@ -1413,15 +1463,19 @@ export default function AstroTracker() {
               <SectionTitle title="Paneles" />
               <Card className="p-4 mb-4">
                 <div className="flex items-center gap-3">
-                  <button className="px-4 py-2 rounded-lg bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-medium transition-colors">
-                    Panel 1
-                  </button>
-                  <button className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors">
-                    Panel 2
-                  </button>
-                  <button className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium transition-colors">
-                    Panel 3
-                  </button>
+                  {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
+                    <button 
+                      key={panelNum}
+                      onClick={() => setSelectedPanel(parseInt(panelNum))}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        selectedPanel === parseInt(panelNum)
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                          : "border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      Panel {panelNum}
+                    </button>
+                  ))}
                 </div>
               </Card>
 
