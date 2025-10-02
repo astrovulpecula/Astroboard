@@ -910,22 +910,18 @@ export default function AstroTracker() {
     if (projectFilters.length > 0) {
       // Crear tabs automáticamente basadas en los filtros del proyecto
       const newTabs: TabType[] = projectFilters.map((filter: string) => ({
-        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}`,
         name: filter,
         custom: false
       }));
       setTabs(newTabs);
       setActive(newTabs[0]?.id || "");
     } else {
-      // Si no hay filtros definidos, usar los predeterminados
-      const defaultTabs = [
-        { id: "rgb", name: "RGB", preset: "rgb" as const },
-        { id: "haoiii", name: "Ha/OIII", preset: "haoiii" as const }
-      ];
-      setTabs(defaultTabs);
-      setActive("rgb");
+      // Si el proyecto no tiene filtros definidos, no crear pestañas automáticas
+      setTabs([]);
+      setActive("");
     }
-  }, [proj?.id, (proj as any)?.filters]);
+  }, [proj?.id]);
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
