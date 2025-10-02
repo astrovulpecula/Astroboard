@@ -311,8 +311,8 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
-          <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#94a3b8" />
+          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
           <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot />
         </LineChart>
@@ -332,8 +332,8 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#94a3b8" />
-          <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#94a3b8" />
+          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#ffffff" />
           <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Legend />
           <Line type="monotone" dataKey="r" name="SNR - R" stroke="#ef4444" strokeWidth={3} dot />
@@ -354,8 +354,8 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={d} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#94a3b8" />
-          <YAxis tickMargin={8} stroke="#94a3b8" />
+          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} stroke="#ffffff" />
           <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Bar dataKey="horas" fill="#3b82f6" />
         </BarChart>
@@ -1256,20 +1256,20 @@ export default function AstroTracker() {
                           const sessionTime = s.lights * s.exposureSec;
                           const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
                           return (
-                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{i + 1}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.date}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.filter ?? "–"}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.exposureSec}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{s.lights}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{cumulativeLightsVal}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{hh(sessionTime)}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{hh(cumulativeTime)}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">{i === 0 ? 0 : inc}</td>
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40 h-[57px]">
+                              <td className="p-3 whitespace-nowrap align-middle">{i + 1}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{s.date}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
+                              <td className="p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
                             </tr>
                           );
                         })}
@@ -1292,8 +1292,8 @@ export default function AstroTracker() {
                           const sessionTime = s.lights * s.exposureSec;
                           const cumulativeTime = a.slice(0, i + 1).reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
                           return (
-                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                              <td className="p-3 whitespace-nowrap align-middle h-[57px]">
+                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40 h-[57px]">
+                              <td className="p-3 whitespace-nowrap align-middle">
                                 <div className="inline-flex gap-2">
                                   <Dialog>
                                     <DialogTrigger asChild>
