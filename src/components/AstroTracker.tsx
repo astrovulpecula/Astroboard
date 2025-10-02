@@ -334,16 +334,19 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => s.map((x, i, a) => ({ lightTotal: cumulativeLights(a, i), snr: mean(x) })), [s]);
+  const data = useMemo(() => s.map((x, i, a) => ({ 
+    hours: a.slice(0, i + 1).reduce((acc, ses) => acc + (ses.lights || 0) * (ses.exposureSec || 0), 0) / 3600,
+    snr: mean(x) 
+  })), [s]);
   const first = useMemo(() => { const m = mean(s[0]); return Number.isFinite(m) ? m : 0; }, [s]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
+      <SectionTitle icon={Star} title="SNR (media) vs horas acumuladas" />
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="hours" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => v.toFixed(1)} />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
           <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot />
@@ -355,16 +358,21 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
 
 const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => s.map((x, i, a) => ({ lightTotal: cumulativeLights(a, i), r: Number.isFinite(x.snrR) ? x.snrR : null, g: Number.isFinite(x.snrG) ? x.snrG : null, b: Number.isFinite(x.snrB) ? x.snrB : null })), [s]);
+  const data = useMemo(() => s.map((x, i, a) => ({ 
+    hours: a.slice(0, i + 1).reduce((acc, ses) => acc + (ses.lights || 0) * (ses.exposureSec || 0), 0) / 3600,
+    r: Number.isFinite(x.snrR) ? x.snrR : null, 
+    g: Number.isFinite(x.snrG) ? x.snrG : null, 
+    b: Number.isFinite(x.snrB) ? x.snrB : null 
+  })), [s]);
   const firstMin = useMemo(() => { const t = s[0], v = [t?.snrR, t?.snrG, t?.snrB].filter((x) => Number.isFinite(x)); return v.length ? Math.min(...v) : 0; }, [s]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
+      <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs horas acumuladas" />
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="hours" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => v.toFixed(1)} />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
           <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Line type="monotone" dataKey="r" stroke="#ef4444" strokeWidth={2.5} dot name="R" />
