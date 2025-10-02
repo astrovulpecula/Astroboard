@@ -344,7 +344,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="90%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
@@ -370,7 +370,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="90%">
-        <LineChart data={data} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
@@ -416,7 +416,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         % medio de iluminación: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 50, bottom: 30 }}>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis 
             dataKey="session" 
@@ -444,7 +444,7 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
     <Card className="p-4 h-80">
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={d} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
+        <BarChart data={d} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
           <YAxis tickMargin={8} stroke="#ffffff" />
