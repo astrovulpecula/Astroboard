@@ -195,11 +195,149 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
 function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   const [name, setName] = useState("Proyecto Trevinca");
   const [description, setDescription] = useState("Campaña principal");
+  const [projectType, setProjectType] = useState("ONP");
+  const [filters, setFilters] = useState<string[]>(["RGB", "HA", "OIII"]);
+  const [newFilter, setNewFilter] = useState("");
+  const [equipment, setEquipment] = useState("Predeterminado");
+  const [customEquipment, setCustomEquipment] = useState("");
+  const [showCustomEquipment, setShowCustomEquipment] = useState(false);
+  const [numPanels, setNumPanels] = useState(1);
+  
+  const handleAddFilter = () => {
+    if (newFilter.trim() && !filters.includes(newFilter.trim())) {
+      setFilters([...filters, newFilter.trim()]);
+      setNewFilter("");
+    }
+  };
+  
+  const handleRemoveFilter = (filter: string) => {
+    setFilters(filters.filter(f => f !== filter));
+  };
+  
+  const handleSubmit = () => {
+    const finalEquipment = equipment === "Otro" && customEquipment.trim() ? customEquipment.trim() : equipment;
+    onSubmit({ 
+      name, 
+      description, 
+      projectType,
+      filters,
+      equipment: finalEquipment,
+      numPanels 
+    });
+  };
   
   return (
-    <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); onSubmit({ name, description }); }}>
-      <label className="grid gap-1"><Label>Nombre del proyecto</Label><input value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLS} /></label>
-      <label className="grid gap-1"><Label>Descripción</Label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className={INPUT_CLS} rows={3} /></label>
+    <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+      <label className="grid gap-1">
+        <Label>Nombre del proyecto</Label>
+        <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT_CLS} placeholder="Proyecto Trevinca" />
+      </label>
+      
+      <label className="grid gap-1">
+        <Label>Descripción</Label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} className={INPUT_CLS} rows={2} placeholder="Campaña principal" />
+      </label>
+      
+      <label className="grid gap-1">
+        <Label>Tipo de proyecto</Label>
+        <div className="flex gap-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="projectType" 
+              value="ONP" 
+              checked={projectType === "ONP"} 
+              onChange={(e) => setProjectType(e.target.value)}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700 dark:text-slate-300">ONP (One-Night Project)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input 
+              type="radio" 
+              name="projectType" 
+              value="SNP" 
+              checked={projectType === "SNP"} 
+              onChange={(e) => setProjectType(e.target.value)}
+              className="w-4 h-4"
+            />
+            <span className="text-sm text-slate-700 dark:text-slate-300">SNP (Several-Nights Project)</span>
+          </label>
+        </div>
+      </label>
+      
+      <div className="grid gap-2">
+        <Label>Filtros</Label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {filters.map(filter => (
+            <span 
+              key={filter} 
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-sm"
+            >
+              {filter}
+              <button 
+                type="button"
+                onClick={() => handleRemoveFilter(filter)}
+                className="ml-1 hover:bg-white/20 rounded-full p-0.5"
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input 
+            value={newFilter} 
+            onChange={(e) => setNewFilter(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddFilter(); } }}
+            className={`${INPUT_CLS} flex-1`}
+            placeholder="IR/UV, HA/OIII, Otro..."
+          />
+          <button 
+            type="button"
+            onClick={handleAddFilter}
+            className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      
+      <label className="grid gap-1">
+        <Label>Equipo</Label>
+        <select 
+          value={equipment} 
+          onChange={(e) => {
+            setEquipment(e.target.value);
+            setShowCustomEquipment(e.target.value === "Otro");
+          }} 
+          className={INPUT_CLS}
+        >
+          <option value="Predeterminado">Predeterminado (Configurado en Settings)</option>
+          <option value="Otro">Otro...</option>
+        </select>
+        {showCustomEquipment && (
+          <input 
+            value={customEquipment}
+            onChange={(e) => setCustomEquipment(e.target.value)}
+            className={`${INPUT_CLS} mt-2`}
+            placeholder="Especificar equipo..."
+          />
+        )}
+      </label>
+      
+      <label className="grid gap-1">
+        <Label>Número de Paneles/Teselas</Label>
+        <input 
+          type="number" 
+          min={1}
+          max={10}
+          value={numPanels} 
+          onChange={(e) => setNumPanels(parseInt(e.target.value) || 1)} 
+          className={INPUT_CLS}
+        />
+      </label>
+      
       <div className="flex items-center justify-end gap-2 mt-2">
         <Btn type="submit"><Plus className="w-4 h-4" /> Crear proyecto</Btn>
       </div>
