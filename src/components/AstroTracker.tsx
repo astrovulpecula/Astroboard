@@ -392,6 +392,14 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
     return validValues.length > 0 ? validValues.reduce((a, b) => a + b, 0) / validValues.length : 0;
   }, [data]);
   
+  const yDomain = useMemo(() => {
+    if (!data.length) return [0, 100];
+    const illuminations = data.map(d => d.illumination);
+    const min = Math.floor(Math.min(...illuminations));
+    const max = Math.ceil(Math.max(...illuminations));
+    return [min, max];
+  }, [data]);
+  
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
@@ -400,17 +408,19 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         % medio de iluminación: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 50, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis 
             dataKey="date" 
             tickMargin={8} 
-            stroke="#ffffff" 
-            angle={-45}
-            textAnchor="end"
-            height={60}
+            stroke="#ffffff"
           />
-          <YAxis tickMargin={8} domain={[0, 100]} stroke="#ffffff" label={{ value: '% Iluminación', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
+          <YAxis 
+            tickMargin={8} 
+            domain={yDomain} 
+            stroke="#ffffff" 
+            tickFormatter={(value) => `${value}%`}
+          />
           <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} formatter={(v) => `${v}%`} />
           <Line type="monotone" dataKey="illumination" stroke="#fbbf24" strokeWidth={3} dot={{ fill: '#fbbf24', r: 4 }} name="Iluminación lunar" />
         </LineChart>
