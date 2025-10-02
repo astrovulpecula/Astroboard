@@ -855,7 +855,12 @@ export default function AstroTracker() {
   
   // Inicializar tabs basándose en los filtros del proyecto
   useEffect(() => {
-    if (!proj) return;
+    if (!proj) {
+      setTabs([]);
+      setActive("");
+      return;
+    }
+    
     const projectFilters = (proj as any).filters || [];
     
     if (projectFilters.length > 0) {
@@ -870,13 +875,13 @@ export default function AstroTracker() {
     } else {
       // Si no hay filtros definidos, usar los predeterminados
       const defaultTabs = [
-        { id: "rgb", name: "RGB", preset: "rgb" },
-        { id: "haoiii", name: "Ha/OIII", preset: "haoiii" }
+        { id: "rgb", name: "RGB", preset: "rgb" as const },
+        { id: "haoiii", name: "Ha/OIII", preset: "haoiii" as const }
       ];
       setTabs(defaultTabs);
       setActive("rgb");
     }
-  }, [proj?.id]);
+  }, [proj?.id, (proj as any)?.filters]);
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
