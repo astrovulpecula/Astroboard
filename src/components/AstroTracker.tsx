@@ -631,6 +631,8 @@ export default function AstroTracker() {
   const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([{ name: "", focalLength: "" }]);
   const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState(1);
+  const [showEditPanels, setShowEditPanels] = useState(false);
+  const [editNumPanels, setEditNumPanels] = useState(1);
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -772,6 +774,38 @@ export default function AstroTracker() {
       projects: o.projects.map((p) => p.id === pid ? { ...p, ...updates } : p) 
     }));
   }, [objects, obj]);
+
+  const updatePanelCount = useCallback((newCount: number) => {
+    if (!obj || !proj) return;
+    const currentPanels = (proj as any).panels || {};
+    const currentCount = Object.keys(currentPanels).length;
+    
+    if (newCount === currentCount) return;
+    
+    const newPanels: any = {};
+    
+    if (newCount > currentCount) {
+      // Añadir paneles nuevos (vacíos)
+      for (let i = 1; i <= currentCount; i++) {
+        newPanels[i] = currentPanels[i] || [];
+      }
+      for (let i = currentCount + 1; i <= newCount; i++) {
+        newPanels[i] = [];
+      }
+    } else {
+      // Eliminar paneles (mantener solo los primeros newCount)
+      for (let i = 1; i <= newCount; i++) {
+        newPanels[i] = currentPanels[i] || [];
+      }
+      // Si el panel seleccionado ya no existe, seleccionar el primero
+      if (selectedPanel > newCount) {
+        setSelectedPanel(1);
+      }
+    }
+    
+    updateProj(proj.id, { panels: newPanels });
+    setShowEditPanels(false);
+  }, [objects, obj, proj, selectedPanel, updateProj]);
 
   const addSes = useCallback((base: any) => {
     if (!obj || !proj) return;
@@ -1490,7 +1524,19 @@ export default function AstroTracker() {
               <SectionTitle title="Imagen final del proyecto" />
               <ImageCard title="Imagen final" keyName="finalProject" />
 
-              <SectionTitle title="Paneles" />
+              <div className="flex items-center justify-between mb-3">
+                <SectionTitle title="Paneles" />
+                <button
+                  onClick={() => {
+                    setEditNumPanels(Object.keys((proj as any).panels || {}).length);
+                    setShowEditPanels(true);
+                  }}
+                  className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+                  title="Editar cantidad de paneles"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              </div>
               <Card className="p-4 mb-4">
                 <div className="flex items-center gap-3">
                   {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
@@ -1685,6 +1731,33 @@ export default function AstroTracker() {
           </form>
         </Modal>
         
+        <Modal open={showEditPanels} onClose={() => setShowEditPanels(false)} title="Editar cantidad de paneles">
+          <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); updatePanelCount(editNumPanels); }}>
+            <label className="grid gap-1">
+              <Label>Número de Paneles/Teselas</Label>
+              <input 
+                type="number" 
+                min={1}
+                max={10}
+                value={editNumPanels} 
+                onChange={(e) => setEditNumPanels(parseInt(e.target.value) || 1)} 
+                className={INPUT_CLS}
+              />
+            </label>
+            <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                {editNumPanels < Object.keys((proj as any)?.panels || {}).length 
+                  ? "⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados."
+                  : "ℹ️ Los nuevos paneles se crearán vacíos sin sesiones."}
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <Btn outline onClick={() => setShowEditPanels(false)}>Cancelar</Btn>
+              <Btn type="submit">Actualizar</Btn>
+            </div>
+          </form>
+        </Modal>
+
         <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración" wide>
           <div className="grid gap-6">
             {/* Tema por defecto */}
