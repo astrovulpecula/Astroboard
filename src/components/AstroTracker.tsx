@@ -923,10 +923,10 @@ export default function AstroTracker() {
     return ss;
   }, [ss]);
   
-  const act = tabs.find((t) => t.id === active) || tabs[0];
+  const act = tabs.find((t) => t.id === active) || tabs[0] || { id: "", name: "Sin filtro", custom: false };
   const filtered = filt(act);
-  const tabLabel = act?.preset === "rgb" ? "RGB" : "HA/OIII";
-  const keyPrefix = act?.preset === "rgb" ? "RGB" : "HAOIII";
+  const tabLabel = act?.preset === "rgb" ? "RGB" : act?.preset === "haoiii" ? "HA/OIII" : act?.name || "Sin filtro";
+  const keyPrefix = act?.preset === "rgb" ? "RGB" : act?.preset === "haoiii" ? "HAOIII" : (act?.name?.replace(/[^a-zA-Z0-9]/g, "") || "default");
 
   const ImageCard = ({ title, keyName }: { title: string; keyName: string }) => (
     <Card className="p-4">
@@ -1546,8 +1546,8 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <ImageCard title={`Imagen inicial ${act.name}`} keyName={`initial${act.name.replace(/\//g, "")}`} />
-                <ImageCard title={`Imagen final ${act.name}`} keyName={`final${act.name.replace(/\//g, "")}`} />
+                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} />
+                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} />
               </div>
 
               <Card className="relative overflow-x-auto">
