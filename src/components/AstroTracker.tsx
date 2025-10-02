@@ -475,6 +475,27 @@ export default function AstroTracker() {
   const obj = useMemo(() => objects.find((o) => o.id === selectedObjectId) || null, [objects, selectedObjectId]);
   const proj = useMemo(() => obj?.projects.find((p) => p.id === selectedProjectId) || null, [obj, selectedProjectId]);
   
+  // Memoize random image selection for dashboard carousel
+  const dashboardCarouselImages = useMemo(() => {
+    const allImages: ImageItem[] = objects.flatMap(obj => [
+      obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
+      ...obj.projects.flatMap(proj => 
+        Object.entries(proj.images || {}).map(([key, src]) => ({
+          src: src as string,
+          title: `${obj.id} - ${proj.name}`,
+          type: key
+        }))
+      )
+    ]).filter((item): item is ImageItem => item !== null);
+    
+    if (allImages.length === 0) return [];
+    if (allImages.length <= 6) return allImages;
+    
+    // Select 6 random images
+    const shuffled = [...allImages].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, 6);
+  }, [objects.length, objects.reduce((acc, obj) => acc + (obj.image ? 1 : 0) + obj.projects.reduce((pAcc, p) => pAcc + Object.keys(p.images || {}).length, 0), 0)]);
+  
   const addObj = useCallback((base: any) => {
     if (!base.id || objects.some((o) => o.id.toLowerCase() === base.id.toLowerCase())) { alert("Ya existe un objeto con ese código."); return; }
     const no = { ...base, id: base.id.trim(), createdAt: new Date().toISOString(), projects: [], image: undefined };
@@ -729,29 +750,9 @@ export default function AstroTracker() {
           {view === "objects" && (
             <div className="grid gap-4">
               {/* Image Carousel */}
-              {(() => {
-                const allImages: ImageItem[] = objects.flatMap(obj => [
-                  obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
-                  ...obj.projects.flatMap(proj => 
-                    Object.entries(proj.images || {}).map(([key, src]) => ({
-                      src: src as string,
-                      title: `${obj.id} - ${proj.name}`,
-                      type: key
-                    }))
-                  )
-                ]).filter((item): item is ImageItem => item !== null);
-                
-                if (allImages.length === 0) return null;
-                
-                // Seleccionar 6 imágenes aleatorias
-                const selectedImages = useMemo(() => {
-                  if (allImages.length <= 6) return allImages;
-                  const shuffled = [...allImages].sort(() => Math.random() - 0.5);
-                  return shuffled.slice(0, 6);
-                }, [objects.length, objects.reduce((acc, obj) => acc + (obj.image ? 1 : 0) + obj.projects.reduce((pAcc, p) => pAcc + Object.keys(p.images || {}).length, 0), 0)]);
-                
-                return <ImageCarousel images={selectedImages} />;
-              })()}
+              {dashboardCarouselImages.length > 0 && (
+                <ImageCarousel images={dashboardCarouselImages} />
+              )}
 
               {/* Global Metrics */}
               {(() => {
