@@ -964,11 +964,17 @@ export default function AstroTracker() {
   const availableFilters = useMemo(() => tabs.map(t => t.name), [tabs]);
   
   const filt = useCallback((t: TabType | undefined) => {
-    const up = (x: string) => (x || "").toUpperCase();
+    const up = (x: string) => (x || "").toUpperCase().trim();
     if (t?.preset === "rgb") return ss.filter((s: any) => up(s.filter) === "RGB");
     if (t?.preset === "haoiii") return ss.filter((s: any) => { const f = up(s.filter); return f.includes("HA") || f.includes("OIII"); });
-    // Para tabs basadas en filtros del proyecto o custom, filtrar por nombre exacto
-    if (t) return ss.filter((s: any) => up(s.filter) === up(t.name));
+    // Para tabs basadas en filtros del proyecto o custom, filtrar por nombre exacto (sin distinguir mayúsculas y sin espacios extra)
+    if (t) {
+      const tabName = up(t.name);
+      return ss.filter((s: any) => {
+        const sessionFilter = up(s.filter);
+        return sessionFilter === tabName;
+      });
+    }
     return ss;
   }, [ss]);
   
