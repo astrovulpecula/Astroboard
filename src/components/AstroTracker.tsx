@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
+import { calculateMoonPhase, formatMoonPhase } from "@/lib/lunar-phase";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60";
@@ -217,8 +218,27 @@ function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session:
   const [snrB, setSnrB] = useState(init.snrB ?? "");
   const [notes, setNotes] = useState(init.notes ?? "");
   
+  // Calcular fase lunar basado en la fecha seleccionada
+  const moonPhase = useMemo(() => {
+    if (!date) return null;
+    return calculateMoonPhase(date);
+  }, [date]);
+  
   return (
-    <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); onSubmit({ date, lights: num(lights), exposureSec: num(exposureSec, 1), filter, snrR: snrR !== "" ? parseFloat(snrR) : undefined, snrG: snrG !== "" ? parseFloat(snrG) : undefined, snrB: snrB !== "" ? parseFloat(snrB) : undefined, notes }); }}>
+    <form className="grid gap-3" onSubmit={(e) => { 
+      e.preventDefault(); 
+      onSubmit({ 
+        date, 
+        lights: num(lights), 
+        exposureSec: num(exposureSec, 1), 
+        filter, 
+        snrR: snrR !== "" ? parseFloat(snrR) : undefined, 
+        snrG: snrG !== "" ? parseFloat(snrG) : undefined, 
+        snrB: snrB !== "" ? parseFloat(snrB) : undefined, 
+        notes,
+        moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined
+      }); 
+    }}>
       <div className="grid grid-cols-2 gap-3">
         <label className="grid gap-1"><Label>Fecha</Label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} /></label>
         <label className="grid gap-1">
@@ -230,6 +250,18 @@ function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session:
         <label className="grid gap-1"><Label>Lights</Label><input type="number" value={lights} min={0} onChange={(e) => setLights(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>Exposición por light (s)</Label><input type="number" value={exposureSec} min={1} onChange={(e) => setExposureSec(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
       </div>
+      
+      {moonPhase && (
+        <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-sm">
+            <Moon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+            <span className="text-slate-600 dark:text-slate-400">Fase lunar:</span>
+            <span className="font-medium text-slate-900 dark:text-slate-100">
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+            </span>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-3">
         <label className="grid gap-1"><Label>SNR - R</Label><input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>SNR - G</Label><input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} /></label>
@@ -1232,6 +1264,7 @@ export default function AstroTracker() {
                     <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
                       <th className="p-3 whitespace-nowrap">#</th>
                       <th className="p-3 whitespace-nowrap">Fecha</th>
+                      <th className="p-3 whitespace-nowrap">Fase lunar</th>
                       <th className="p-3 whitespace-nowrap">Filtro</th>
                       <th className="p-3 whitespace-nowrap">Exposición (s)</th>
                       <th className="p-3 whitespace-nowrap">Lights sesión</th>
@@ -1258,6 +1291,7 @@ export default function AstroTracker() {
                         <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
                           <td className="p-3 whitespace-nowrap align-middle">{i + 1}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.date}</td>
+                          <td className="p-3 whitespace-nowrap align-middle">{s.moonPhase ?? "–"}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.lights}</td>
