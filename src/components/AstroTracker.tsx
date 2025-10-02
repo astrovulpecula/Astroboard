@@ -29,8 +29,8 @@ const sample = [{
   projects: [{
     id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), status: "active", images: {},
     sessions: [
-      { id: uid("ses"), date: toISODate("22/09/25"), lights: 48, exposureSec: 180, filter: "RGB", snrR: 49.54, snrG: 50.77, snrB: 48.36, notes: "Noche estable." },
-      { id: uid("ses"), date: toISODate("23/09/25"), lights: 60, exposureSec: 180, filter: "RGB", snrR: 51.91, snrG: 53.46, snrB: 50.89, notes: "Ligera bruma." }
+      { id: uid("ses"), date: toISODate("22/09/25"), lights: 48, exposureSec: 180, filter: "RGB", snrR: 49.54, snrG: 50.77, snrB: 48.36, notes: "Noche estable.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("22/09/25"))) },
+      { id: uid("ses"), date: toISODate("23/09/25"), lights: 60, exposureSec: 180, filter: "RGB", snrR: 51.91, snrG: 53.46, snrB: 50.89, notes: "Ligera bruma.", moonPhase: formatMoonPhase(calculateMoonPhase(toISODate("23/09/25"))) }
     ]
   }]
 }];
@@ -365,13 +365,48 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
-          <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} stroke="#ffffff" />
-          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
+          <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
+          <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
+          <Line type="monotone" dataKey="r" stroke="#ef4444" strokeWidth={2.5} dot name="R" />
+          <Line type="monotone" dataKey="g" stroke="#22c55e" strokeWidth={2.5} dot name="G" />
+          <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2.5} dot name="B" />
           <Legend />
-          <Line type="monotone" dataKey="r" name="SNR - R" stroke="#ef4444" strokeWidth={3} dot />
-          <Line type="monotone" dataKey="g" name="SNR - G" stroke="#22c55e" strokeWidth={3} dot />
-          <Line type="monotone" dataKey="b" name="SNR - B" stroke="#3b82f6" strokeWidth={3} dot />
         </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
+  const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
+  const data = useMemo(() => s.map((x) => {
+    const moonData = x.moonPhase ? calculateMoonPhase(x.date) : null;
+    return { 
+      date: x.date, 
+      illumination: moonData ? moonData.illumination : null 
+    };
+  }), [s]);
+  
+  const avgIllumination = useMemo(() => {
+    const validValues = data.filter(d => d.illumination !== null).map(d => d.illumination!);
+    return validValues.length > 0 ? validValues.reduce((a, b) => a + b, 0) / validValues.length : 0;
+  }, [data]);
+  
+  if (!data.length) return null;
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        % medio de iluminación: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} domain={[0, 100]} stroke="#ffffff" label={{ value: '% Iluminación', angle: -90, position: 'insideLeft', fill: '#ffffff' }} />
+          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} formatter={(v) => `${v}%`} />
+          <Bar dataKey="illumination" fill="#fbbf24" name="Iluminación lunar" />
+        </BarChart>
       </ResponsiveContainer>
     </Card>
   );
@@ -1341,6 +1376,7 @@ export default function AstroTracker() {
                 <ExposureChart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
+                <MoonIlluminationChart sessions={filtered} />
               </div>
             </div>
           )}
