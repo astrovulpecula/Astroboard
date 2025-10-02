@@ -346,11 +346,16 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   return (
     <Card className="p-4 h-80">
       <div className="flex items-center justify-between mb-3">
-        <SectionTitle icon={Star} title={`SNR (media) vs ${showHours ? 'horas acumuladas' : 'acumulado de lights'}`} />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600 dark:text-slate-400">Lights</span>
+          <Star className="w-5 h-5" />
+          <h3 className="text-lg font-semibold tracking-tight">
+            SNR (media) vs {showHours ? 'horas acumuladas' : 'acumulado de lights'}
+          </h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-600 dark:text-slate-400">Lights</span>
           <Switch checked={showHours} onCheckedChange={setShowHours} />
-          <span className="text-sm text-slate-600 dark:text-slate-400">Horas</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">Horas</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height="100%">
@@ -381,11 +386,16 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   return (
     <Card className="p-4 h-80">
       <div className="flex items-center justify-between mb-3">
-        <SectionTitle icon={Star} title={`SNR por canal (R/G/B) vs ${showHours ? 'horas acumuladas' : 'acumulado de lights'}`} />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-600 dark:text-slate-400">Lights</span>
+          <Star className="w-5 h-5" />
+          <h3 className="text-lg font-semibold tracking-tight">
+            SNR por canal (R/G/B) vs {showHours ? 'horas acumuladas' : 'acumulado de lights'}
+          </h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-600 dark:text-slate-400">Lights</span>
           <Switch checked={showHours} onCheckedChange={setShowHours} />
-          <span className="text-sm text-slate-600 dark:text-slate-400">Horas</span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">Horas</span>
         </div>
       </div>
       <ResponsiveContainer width="100%" height="100%">
