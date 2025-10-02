@@ -350,12 +350,13 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   );
 }
 
-function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[] }) {
+function FSession({ onSubmit, initial, availableFilters, cameras }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[]; cameras: string[] }) {
   const init = initial || {};
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
   const [filter, setFilter] = useState(init.filter || (availableFilters[0] || "RGB"));
+  const [camera, setCamera] = useState(init.camera || "");
   const [snrR, setSnrR] = useState(init.snrR ?? "");
   const [snrG, setSnrG] = useState(init.snrG ?? "");
   const [snrB, setSnrB] = useState(init.snrB ?? "");
@@ -374,7 +375,8 @@ function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session:
         date, 
         lights: num(lights), 
         exposureSec: num(exposureSec, 1), 
-        filter, 
+        filter,
+        camera,
         snrR: snrR !== "" ? parseFloat(snrR) : undefined, 
         snrG: snrG !== "" ? parseFloat(snrG) : undefined, 
         snrB: snrB !== "" ? parseFloat(snrB) : undefined, 
@@ -393,6 +395,14 @@ function FSession({ onSubmit, initial, availableFilters }: { onSubmit: (session:
         <label className="grid gap-1"><Label>Lights</Label><input type="number" value={lights} min={0} onChange={(e) => setLights(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>Exposición por light (s)</Label><input type="number" value={exposureSec} min={1} onChange={(e) => setExposureSec(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
       </div>
+      
+      <label className="grid gap-1">
+        <Label>Cámara</Label>
+        <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
+          <option value="">Seleccionar cámara</option>
+          {cameras.filter(c => c.trim() !== "").map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </label>
       
       {moonPhase && (
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
@@ -1123,44 +1133,77 @@ export default function AstroTracker() {
                 
                 const totalNights = uniqueDates.size;
                 
+                // Calculate camera usage
+                const cameraCounts: Record<string, number> = {};
+                objects.forEach(obj => {
+                  obj.projects.forEach(proj => {
+                    proj.sessions.forEach((session: any) => {
+                      if (session.camera) {
+                        cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
+                      }
+                    });
+                  });
+                });
+                const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+                
                 return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <Card className="p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-blue-500/10">
-                          <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-blue-500/10">
+                            <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
+                            <div className="text-2xl font-bold">{totalObjects} / {totalProjects}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
-                          <div className="text-2xl font-bold">{totalObjects} / {totalProjects}</div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-purple-500/10">
+                            <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
+                            <div className="text-2xl font-bold">{totalHours.toFixed(1)}h / {totalLights}</div>
+                          </div>
                         </div>
-                      </div>
-                    </Card>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-green-500/10">
+                            <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Noches y Sesiones</div>
+                            <div className="text-2xl font-bold">{totalNights} / {totalSessions}</div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
                     
-                    <Card className="p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-purple-500/10">
-                          <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    {/* Camera Usage Statistics */}
+                    {Object.keys(cameraCounts).length > 0 && (
+                      <Card className="p-5 mb-4">
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de cámaras (% de lights)</div>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(cameraCounts).sort(([,a], [,b]) => b - a).map(([camera, count]) => {
+                            const percentage = totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
+                            return (
+                              <div key={camera} className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
+                                <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
+                                <div className="text-xs text-blue-700 dark:text-blue-300">{count} lights ({percentage}%)</div>
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
-                          <div className="text-2xl font-bold">{totalHours.toFixed(1)}h / {totalLights}</div>
-                        </div>
-                      </div>
-                    </Card>
-                    
-                    <Card className="p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-green-500/10">
-                          <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">Noches y Sesiones</div>
-                          <div className="text-2xl font-bold">{totalNights} / {totalSessions}</div>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
+                      </Card>
+                    )}
+                  </>
                 );
               })()}
               
@@ -1361,6 +1404,36 @@ export default function AstroTracker() {
                           )}
                         </div>
                       </Card>
+
+                      {/* Cámaras utilizadas */}
+                      {(() => {
+                        const cameraCounts: Record<string, number> = {};
+                        allSessions.forEach((s: any) => {
+                          if (s.camera) {
+                            cameraCounts[s.camera] = (cameraCounts[s.camera] || 0) + (s.lights || 0);
+                          }
+                        });
+                        const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+                        
+                        return (
+                          <Card className="p-4 sm:col-span-2 lg:col-span-2">
+                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Cámaras utilizadas</div>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(cameraCounts).map(([camera, count]) => {
+                                const percentage = totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
+                                return (
+                                  <div key={camera} className="px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-sm">
+                                    <span className="font-semibold">{camera}:</span> {count} ({percentage}%)
+                                  </div>
+                                );
+                              })}
+                              {Object.keys(cameraCounts).length === 0 && (
+                                <div className="text-sm text-slate-400">Sin cámaras registradas</div>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })()}
 
                       {/* Proyectos por estado */}
                       <Card className="p-4 sm:col-span-2 lg:col-span-2">
@@ -1609,6 +1682,7 @@ export default function AstroTracker() {
                       <th className="p-3 whitespace-nowrap">Fecha</th>
                       <th className="p-3 whitespace-nowrap">Fase lunar</th>
                       <th className="p-3 whitespace-nowrap">Filtro</th>
+                      <th className="p-3 whitespace-nowrap">Cámara</th>
                       <th className="p-3 whitespace-nowrap">Exposición (s)</th>
                       <th className="p-3 whitespace-nowrap">Lights sesión</th>
                       <th className="p-3 whitespace-nowrap">Lights acumulados</th>
@@ -1641,6 +1715,7 @@ export default function AstroTracker() {
                           <td className="p-3 whitespace-nowrap align-middle">{s.date}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
+                          <td className="p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{s.lights}</td>
                           <td className="p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
@@ -1710,10 +1785,10 @@ export default function AstroTracker() {
           <FProject onSubmit={addProj} />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
-          <FSession onSubmit={addSes} availableFilters={availableFilters} />
+          <FSession onSubmit={addSes} availableFilters={availableFilters} cameras={cameras} />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
-          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} />}
+          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} cameras={cameras} />}
         </Modal>
         <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); createTab(); }}>
