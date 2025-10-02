@@ -1243,7 +1243,7 @@ export default function AstroTracker() {
                       <th className="p-3 whitespace-nowrap">SNR-G</th>
                       <th className="p-3 whitespace-nowrap">SNR-B</th>
                       <th className="p-3 whitespace-nowrap">Incremento</th>
-                      <th className="p-3 whitespace-nowrap sticky right-0 bg-slate-50/50 dark:bg-slate-900/40 border-l">Acciones</th>
+                      <th className="p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1273,8 +1273,11 @@ export default function AstroTracker() {
                             <div className="inline-flex gap-2">
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" title="Comentarios">
+                                  <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative" title="Comentarios">
                                     <MessageCircle className="w-4 h-4" />
+                                    {s.notes && s.notes.trim() !== "" && (
+                                      <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                    )}
                                   </button>
                                 </DialogTrigger>
                                 <DialogContent>
