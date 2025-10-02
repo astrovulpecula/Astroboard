@@ -334,7 +334,7 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 };
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
-  const [showHours, setShowHours] = useState(false);
+  const [showHours, setShowHours] = React.useState(false);
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(() => s.map((x, i, a) => ({ 
     lightTotal: cumulativeLights(a, i), 
@@ -374,7 +374,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
-  const [showHours, setShowHours] = useState(false);
+  const [showHours, setShowHours] = React.useState(false);
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(() => s.map((x, i, a) => ({ 
     lightTotal: cumulativeLights(a, i), 
