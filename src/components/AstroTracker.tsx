@@ -850,8 +850,33 @@ export default function AstroTracker() {
     return (p.panels?.[selectedPanel] || []).slice().sort((a: any, b: any) => a.date.localeCompare(b.date));
   }, [proj, selectedPanel]);
   
-  const [tabs, setTabs] = useState<TabType[]>([{ id: "rgb", name: "RGB", preset: "rgb" }, { id: "haoiii", name: "Ha/OIII", preset: "haoiii" }]);
-  const [active, setActive] = useState("rgb");
+  const [tabs, setTabs] = useState<TabType[]>([]);
+  const [active, setActive] = useState("");
+  
+  // Inicializar tabs basándose en los filtros del proyecto
+  useEffect(() => {
+    if (!proj) return;
+    const projectFilters = (proj as any).filters || [];
+    
+    if (projectFilters.length > 0) {
+      // Crear tabs automáticamente basadas en los filtros del proyecto
+      const newTabs: TabType[] = projectFilters.map((filter: string) => ({
+        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        name: filter,
+        custom: false
+      }));
+      setTabs(newTabs);
+      setActive(newTabs[0]?.id || "");
+    } else {
+      // Si no hay filtros definidos, usar los predeterminados
+      const defaultTabs = [
+        { id: "rgb", name: "RGB", preset: "rgb" },
+        { id: "haoiii", name: "Ha/OIII", preset: "haoiii" }
+      ];
+      setTabs(defaultTabs);
+      setActive("rgb");
+    }
+  }, [proj?.id]);
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -893,8 +918,8 @@ export default function AstroTracker() {
     const up = (x: string) => (x || "").toUpperCase();
     if (t?.preset === "rgb") return ss.filter((s: any) => up(s.filter) === "RGB");
     if (t?.preset === "haoiii") return ss.filter((s: any) => { const f = up(s.filter); return f.includes("HA") || f.includes("OIII"); });
-    // Para pestañas personalizadas, filtrar por el nombre exacto de la pestaña
-    if (t?.custom) return ss.filter((s: any) => up(s.filter) === up(t.name));
+    // Para tabs basadas en filtros del proyecto o custom, filtrar por nombre exacto
+    if (t) return ss.filter((s: any) => up(s.filter) === up(t.name));
     return ss;
   }, [ss]);
   
