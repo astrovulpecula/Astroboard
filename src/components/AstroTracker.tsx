@@ -345,17 +345,19 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Star className="w-5 h-5" />
-          <h3 className="text-lg font-semibold tracking-tight">
-            SNR (media) vs {showHours ? 'horas acumuladas' : 'acumulado de lights'}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-600 dark:text-slate-400">Lights</span>
-          <Switch checked={showHours} onCheckedChange={setShowHours} />
-          <span className="text-xs text-slate-600 dark:text-slate-400">Horas</span>
+      <div className="flex flex-col gap-2 mb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5" />
+            <h3 className="text-base md:text-lg font-semibold tracking-tight">
+              SNR (media) vs {showHours ? 'horas' : 'lights'}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-slate-600 dark:text-slate-400">L</span>
+            <Switch checked={showHours} onCheckedChange={setShowHours} />
+            <span className="text-xs text-slate-600 dark:text-slate-400">H</span>
+          </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height="100%">
@@ -385,17 +387,19 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <Star className="w-5 h-5" />
-          <h3 className="text-lg font-semibold tracking-tight">
-            SNR por canal (R/G/B) vs {showHours ? 'horas acumuladas' : 'acumulado de lights'}
-          </h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-600 dark:text-slate-400">Lights</span>
-          <Switch checked={showHours} onCheckedChange={setShowHours} />
-          <span className="text-xs text-slate-600 dark:text-slate-400">Horas</span>
+      <div className="flex flex-col gap-2 mb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Star className="w-5 h-5" />
+            <h3 className="text-base md:text-lg font-semibold tracking-tight">
+              SNR RGB vs {showHours ? 'horas' : 'lights'}
+            </h3>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-slate-600 dark:text-slate-400">L</span>
+            <Switch checked={showHours} onCheckedChange={setShowHours} />
+            <span className="text-xs text-slate-600 dark:text-slate-400">H</span>
+          </div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height="100%">
