@@ -743,7 +743,14 @@ export default function AstroTracker() {
                 
                 if (allImages.length === 0) return null;
                 
-                return <ImageCarousel images={allImages} />;
+                // Seleccionar 6 imágenes aleatorias
+                const selectedImages = useMemo(() => {
+                  if (allImages.length <= 6) return allImages;
+                  const shuffled = [...allImages].sort(() => Math.random() - 0.5);
+                  return shuffled.slice(0, 6);
+                }, [objects.length, objects.reduce((acc, obj) => acc + (obj.image ? 1 : 0) + obj.projects.reduce((pAcc, p) => pAcc + Object.keys(p.images || {}).length, 0), 0)]);
+                
+                return <ImageCarousel images={selectedImages} />;
               })()}
 
               {/* Global Metrics */}
@@ -923,6 +930,24 @@ export default function AstroTracker() {
                   <Btn onClick={() => setMProj(true)}><Plus className="w-4 h-4" /> Nuevo</Btn>
                 </div>
               </div>
+
+              {/* Object Image Carousel */}
+              {(() => {
+                const objectImages: ImageItem[] = [
+                  obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
+                  ...obj.projects.flatMap(proj => 
+                    Object.entries(proj.images || {}).map(([key, src]) => ({
+                      src: src as string,
+                      title: `${obj.id} - ${proj.name}`,
+                      type: key
+                    }))
+                  )
+                ].filter((item): item is ImageItem => item !== null);
+                
+                if (objectImages.length === 0) return null;
+                
+                return <ImageCarousel images={objectImages} />;
+              })()}
 
               {/* Highlights/Statistics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
