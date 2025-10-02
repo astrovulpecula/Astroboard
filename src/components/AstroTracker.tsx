@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle, Settings } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase } from "@/lib/lunar-phase";
@@ -334,36 +333,17 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 };
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
-  const [showHours, setShowHours] = React.useState(false);
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => s.map((x, i, a) => ({ 
-    lightTotal: cumulativeLights(a, i), 
-    hours: sessions.slice(0, i + 1).reduce((acc, ses) => acc + (ses.lights || 0) * (ses.exposureSec || 0), 0) / 3600,
-    snr: mean(x) 
-  })), [s, sessions]);
+  const data = useMemo(() => s.map((x, i, a) => ({ lightTotal: cumulativeLights(a, i), snr: mean(x) })), [s]);
   const first = useMemo(() => { const m = mean(s[0]); return Number.isFinite(m) ? m : 0; }, [s]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <div className="flex flex-col gap-2 mb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5" />
-            <h3 className="text-base md:text-lg font-semibold tracking-tight">
-              SNR (media) vs {showHours ? 'horas' : 'lights'}
-            </h3>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-slate-600 dark:text-slate-400">L</span>
-            <Switch checked={showHours} onCheckedChange={setShowHours} />
-            <span className="text-xs text-slate-600 dark:text-slate-400">H</span>
-          </div>
-        </div>
-      </div>
+      <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey={showHours ? "hours" : "lightTotal"} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => showHours ? v.toFixed(1) : v} />
+          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
           <YAxis tickMargin={8} domain={[Math.max(first - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
           <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot />
@@ -374,38 +354,17 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
-  const [showHours, setShowHours] = React.useState(false);
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => s.map((x, i, a) => ({ 
-    lightTotal: cumulativeLights(a, i), 
-    hours: sessions.slice(0, i + 1).reduce((acc, ses) => acc + (ses.lights || 0) * (ses.exposureSec || 0), 0) / 3600,
-    r: Number.isFinite(x.snrR) ? x.snrR : null, 
-    g: Number.isFinite(x.snrG) ? x.snrG : null, 
-    b: Number.isFinite(x.snrB) ? x.snrB : null 
-  })), [s, sessions]);
+  const data = useMemo(() => s.map((x, i, a) => ({ lightTotal: cumulativeLights(a, i), r: Number.isFinite(x.snrR) ? x.snrR : null, g: Number.isFinite(x.snrG) ? x.snrG : null, b: Number.isFinite(x.snrB) ? x.snrB : null })), [s]);
   const firstMin = useMemo(() => { const t = s[0], v = [t?.snrR, t?.snrG, t?.snrB].filter((x) => Number.isFinite(x)); return v.length ? Math.min(...v) : 0; }, [s]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <div className="flex flex-col gap-2 mb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Star className="w-5 h-5" />
-            <h3 className="text-base md:text-lg font-semibold tracking-tight">
-              SNR RGB vs {showHours ? 'horas' : 'lights'}
-            </h3>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-slate-600 dark:text-slate-400">L</span>
-            <Switch checked={showHours} onCheckedChange={setShowHours} />
-            <span className="text-xs text-slate-600 dark:text-slate-400">H</span>
-          </div>
-        </div>
-      </div>
+      <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 80, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey={showHours ? "hours" : "lightTotal"} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => showHours ? v.toFixed(1) : v} />
+          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
           <YAxis tickMargin={8} domain={[Math.max(firstMin - 1, 0), "dataMax"]} tickFormatter={(v) => typeof v === "number" ? v.toFixed(2) : v} stroke="#ffffff" />
           <Tooltip formatter={(v) => typeof v === "number" ? v.toFixed(2) : v} contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
           <Line type="monotone" dataKey="r" stroke="#ef4444" strokeWidth={2.5} dot name="R" />
