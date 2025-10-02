@@ -7,7 +7,7 @@ import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase } from "@/lib/lunar-phase";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
-const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60";
+const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
 const num = (v: any, d = 0) => (Number.isFinite(+v) ? +v : d);
 const toISODate = (d: string) => {
   if (!/^\d{2}\/\d{2}\/\d{2,4}$/.test(d)) return d;
@@ -47,7 +47,7 @@ const Badge = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Card = ({ children, className = "", onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) => (
-  <div className={`rounded-2xl border shadow-sm ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`} 
+  <div className={`rounded-2xl border shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`} 
        data-card
        style={{
          borderColor: 'var(--card-border, rgb(226 232 240))',
@@ -107,8 +107,8 @@ const ImageCarousel = ({ images }: { images: ImageItem[] }) => {
 
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; title: string }) => (
   <div className="flex items-center gap-2 mb-3">
-    {Icon && <Icon className="w-5 h-5" />}
-    <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+    {Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
+    <h3 className="text-base md:text-lg font-semibold tracking-tight">{title}</h3>
   </div>
 );
 
@@ -118,7 +118,7 @@ const Btn = ({ children, onClick, outline, type = "button" }: { children: React.
     <button 
       type={type} 
       onClick={onClick} 
-      className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 transition ${
+      className={`inline-flex items-center gap-1 md:gap-2 rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-sm md:text-base transition ${
         outline 
           ? "border hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800" 
           : isAstro 
@@ -139,11 +139,11 @@ const IconBtn = ({ title, onClick, children }: { title: string; onClick: (e?: an
 const Modal = ({ open, onClose, title, children, wide = false }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }) => {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"}`} onClick={(e) => e.stopPropagation()}>
-        <Card className="p-5">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-2 md:p-4" onClick={onClose}>
+      <div className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"} max-h-[90vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()}>
+        <Card className="p-4 md:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold">{title}</h3>
+            <h3 className="text-lg md:text-xl font-semibold">{title}</h3>
             <IconBtn title="Cerrar" onClick={onClose}>
               <Trash2 className="w-4 h-4 rotate-45" />
             </IconBtn>
@@ -189,9 +189,9 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
           <option value="Otro">Otro</option>
         </select>
       </label>
-      <div className="flex items-center justify-end gap-2 mt-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 mt-2">
         <Btn outline onClick={() => { setId(""); setCommonName(""); setConstellation(""); setType(""); }}>Limpiar</Btn>
-        <Btn type="submit"><Plus className="w-4 h-4" /> Crear objeto</Btn>
+        <Btn type="submit"><Plus className="w-3 h-3 md:w-4 md:h-4" /> Crear objeto</Btn>
       </div>
     </form>
   );
@@ -245,7 +245,7 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
       
       <label className="grid gap-1">
         <Label>Tipo de proyecto</Label>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
             <input 
               type="radio" 
@@ -301,7 +301,7 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
           <button 
             type="button"
             onClick={handleAddFilter}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:opacity-90 transition-opacity"
+            className="px-3 md:px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:opacity-90 transition-opacity"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -344,7 +344,7 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
       </label>
       
       <div className="flex items-center justify-end gap-2 mt-2">
-        <Btn type="submit"><Plus className="w-4 h-4" /> Crear proyecto</Btn>
+        <Btn type="submit"><Plus className="w-3 h-3 md:w-4 md:h-4" /> Crear proyecto</Btn>
       </div>
     </form>
   );
@@ -384,7 +384,7 @@ function FSession({ onSubmit, initial, availableFilters, cameras }: { onSubmit: 
         moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined
       }); 
     }}>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1"><Label>Fecha</Label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} /></label>
         <label className="grid gap-1">
           <Label>Filtro</Label>
@@ -415,15 +415,15 @@ function FSession({ onSubmit, initial, availableFilters, cameras }: { onSubmit: 
           </div>
         </div>
       )}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1"><Label>SNR - R</Label><input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>SNR - G</Label><input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} /></label>
         <label className="grid gap-1"><Label>SNR - B</Label><input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} /></label>
       </div>
       <label className="grid gap-1"><Label>Notas</Label><textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} /></label>
-      <div className="flex items-center justify-between mt-2">
-        <div className="text-sm text-slate-600 dark:text-slate-400">Tiempo total: <b>{hh(lights * exposureSec)}</b></div>
-        <Btn type="submit"><Plus className="w-4 h-4" /> Guardar</Btn>
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
+        <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">Tiempo total: <b>{hh(lights * exposureSec)}</b></div>
+        <Btn type="submit"><Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar</Btn>
       </div>
     </form>
   );
@@ -1487,7 +1487,7 @@ export default function AstroTracker() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {obj.projects.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((p: any) => {
                   const statusColors = {
                     active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
@@ -1570,7 +1570,7 @@ export default function AstroTracker() {
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Sesiones:</strong> {new Set(ss.map((s: any) => s.date)).size}</span>
               </div>
 
-              <div className="hidden md:grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
                 <Card className="p-4"><div className="text-sm text-slate-500">Objeto</div><div className="text-xl font-semibold">{obj.id}</div><div className="text-sm text-slate-500">{obj.commonName}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Exposición total</div><div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Lights acumulados</div><div className="text-xl font-semibold">{ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</div></Card>
@@ -1597,7 +1597,7 @@ export default function AstroTracker() {
               <SectionTitle title="Imagen final del proyecto" />
               <ImageCard title="Imagen final" keyName="finalProject" />
 
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
                 <button
                   onClick={() => {
@@ -1610,13 +1610,13 @@ export default function AstroTracker() {
                   <Pencil className="w-4 h-4" />
                 </button>
               </div>
-              <Card className="p-4 mb-4">
-                <div className="flex items-center gap-3">
+              <Card className="p-3 md:p-4 mb-4">
+                <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pb-2">
                   {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
                     <button 
                       key={panelNum}
                       onClick={() => setSelectedPanel(parseInt(panelNum))}
-                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
                         selectedPanel === parseInt(panelNum)
                           ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
                           : "border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -1628,16 +1628,16 @@ export default function AstroTracker() {
                 </div>
               </Card>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <SectionTitle icon={Database} title="Sesiones" />
                 <div className="flex items-center gap-2">
-                  <Btn onClick={() => setMSes(true)}><Plus className="w-4 h-4" /> Nueva sesión</Btn>
+                  <Btn onClick={() => setMSes(true)}><Plus className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Nueva sesión</span><span className="sm:hidden">Nueva</span></Btn>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-1 md:gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
                 {tabs.map((t) => (
-                  <div key={t.id} className={`px-3 py-2 -mb-px border-b-2 ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}>
+                  <div key={t.id} className={`px-2 md:px-3 py-1.5 md:py-2 -mb-px border-b-2 text-sm md:text-base whitespace-nowrap ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}>
                     {editingTabId === t.id ? (
                       <input 
                         value={editingTabName} 
@@ -1674,29 +1674,30 @@ export default function AstroTracker() {
                 <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} />
               </div>
 
-              <Card className="relative overflow-x-auto">
-                <table className="text-sm w-full">
-                  <thead>
-                    <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
-                      <th className="p-3 whitespace-nowrap">#</th>
-                      <th className="p-3 whitespace-nowrap">Fecha</th>
-                      <th className="p-3 whitespace-nowrap">Fase lunar</th>
-                      <th className="p-3 whitespace-nowrap">Filtro</th>
-                      <th className="p-3 whitespace-nowrap">Cámara</th>
-                      <th className="p-3 whitespace-nowrap">Exposición (s)</th>
-                      <th className="p-3 whitespace-nowrap">Lights sesión</th>
-                      <th className="p-3 whitespace-nowrap">Lights acumulados</th>
-                      <th className="p-3 whitespace-nowrap">Tiempo sesión</th>
-                      <th className="p-3 whitespace-nowrap">Tiempo acumulado</th>
-                      <th className="p-3 whitespace-nowrap">SNR (X̄)</th>
-                      <th className="p-3 whitespace-nowrap">SNR-R</th>
-                      <th className="p-3 whitespace-nowrap">SNR-G</th>
-                      <th className="p-3 whitespace-nowrap">SNR-B</th>
-                      <th className="p-3 whitespace-nowrap">Incremento</th>
-                      <th className="p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+              <div className="overflow-x-auto -mx-3 md:mx-0">
+                <Card className="p-2 md:p-4">
+                  <table className="text-xs md:text-sm w-full">
+                    <thead>
+                      <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                        <th className="p-2 md:p-3 whitespace-nowrap">#</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Fecha</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Fase lunar</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Filtro</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Cámara</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Exposición (s)</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Lights sesión</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Lights acumulados</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo sesión</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo acumulado</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR (X̄)</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-R</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
                     {filtered.map((s: any, i: number, a: any[]) => {
                       const m = mean(s);
                       const pm = a[i - 1] ? mean(a[i - 1]) : null;
@@ -1711,27 +1712,27 @@ export default function AstroTracker() {
                       
                       return (
                         <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                          <td className="p-3 whitespace-nowrap align-middle">{i + 1}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.date}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{s.lights}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
-                          <td className="p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
-                          <td className="p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l">
-                            <div className="inline-flex gap-2">
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i + 1}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.date}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(m) ? m!.toFixed(2) : "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrR) ? s.snrR : "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l">
+                            <div className="inline-flex gap-1 md:gap-2">
                               <Dialog>
                                 <DialogTrigger asChild>
-                                  <button className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative" title="Comentarios">
-                                    <MessageCircle className="w-4 h-4" />
+                                  <button className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative" title="Comentarios">
+                                    <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                                     {s.notes && s.notes.trim() !== "" && (
                                       <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
                                     )}
@@ -1749,8 +1750,8 @@ export default function AstroTracker() {
                                   </div>
                                 </DialogContent>
                               </Dialog>
-                              <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-4 h-4" /></IconBtn>
-                              <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-4 h-4" /></IconBtn>
+                              <IconBtn title="Editar" onClick={() => setEditSes(s)}><Pencil className="w-3 h-3 md:w-4 md:h-4" /></IconBtn>
+                              <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}><Trash2 className="w-3 h-3 md:w-4 md:h-4" /></IconBtn>
                             </div>
                           </td>
                         </tr>
@@ -1759,6 +1760,7 @@ export default function AstroTracker() {
                   </tbody>
                 </table>
               </Card>
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <ExposureChart sessions={filtered} />
