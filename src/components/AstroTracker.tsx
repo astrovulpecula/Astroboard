@@ -379,10 +379,10 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
 
 const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => s.map((x) => {
+  const data = useMemo(() => s.map((x, index) => {
     const moonData = calculateMoonPhase(x.date);
     return { 
-      date: x.date, 
+      session: index + 1, 
       illumination: moonData.illumination 
     };
   }), [s]);
@@ -402,19 +402,18 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   
   if (!data.length) return null;
   return (
-    <Card className="p-4 h-96">
+    <Card className="p-4 h-80">
       <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         % medio de iluminación: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 50, bottom: 40 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 50, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis 
-            dataKey="date" 
+            dataKey="session" 
             tickMargin={8} 
             stroke="#ffffff"
-            height={50}
           />
           <YAxis 
             tickMargin={8} 
