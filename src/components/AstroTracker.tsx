@@ -1280,6 +1280,37 @@ export default function AstroTracker() {
         <main className="max-w-7xl mx-auto px-4 py-6">
           {view === "objects" && (
             <div className="grid gap-4">
+              {/* Saludo personalizado con fase lunar */}
+              {(() => {
+                const now = new Date();
+                const hour = now.getHours();
+                const minute = now.getMinutes();
+                
+                let greeting = "Buenos días";
+                // Buenos días: 07:01 - 12:00
+                // Buenas tardes: 12:01 - 20:00  
+                // Buenas noches: 20:01 - 07:00
+                if ((hour === 12 && minute >= 1) || (hour > 12 && hour < 20)) {
+                  greeting = "Buenas tardes";
+                } else if (hour >= 20 || hour < 7 || (hour === 7 && minute === 0)) {
+                  greeting = "Buenas noches";
+                }
+                
+                const moonPhase = calculateMoonPhase(now);
+                const displayName = userName || "Astrónomo";
+                
+                return (
+                  <div className="mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                      {greeting}, {displayName}
+                    </h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                      Hoy la luna estará en fase {formatMoonPhase(moonPhase)}
+                    </p>
+                  </div>
+                );
+              })()}
+
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
                 <ImageCarousel images={dashboardCarouselImages} />
@@ -1756,37 +1787,6 @@ export default function AstroTracker() {
 
           {view === "project" && obj && proj && (
             <div className="grid gap-4 mt-2">
-              {/* Saludo personalizado con fase lunar */}
-              {(() => {
-                const now = new Date();
-                const hour = now.getHours();
-                const minute = now.getMinutes();
-                
-                let greeting = "Buenos días";
-                // Buenos días: 07:01 - 12:00
-                // Buenas tardes: 12:01 - 20:00  
-                // Buenas noches: 20:01 - 07:00
-                if ((hour === 12 && minute >= 1) || (hour > 12 && hour < 20)) {
-                  greeting = "Buenas tardes";
-                } else if (hour >= 20 || hour < 7 || (hour === 7 && minute === 0)) {
-                  greeting = "Buenas noches";
-                }
-                
-                const moonPhase = calculateMoonPhase(now);
-                const displayName = userName || "Astrónomo";
-                
-                return (
-                  <div className="mb-4">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2">
-                      {greeting}, {displayName}
-                    </h2>
-                    <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
-                      Hoy la luna estará en fase {formatMoonPhase(moonPhase)}
-                    </p>
-                  </div>
-                );
-              })()}
-
               <div className="md:hidden flex gap-2 overflow-x-auto pb-1">
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Objeto:</strong> {obj.id}</span>
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Exposición:</strong> {hh(totalExposureSec(ss))}</span>
