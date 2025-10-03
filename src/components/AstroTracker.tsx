@@ -1013,10 +1013,32 @@ export default function AstroTracker() {
     }
   }, [tabName, obj, proj, setShow, setTabName, setObjects, setActive]);
   
-  const rm = (id: string) => { 
-    setTabs((p) => p.filter((t) => t.id !== id)); 
-    if (active === id) setActive("rgb"); 
-  };
+  const rm = useCallback((id: string) => {
+    if (!confirm("¿Eliminar esta pestaña de filtro?")) return;
+    
+    const tabToRemove = tabs.find(t => t.id === id);
+    if (!tabToRemove) return;
+    
+    // Remover del array de tabs
+    setTabs((p) => p.filter((t) => t.id !== id));
+    
+    // Remover del proyecto (de proj.filters)
+    if (obj && proj && tabToRemove.name) {
+      setObjects((prevObjects) => prevObjects.map((o) => o.id !== obj.id ? o : { 
+        ...o, 
+        projects: o.projects.map((p) => p.id !== proj.id ? p : { 
+          ...p, 
+          filters: ((p as any).filters || []).filter((f: string) => f !== tabToRemove.name)
+        }) 
+      }));
+    }
+    
+    // Si la tab eliminada era la activa, cambiar a la primera disponible
+    if (active === id) {
+      const remainingTabs = tabs.filter(t => t.id !== id);
+      setActive(remainingTabs[0]?.id || "");
+    }
+  }, [tabs, active, obj, proj, setTabs, setActive, setObjects]);
   
   const startEditTab = (tab: TabType) => {
     setEditingTabId(tab.id);
@@ -1722,11 +1744,32 @@ export default function AstroTracker() {
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Sesiones:</strong> {new Set(ss.map((s: any) => s.date)).size}</span>
               </div>
 
-              <div className="hidden md:grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+              <div className="hidden md:grid grid-cols-2 lg:grid-cols-7 gap-3 md:gap-4">
                 <Card className="p-4"><div className="text-sm text-slate-500">Objeto</div><div className="text-xl font-semibold">{obj.id}</div><div className="text-sm text-slate-500">{obj.commonName}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Exposición total</div><div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Lights acumulados</div><div className="text-xl font-semibold">{ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Sesiones</div><div className="text-xl font-semibold">{new Set(ss.map((s: any) => s.date)).size} noche(s)</div><div className="text-xs text-slate-500">Última: {ss.length ? ss[ss.length - 1].date : "–"}</div></Card>
+                {(() => {
+                  // Calcular horas totales por cada filtro
+                  const filterHours: Record<string, number> = {};
+                  tabs.forEach(tab => {
+                    const tabSessions = filt(tab);
+                    const totalSeconds = tabSessions.reduce((acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0), 0);
+                    filterHours[tab.name] = totalSeconds / 3600;
+                  });
+                  
+                  // Ordenar filtros por horas (descendente) y tomar los 2 primeros
+                  const sortedFilters = Object.entries(filterHours)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 2);
+                  
+                  return sortedFilters.map(([filterName, hours]) => (
+                    <Card key={filterName} className="p-4">
+                      <div className="text-sm text-slate-500">{filterName}</div>
+                      <div className="text-xl font-semibold">{hours.toFixed(1)}h</div>
+                    </Card>
+                  ));
+                })()}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500 mb-2">Estado</div>
                   {(() => {
@@ -1813,7 +1856,13 @@ export default function AstroTracker() {
                         >
                           <Pencil className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
                         </button>
-                        {t.custom && <span onClick={(e) => { e.stopPropagation(); rm(t.id); }} className="text-slate-400 hover:text-red-500">×</span>}
+                        <button 
+                          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" 
+                          onClick={(e) => { e.stopPropagation(); rm(t.id); }} 
+                          title="Eliminar filtro"
+                        >
+                          <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                        </button>
                       </button>
                     )}
                   </div>
