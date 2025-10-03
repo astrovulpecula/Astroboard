@@ -909,8 +909,8 @@ export default function AstroTracker() {
     
     if (projectFilters.length > 0) {
       // Crear tabs automáticamente basadas en los filtros del proyecto
-      const newTabs: TabType[] = projectFilters.map((filter: string) => ({
-        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}`,
+      const newTabs: TabType[] = projectFilters.map((filter: string, index: number) => ({
+        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}-${index}`,
         name: filter,
         custom: false
       }));
@@ -957,7 +957,12 @@ export default function AstroTracker() {
     setEditingTabId(null);
   };
   
-  const availableFilters = useMemo(() => tabs.map(t => t.name), [tabs]);
+  // Obtener filtros del proyecto, no solo de las tabs activas
+  const availableFilters = useMemo(() => {
+    if (!proj) return [];
+    const projectFilters = (proj as any).filters || [];
+    return projectFilters.length > 0 ? projectFilters : tabs.map(t => t.name);
+  }, [proj, tabs]);
   
   const filt = useCallback((t: TabType | undefined) => {
     const up = (x: string) => (x || "").toUpperCase().trim();
