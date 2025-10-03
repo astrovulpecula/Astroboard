@@ -1141,7 +1141,59 @@ export default function AstroTracker() {
               </Btn>
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
                 <Upload className="w-4 h-4" /> Importar
-                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const text = await f.text(); let json; try { json = JSON.parse(text); } catch { alert("JSON no válido"); e.target.value = ""; return; } if (Array.isArray(json)) { setObjects(json); setView("objects"); setSelectedObjectId(null); setSelectedProjectId(null); } else { alert("Formato no válido"); } e.target.value = ""; }} />
+                <input type="file" accept="application/json" className="hidden" onChange={async (e) => { 
+                  const f = e.target.files?.[0]; 
+                  if (!f) return; 
+                  const text = await f.text(); 
+                  let json; 
+                  try { json = JSON.parse(text); } catch { alert("JSON no válido"); e.target.value = ""; return; } 
+                  if (Array.isArray(json)) { 
+                    // Procesar cada objeto para asegurar que los filtros del proyecto incluyan todos los filtros de las sesiones
+                    const processedObjects = json.map(obj => {
+                      if (obj.projects && Array.isArray(obj.projects)) {
+                        const processedProjects = obj.projects.map((proj: any) => {
+                          // Recopilar todos los filtros únicos de las sesiones de todos los paneles
+                          const allFiltersFromSessions = new Set<string>();
+                          
+                          if (proj.panels && Array.isArray(proj.panels)) {
+                            proj.panels.forEach((panel: any) => {
+                              if (panel.sessions && Array.isArray(panel.sessions)) {
+                                panel.sessions.forEach((session: any) => {
+                                  if (session.filter) {
+                                    allFiltersFromSessions.add(session.filter);
+                                  }
+                                });
+                              }
+                            });
+                          }
+                          
+                          // Combinar filtros existentes del proyecto con los encontrados en las sesiones
+                          const existingFilters = proj.filters || [];
+                          const combinedFilters = [...new Set([...existingFilters, ...Array.from(allFiltersFromSessions)])];
+                          
+                          return {
+                            ...proj,
+                            filters: combinedFilters
+                          };
+                        });
+                        
+                        return {
+                          ...obj,
+                          projects: processedProjects
+                        };
+                      }
+                      return obj;
+                    });
+                    
+                    setObjects(processedObjects); 
+                    setView("objects"); 
+                    setSelectedObjectId(null); 
+                    setSelectedProjectId(null); 
+                  } else { 
+                    alert("Formato no válido"); 
+                  } 
+                  e.target.value = ""; 
+                }} />
               </label>
               <IconBtn title={theme === "light" ? "Cambiar a oscuro" : theme === "dark" ? "Cambiar a Astro" : "Cambiar a claro"} onClick={cycleTheme}>
                 {theme === "light" ? <Moon className="w-4 h-4" /> : theme === "dark" ? <Star className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
