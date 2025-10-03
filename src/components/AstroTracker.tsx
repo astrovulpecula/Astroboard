@@ -997,6 +997,16 @@ export default function AstroTracker() {
     setActive(t.id);
     setShow(false);
     setTabName("");
+    
+    // CRÍTICO: Añadir el nuevo filtro al array de filtros del proyecto
+    if (proj) {
+      const currentFilters = (proj as any).filters || [];
+      if (!currentFilters.includes(name)) {
+        updateProj(proj.id, { 
+          filters: [...currentFilters, name] 
+        });
+      }
+    }
   };
   
   const rm = (id: string) => { 
