@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle, Settings } from "lucide-react";
+import { Plus, FolderOpen, Telescope, Star, Upload, Download, Trash2, Moon, Sun, Calendar, ChevronLeft, Database, Pencil, MessageCircle, Settings, User } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
-import { calculateMoonPhase, formatMoonPhase } from "@/lib/lunar-phase";
+import { calculateMoonPhase, formatMoonPhase, type MoonPhase } from "@/lib/lunar-phase";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -643,6 +643,7 @@ export default function AstroTracker() {
   const [selectedPanel, setSelectedPanel] = useState(1);
   const [showEditPanels, setShowEditPanels] = useState(false);
   const [editNumPanels, setEditNumPanels] = useState(1);
+  const [userName, setUserName] = useState<string>("");
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -667,6 +668,7 @@ export default function AstroTracker() {
         if (settings.jsonPath) setJsonPath(settings.jsonPath);
         if (settings.cameras) setCameras(settings.cameras);
         if (settings.telescopes) setTelescopes(settings.telescopes);
+        if (settings.userName) setUserName(settings.userName);
       } catch (e) {
         console.error('Error loading settings:', e);
       }
@@ -705,11 +707,12 @@ export default function AstroTracker() {
       defaultTheme,
       jsonPath,
       cameras: cameras.filter(c => c.trim() !== ""),
-      telescopes: telescopes.filter(t => t.name.trim() !== "")
+      telescopes: telescopes.filter(t => t.name.trim() !== ""),
+      userName
     };
     localStorage.setItem('astroTrackerSettings', JSON.stringify(settings));
     setShowSettings(false);
-  }, [defaultTheme, jsonPath, cameras, telescopes]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, userName]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -1495,8 +1498,18 @@ export default function AstroTracker() {
 
               {/* Object Image Carousel */}
               {(() => {
+                // Buscar la imagen final del último proyecto
+                const lastProjectFinalImage = (() => {
+                  const lastProject = obj.projects[obj.projects.length - 1];
+                  return (lastProject as any)?.finalImage || "";
+                })();
+                
                 const objectImages: ImageItem[] = [
-                  obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
+                  // Mostrar imagen del objeto si existe, si no mostrar imagen del último proyecto
+                  obj.image || lastProjectFinalImage ? { 
+                    src: obj.image || lastProjectFinalImage, 
+                    title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` 
+                  } : null,
                   ...obj.projects.flatMap(proj => 
                     Object.entries(proj.images || {}).map(([key, src]) => ({
                       src: src as string,
@@ -1737,6 +1750,32 @@ export default function AstroTracker() {
 
           {view === "project" && obj && proj && (
             <div className="grid gap-4 mt-2">
+              {/* Saludo personalizado con fase lunar */}
+              {(() => {
+                const now = new Date();
+                const hour = now.getHours();
+                let greeting = "Buenos días";
+                if (hour >= 12 && hour < 20) {
+                  greeting = "Buenas tardes";
+                } else if (hour >= 20 || hour < 7) {
+                  greeting = "Buenas noches";
+                }
+                
+                const moonPhase = calculateMoonPhase(now);
+                const displayName = userName || "Astrónomo";
+                
+                return (
+                  <div className="mb-4">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                      {greeting}, {displayName}
+                    </h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                      Hoy la luna estará en fase {formatMoonPhase(moonPhase)}
+                    </p>
+                  </div>
+                );
+              })()}
+
               <div className="md:hidden flex gap-2 overflow-x-auto pb-1">
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Objeto:</strong> {obj.id}</span>
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Exposición:</strong> {hh(totalExposureSec(ss))}</span>
@@ -2038,6 +2077,21 @@ export default function AstroTracker() {
 
         <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración" wide>
           <div className="grid gap-6">
+            {/* Nombre de usuario */}
+            <div className="grid gap-3">
+              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                <User className="w-4 h-4" />
+                <span>Nombre de usuario</span>
+              </div>
+              <input 
+                type="text"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                placeholder="Tu nombre"
+                className={INPUT_CLS}
+              />
+            </div>
+
             {/* Tema por defecto */}
             <div className="grid gap-3">
               <Label>Tema de página by default</Label>
