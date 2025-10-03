@@ -652,10 +652,10 @@ export default function AstroTracker() {
     });
   };
 
-  // Load settings from localStorage on mount
+  // Load settings and data from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem('astroTrackerSettings');
-    const hasData = localStorage.getItem('astroTrackerData');
+    const savedData = localStorage.getItem('astroTrackerData');
     
     if (savedSettings) {
       try {
@@ -672,11 +672,32 @@ export default function AstroTracker() {
       }
     }
     
-    // Show initial file prompt if no data exists
-    if (!hasData || hasData === '[]') {
+    // Load data from localStorage if exists
+    if (savedData && savedData !== '[]') {
+      try {
+        const data = JSON.parse(savedData);
+        if (Array.isArray(data) && data.length > 0) {
+          setObjects(data);
+        } else {
+          setShowInitialFilePrompt(true);
+        }
+      } catch (e) {
+        console.error('Error loading data:', e);
+        setShowInitialFilePrompt(true);
+      }
+    } else {
       setShowInitialFilePrompt(true);
     }
   }, []);
+
+  // Auto-save objects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('astroTrackerData', JSON.stringify(objects));
+    } catch (err) {
+      console.warn('No se pudo guardar en localStorage:', err);
+    }
+  }, [objects]);
 
   // Save settings to localStorage
   const saveSettings = useCallback(() => {
