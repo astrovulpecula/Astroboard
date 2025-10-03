@@ -1443,27 +1443,33 @@ export default function AstroTracker() {
                   return (
                     <Card key={o.id} className="p-4" onClick={() => { setSelectedObjectId(o.id); setView("projects"); }}>
                       <div className="flex items-start gap-3">
-                        <div className="relative group flex-shrink-0">
-                          {o.image ? (
-                            <>
-                              <img src={o.image} alt={o.id} className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                                <label className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => e.stopPropagation()}>
-                                  <Upload className="w-4 h-4" />
-                                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
-                                </label>
-                                <button className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => { e.stopPropagation(); upObjImg(o.id, null); }}>
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition" onClick={(e) => e.stopPropagation()}>
-                              <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                              <span className="text-xs text-slate-500">Subir</span>
-                              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
-                            </label>
-                          )}
+                         <div className="relative group flex-shrink-0">
+                          {(() => {
+                            // Usar imagen del objeto, si no existe usar la final del último proyecto
+                            const lastProject = o.projects[o.projects.length - 1];
+                            const displayImage = o.image || (lastProject as any)?.finalImage;
+                            
+                            return displayImage ? (
+                              <>
+                                <img src={displayImage} alt={o.id} className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+                                  <label className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => e.stopPropagation()}>
+                                    <Upload className="w-4 h-4" />
+                                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
+                                  </label>
+                                  <button className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => { e.stopPropagation(); upObjImg(o.id, null); }}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition" onClick={(e) => e.stopPropagation()}>
+                                <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                                <span className="text-xs text-slate-500">Subir</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
+                              </label>
+                            );
+                          })()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="text-base font-semibold">{o.id} <span className="text-slate-500 dark:text-slate-400">{o.commonName ? `· ${o.commonName}` : ""}</span></h4>
@@ -1754,10 +1760,15 @@ export default function AstroTracker() {
               {(() => {
                 const now = new Date();
                 const hour = now.getHours();
+                const minute = now.getMinutes();
+                
                 let greeting = "Buenos días";
-                if (hour >= 12 && hour < 20) {
+                // Buenos días: 07:01 - 12:00
+                // Buenas tardes: 12:01 - 20:00  
+                // Buenas noches: 20:01 - 07:00
+                if ((hour === 12 && minute >= 1) || (hour > 12 && hour < 20)) {
                   greeting = "Buenas tardes";
-                } else if (hour >= 20 || hour < 7) {
+                } else if (hour >= 20 || hour < 7 || (hour === 7 && minute === 0)) {
                   greeting = "Buenas noches";
                 }
                 
