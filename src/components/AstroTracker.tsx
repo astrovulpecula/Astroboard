@@ -897,7 +897,7 @@ export default function AstroTracker() {
   const [tabs, setTabs] = useState<TabType[]>([]);
   const [active, setActive] = useState("");
   
-  // Inicializar tabs basándose en los filtros del proyecto
+  // Inicializar tabs basándose en los filtros del proyecto (actualizado 2025-10-03)
   useEffect(() => {
     if (!proj) {
       setTabs([]);
