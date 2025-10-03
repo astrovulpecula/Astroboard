@@ -991,14 +991,11 @@ export default function AstroTracker() {
   const createTab = useCallback(() => {
     const name = tabName.trim(); 
     if (!name) return;
-    // Usar ID estable basado en el nombre para tabs personalizadas también
-    const t: TabType = { id: `custom-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}`, name, custom: true, filters: [] };
-    setTabs((p) => [...p, t]);
-    setActive(t.id);
+    
     setShow(false);
     setTabName("");
     
-    // CRÍTICO: Añadir el nuevo filtro al array de filtros del proyecto
+    // Solo actualizar proj.filters - el useEffect creará la tab automáticamente
     if (obj && proj) {
       setObjects((prevObjects) => prevObjects.map((o) => o.id !== obj.id ? o : { 
         ...o, 
@@ -1007,8 +1004,14 @@ export default function AstroTracker() {
           filters: [...((p as any).filters || []), name].filter((v, i, a) => a.indexOf(v) === i)
         }) 
       }));
+      
+      // Activar la nueva tab después de que se cree
+      setTimeout(() => {
+        const newTabId = `filter-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+        setActive(newTabId);
+      }, 0);
     }
-  }, [tabName, obj, proj, setTabs, setActive, setShow, setTabName, setObjects]);
+  }, [tabName, obj, proj, setShow, setTabName, setObjects, setActive]);
   
   const rm = (id: string) => { 
     setTabs((p) => p.filter((t) => t.id !== id)); 
