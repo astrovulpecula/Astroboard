@@ -988,7 +988,7 @@ export default function AstroTracker() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
   
-  const createTab = () => {
+  const createTab = useCallback(() => {
     const name = tabName.trim(); 
     if (!name) return;
     // Usar ID estable basado en el nombre para tabs personalizadas también
@@ -999,15 +999,16 @@ export default function AstroTracker() {
     setTabName("");
     
     // CRÍTICO: Añadir el nuevo filtro al array de filtros del proyecto
-    if (proj) {
-      const currentFilters = (proj as any).filters || [];
-      if (!currentFilters.includes(name)) {
-        updateProj(proj.id, { 
-          filters: [...currentFilters, name] 
-        });
-      }
+    if (obj && proj) {
+      setObjects((prevObjects) => prevObjects.map((o) => o.id !== obj.id ? o : { 
+        ...o, 
+        projects: o.projects.map((p) => p.id !== proj.id ? p : { 
+          ...p, 
+          filters: [...((p as any).filters || []), name].filter((v, i, a) => a.indexOf(v) === i)
+        }) 
+      }));
     }
-  };
+  }, [tabName, obj, proj, setTabs, setActive, setShow, setTabName, setObjects]);
   
   const rm = (id: string) => { 
     setTabs((p) => p.filter((t) => t.id !== id)); 
