@@ -1168,14 +1168,29 @@ export default function AstroTracker() {
                     const processedObjects = json.map(obj => {
                       if (obj.projects && Array.isArray(obj.projects)) {
                         const processedProjects = obj.projects.map((proj: any) => {
-                          // Recopilar todos los filtros únicos de las sesiones de todos los paneles
+                          // Recopilar todos los filtros únicos de las sesiones
                           const allFiltersFromSessions = new Set<string>();
                           
+                          console.log('📦 Procesando proyecto:', proj.name);
+                          console.log('📦 Sesiones en proyecto:', proj.sessions);
+                          
+                          // Buscar filtros directamente en proj.sessions
+                          if (proj.sessions && Array.isArray(proj.sessions)) {
+                            proj.sessions.forEach((session: any) => {
+                              if (session.filter) {
+                                console.log('✅ Filtro encontrado:', session.filter);
+                                allFiltersFromSessions.add(session.filter);
+                              }
+                            });
+                          }
+                          
+                          // También buscar en paneles por compatibilidad con formatos antiguos
                           if (proj.panels && Array.isArray(proj.panels)) {
                             proj.panels.forEach((panel: any) => {
                               if (panel.sessions && Array.isArray(panel.sessions)) {
                                 panel.sessions.forEach((session: any) => {
                                   if (session.filter) {
+                                    console.log('✅ Filtro encontrado en panel:', session.filter);
                                     allFiltersFromSessions.add(session.filter);
                                   }
                                 });
@@ -1186,6 +1201,8 @@ export default function AstroTracker() {
                           // Combinar filtros existentes del proyecto con los encontrados en las sesiones
                           const existingFilters = proj.filters || [];
                           const combinedFilters = [...new Set([...existingFilters, ...Array.from(allFiltersFromSessions)])];
+                          
+                          console.log('🎯 Filtros finales para proyecto:', proj.name, combinedFilters);
                           
                           return {
                             ...proj,
