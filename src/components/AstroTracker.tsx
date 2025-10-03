@@ -32,7 +32,7 @@ const sampleSessions = [
 const sample = [{
   id: "M31", commonName: "Galaxia de Andrómeda", constellation: "Andrómeda", type: "Galaxia", createdAt: new Date().toISOString(), image: undefined,
   projects: [{
-    id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), status: "active", images: {},
+    id: uid("proj"), name: "Proyecto Trevinca", description: "Campaña principal RGB", createdAt: new Date().toISOString(), startDate: new Date().toISOString(), status: "active", completedDate: undefined, images: {},
     sessions: sampleSessions,
     panels: {
       1: sampleSessions
@@ -207,6 +207,7 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   const [customEquipment, setCustomEquipment] = useState("");
   const [showCustomEquipment, setShowCustomEquipment] = useState(false);
   const [numPanels, setNumPanels] = useState(1);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   
   const handleAddFilter = () => {
     if (newFilter.trim() && !filters.includes(newFilter.trim())) {
@@ -227,7 +228,8 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
       projectType,
       filters,
       equipment: finalEquipment,
-      numPanels 
+      numPanels,
+      startDate: new Date(startDate).toISOString()
     });
   };
   
@@ -339,6 +341,16 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
           max={10}
           value={numPanels} 
           onChange={(e) => setNumPanels(parseInt(e.target.value) || 1)} 
+          className={INPUT_CLS}
+        />
+      </label>
+      
+      <label className="grid gap-1">
+        <Label>Fecha de inicio del proyecto</Label>
+        <input 
+          type="date" 
+          value={startDate} 
+          onChange={(e) => setStartDate(e.target.value)} 
           className={INPUT_CLS}
         />
       </label>
@@ -794,7 +806,7 @@ export default function AstroTracker() {
     for (let i = 1; i <= (base.numPanels || 1); i++) {
       panels[i] = [];
     }
-    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), status: "active", sessions: [], panels, images: {} };
+    const np = { id: uid("proj"), ...base, createdAt: new Date().toISOString(), startDate: base.startDate || new Date().toISOString(), status: "active", completedDate: undefined, sessions: [], panels, images: {} };
     setObjects(objects.map((o) => o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o));
     setSelectedProjectId(np.id);
     setMProj(false);
@@ -805,7 +817,15 @@ export default function AstroTracker() {
     if (!obj) return;
     setObjects(objects.map((o) => o.id !== obj.id ? o : { 
       ...o, 
-      projects: o.projects.map((p) => p.id === pid ? { ...p, ...updates } : p) 
+      projects: o.projects.map((p) => {
+        if (p.id !== pid) return p;
+        // Si se cambia el status a completed y no tiene completedDate, asignar la fecha actual
+        const newUpdates = { ...updates };
+        if (updates.status === 'completed' && !p.completedDate && p.status !== 'completed') {
+          newUpdates.completedDate = new Date().toISOString();
+        }
+        return { ...p, ...newUpdates };
+      }) 
     }));
   }, [objects, obj]);
 
@@ -1800,6 +1820,44 @@ export default function AstroTracker() {
                 <Card className="p-4"><div className="text-sm text-slate-500">Lights acumulados</div><div className="text-xl font-semibold">{ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Sesiones</div><div className="text-xl font-semibold">{new Set(ss.map((s: any) => s.date)).size} noche(s)</div><div className="text-xs text-slate-500">Última: {ss.length ? ss[ss.length - 1].date : "–"}</div></Card>
                 {(() => {
+                  // Calcular tiempo activo del proyecto
+                  const startDate = new Date((proj as any).startDate || proj.createdAt);
+                  const endDate = proj.status === 'completed' && (proj as any).completedDate
+                    ? new Date((proj as any).completedDate)
+                    : new Date();
+                  
+                  const diffMs = endDate.getTime() - startDate.getTime();
+                  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                  
+                  let displayTime = "";
+                  if (diffDays < 30) {
+                    displayTime = `${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+                  } else if (diffDays < 365) {
+                    const months = Math.floor(diffDays / 30);
+                    const remainingDays = diffDays % 30;
+                    displayTime = remainingDays > 0 
+                      ? `${months} mes${months !== 1 ? 'es' : ''}, ${remainingDays} día${remainingDays !== 1 ? 's' : ''}`
+                      : `${months} mes${months !== 1 ? 'es' : ''}`;
+                  } else {
+                    const years = Math.floor(diffDays / 365);
+                    const remainingDays = diffDays % 365;
+                    const months = Math.floor(remainingDays / 30);
+                    displayTime = months > 0
+                      ? `${years} año${years !== 1 ? 's' : ''}, ${months} mes${months !== 1 ? 'es' : ''}`
+                      : `${years} año${years !== 1 ? 's' : ''}`;
+                  }
+                  
+                  return (
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500">Tiempo {proj.status === 'completed' ? 'total' : 'activo'}</div>
+                      <div className="text-xl font-semibold">{displayTime}</div>
+                      <div className="text-xs text-slate-500">
+                        {proj.status === 'completed' ? 'Completado' : 'En curso'}
+                      </div>
+                    </Card>
+                  );
+                })()}
+                {(() => {
                   // Calcular horas totales por cada filtro
                   const filterHours: Record<string, number> = {};
                   tabs.forEach(tab => {
@@ -1808,10 +1866,10 @@ export default function AstroTracker() {
                     filterHours[tab.name] = totalSeconds / 3600;
                   });
                   
-                  // Ordenar filtros por horas (descendente) y tomar los 2 primeros
+                  // Ordenar filtros por horas (descendente) y tomar el primero
                   const sortedFilters = Object.entries(filterHours)
                     .sort(([, a], [, b]) => b - a)
-                    .slice(0, 2);
+                    .slice(0, 1);
                   
                   return sortedFilters.map(([filterName, hours]) => (
                     <Card key={filterName} className="p-4">
