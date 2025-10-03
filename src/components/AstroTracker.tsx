@@ -918,7 +918,7 @@ export default function AstroTracker() {
   const [tabs, setTabs] = useState<TabType[]>([]);
   const [active, setActive] = useState("");
   
-  // Inicializar tabs basándose en los filtros del proyecto (actualizado 2025-10-03)
+  // Inicializar tabs basándose en los filtros del proyecto
   useEffect(() => {
     if (!proj) {
       setTabs([]);
@@ -928,21 +928,45 @@ export default function AstroTracker() {
     
     const projectFilters = (proj as any).filters || [];
     
-    if (projectFilters.length > 0) {
-      // Crear tabs automáticamente basadas en los filtros del proyecto
-      const newTabs: TabType[] = projectFilters.map((filter: string, index: number) => ({
-        id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}-${index}`,
-        name: filter,
-        custom: false
-      }));
-      setTabs(newTabs);
-      setActive(newTabs[0]?.id || "");
-    } else {
-      // Si el proyecto no tiene filtros definidos, no crear pestañas automáticas
-      setTabs([]);
-      setActive("");
-    }
-  }, [proj?.id]);
+    // Solo inicializar tabs si están vacías o si los filtros del proyecto han cambiado
+    setTabs((currentTabs) => {
+      // Si ya tenemos tabs y coinciden con los filtros del proyecto, mantenerlas
+      const currentTabNames = currentTabs.filter(t => !t.custom).map(t => t.name).sort().join(',');
+      const projectFilterNames = [...projectFilters].sort().join(',');
+      
+      if (currentTabNames === projectFilterNames && currentTabs.length > 0) {
+        return currentTabs;
+      }
+      
+      if (projectFilters.length > 0) {
+        // Crear tabs automáticamente basadas en los filtros del proyecto
+        // Usar IDs estables basados en el nombre del filtro (sin timestamp)
+        const newTabs: TabType[] = projectFilters.map((filter: string) => ({
+          id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          name: filter,
+          custom: false
+        }));
+        
+        // Preservar tabs personalizadas
+        const customTabs = currentTabs.filter(t => t.custom);
+        const allTabs = [...newTabs, ...customTabs];
+        
+        // Actualizar tab activa solo si la actual ya no existe
+        if (!allTabs.find(t => t.id === active)) {
+          setActive(allTabs[0]?.id || "");
+        }
+        
+        return allTabs;
+      } else {
+        // Si el proyecto no tiene filtros definidos, solo mantener tabs personalizadas
+        const customTabs = currentTabs.filter(t => t.custom);
+        if (customTabs.length > 0 && !customTabs.find(t => t.id === active)) {
+          setActive(customTabs[0]?.id || "");
+        }
+        return customTabs;
+      }
+    });
+  }, [proj?.id, (proj as any)?.filters]);
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
@@ -951,7 +975,8 @@ export default function AstroTracker() {
   const createTab = () => {
     const name = tabName.trim(); 
     if (!name) return;
-    const t: TabType = { id: uid("tab"), name, custom: true, filters: [] };
+    // Usar ID estable basado en el nombre para tabs personalizadas también
+    const t: TabType = { id: `custom-${name.toLowerCase().replace(/[^a-z0-9]/g, '')}-${Date.now()}`, name, custom: true, filters: [] };
     setTabs((p) => [...p, t]);
     setActive(t.id);
     setShow(false);
