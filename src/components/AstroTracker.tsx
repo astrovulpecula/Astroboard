@@ -927,25 +927,39 @@ export default function AstroTracker() {
     }
     
     const projectFilters = (proj as any).filters || [];
+    console.log('🔍 Proyecto cargado:', proj.name);
+    console.log('🔍 Filtros del proyecto:', projectFilters);
     
-    // Solo inicializar tabs si están vacías o si los filtros del proyecto han cambiado
+    // Convertir filtros a string para comparación estable
+    const filterString = JSON.stringify([...projectFilters].sort());
+    
     setTabs((currentTabs) => {
-      // Si ya tenemos tabs y coinciden con los filtros del proyecto, mantenerlas
-      const currentTabNames = currentTabs.filter(t => !t.custom).map(t => t.name).sort().join(',');
-      const projectFilterNames = [...projectFilters].sort().join(',');
+      console.log('🔍 Tabs actuales:', currentTabs.map(t => `${t.name} (${t.custom ? 'custom' : 'auto'})`));
       
-      if (currentTabNames === projectFilterNames && currentTabs.length > 0) {
+      // Obtener nombres de tabs automáticas actuales
+      const currentAutoTabNames = currentTabs.filter(t => !t.custom).map(t => t.name).sort();
+      const projectFilterNames = [...projectFilters].sort();
+      
+      // Comparar arrays
+      const tabsMatchFilters = JSON.stringify(currentAutoTabNames) === JSON.stringify(projectFilterNames);
+      
+      console.log('🔍 ¿Tabs coinciden con filtros?', tabsMatchFilters);
+      
+      if (tabsMatchFilters && currentTabs.length > 0) {
+        console.log('✅ Manteniendo tabs existentes');
         return currentTabs;
       }
       
       if (projectFilters.length > 0) {
+        console.log('🔄 Recreando tabs desde filtros del proyecto');
         // Crear tabs automáticamente basadas en los filtros del proyecto
-        // Usar IDs estables basados en el nombre del filtro (sin timestamp)
         const newTabs: TabType[] = projectFilters.map((filter: string) => ({
           id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
           name: filter,
           custom: false
         }));
+        
+        console.log('📋 Nuevas tabs creadas:', newTabs.map(t => t.name));
         
         // Preservar tabs personalizadas
         const customTabs = currentTabs.filter(t => t.custom);
@@ -954,10 +968,12 @@ export default function AstroTracker() {
         // Actualizar tab activa solo si la actual ya no existe
         if (!allTabs.find(t => t.id === active)) {
           setActive(allTabs[0]?.id || "");
+          console.log('🎯 Tab activa cambiada a:', allTabs[0]?.name);
         }
         
         return allTabs;
       } else {
+        console.log('⚠️ Proyecto sin filtros, solo tabs personalizadas');
         // Si el proyecto no tiene filtros definidos, solo mantener tabs personalizadas
         const customTabs = currentTabs.filter(t => t.custom);
         if (customTabs.length > 0 && !customTabs.find(t => t.id === active)) {
@@ -966,7 +982,7 @@ export default function AstroTracker() {
         return customTabs;
       }
     });
-  }, [proj?.id, (proj as any)?.filters]);
+  }, [proj?.id, JSON.stringify((proj as any)?.filters || [])]);
   const [show, setShow] = useState(false);
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
