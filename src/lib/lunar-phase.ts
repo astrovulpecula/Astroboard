@@ -10,6 +10,12 @@ export type MoonPhase = {
   illumination: number; // Porcentaje de iluminación 0-100
 };
 
+export type MoonTimes = {
+  moonrise: Date;
+  moonset: Date;
+  darkHours: number; // Horas de oscuridad total
+};
+
 /**
  * Calcula la fase lunar para una fecha dada
  * @param date Fecha para calcular la fase lunar
@@ -76,4 +82,98 @@ export function calculateMoonPhase(date: Date | string): MoonPhase {
  */
 export function formatMoonPhase(moonPhase: MoonPhase): string {
   return `${moonPhase.emoji} ${moonPhase.name}`;
+}
+
+/**
+ * Calcula los horarios de salida y puesta de la luna
+ * Algoritmo simplificado basado en cálculos astronómicos
+ * @param date Fecha para calcular
+ * @param latitude Latitud (por defecto 40.4° - España central)
+ * @param longitude Longitud (por defecto -3.7° - España central)
+ */
+export function calculateMoonTimes(
+  date: Date | string,
+  latitude: number = 40.4,
+  longitude: number = -3.7
+): MoonTimes {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Calcular días julianos
+  const year = d.getFullYear();
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  
+  let a = Math.floor((14 - month) / 12);
+  let y = year + 4800 - a;
+  let m = month + 12 * a - 3;
+  
+  let jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y + Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
+  
+  // Calcular fase lunar para ajustar horarios
+  const moonPhase = calculateMoonPhase(d);
+  
+  // Parámetros solares para calcular el anochecer/amanecer
+  const dayOfYear = Math.floor((d.getTime() - new Date(year, 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+  const solarDeclination = -23.45 * Math.cos((2 * Math.PI / 365) * (dayOfYear + 10)) * (Math.PI / 180);
+  
+  const latRad = latitude * (Math.PI / 180);
+  const cosHourAngle = -Math.tan(latRad) * Math.tan(solarDeclination);
+  
+  // Horas de luz solar
+  let daylightHours = 12;
+  if (cosHourAngle >= -1 && cosHourAngle <= 1) {
+    const hourAngle = Math.acos(cosHourAngle);
+    daylightHours = (2 * hourAngle * 12) / Math.PI;
+  }
+  
+  // Calcular horarios aproximados de salida/puesta de luna
+  // La luna sale aproximadamente 50 minutos más tarde cada día
+  const moonDelay = moonPhase.phase * 24; // Retraso basado en fase
+  
+  // Hora base de salida de luna (opuesta al sol en luna llena)
+  let moonriseHour = 12 - daylightHours / 2 + moonDelay;
+  let moonsetHour = 12 + daylightHours / 2 + moonDelay;
+  
+  // Normalizar a 24 horas
+  while (moonriseHour >= 24) moonriseHour -= 24;
+  while (moonriseHour < 0) moonriseHour += 24;
+  while (moonsetHour >= 24) moonsetHour -= 24;
+  while (moonsetHour < 0) moonsetHour += 24;
+  
+  // Crear fechas
+  const moonrise = new Date(d);
+  moonrise.setHours(Math.floor(moonriseHour), Math.floor((moonriseHour % 1) * 60), 0, 0);
+  
+  const moonset = new Date(d);
+  moonset.setHours(Math.floor(moonsetHour), Math.floor((moonsetHour % 1) * 60), 0, 0);
+  
+  // Si moonset es antes que moonrise, añadir un día a moonset
+  if (moonset < moonrise) {
+    moonset.setDate(moonset.getDate() + 1);
+  }
+  
+  // Calcular horas de oscuridad total
+  // Oscuridad total = cuando no hay luna Y es de noche
+  const nightHours = 24 - daylightHours;
+  
+  // Horas en que la luna está fuera (depende de cuándo sale/se pone)
+  let moonAbsentHours = 0;
+  
+  if (moonPhase.phase < 0.0625 || moonPhase.phase >= 0.9375) {
+    // Luna nueva: oscuridad toda la noche
+    moonAbsentHours = nightHours;
+  } else if (moonPhase.phase >= 0.4375 && moonPhase.phase < 0.5625) {
+    // Luna llena: sin oscuridad total
+    moonAbsentHours = 0;
+  } else {
+    // Fases intermedias: calcular aproximadamente
+    const illuminationFactor = moonPhase.illumination / 100;
+    moonAbsentHours = nightHours * (1 - illuminationFactor);
+  }
+  
+  return {
+    moonrise,
+    moonset,
+    darkHours: Math.max(0, moonAbsentHours)
+  };
 }

@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
-import { calculateMoonPhase, formatMoonPhase, type MoonPhase } from "@/lib/lunar-phase";
+import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -1317,16 +1317,26 @@ export default function AstroTracker() {
                 }
                 
                 const moonPhase = calculateMoonPhase(now);
+                const moonTimes = calculateMoonTimes(now);
                 const displayName = userName || "Astrónomo";
+                
+                const formatTime = (date: Date) => {
+                  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                };
                 
                 return (
                   <div className="mb-4">
                     <h2 className="text-3xl md:text-4xl font-bold mb-2">
                       {greeting}, {displayName}
                     </h2>
-                    <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
-                      Hoy la luna estará en fase {formatMoonPhase(moonPhase)}
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                        Hoy la luna estará en fase {formatMoonPhase(moonPhase)} • {moonPhase.illumination}% iluminada
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
+                        Sale a las {formatTime(moonTimes.moonrise)} • Se pone a las {formatTime(moonTimes.moonset)} • {moonTimes.darkHours.toFixed(1)}h de oscuridad total
+                      </p>
+                    </div>
                   </div>
                 );
               })()}
