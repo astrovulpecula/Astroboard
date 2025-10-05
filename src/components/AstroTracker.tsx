@@ -1343,6 +1343,110 @@ export default function AstroTracker() {
                 );
               })()}
 
+              {/* Image Carousel */}
+              {dashboardCarouselImages.length > 0 && (
+                <ImageCarousel images={dashboardCarouselImages} />
+              )}
+
+              {/* Global Metrics */}
+              {(() => {
+                // Calculate global metrics
+                const totalObjects = objects.length;
+                const totalProjects = objects.reduce((acc, obj) => acc + obj.projects.length, 0);
+                
+                // Calculate total hours and lights
+                let totalHours = 0;
+                let totalLights = 0;
+                const uniqueDates = new Set<string>();
+                let totalSessions = 0;
+                
+                objects.forEach(obj => {
+                  obj.projects.forEach(proj => {
+                    proj.sessions.forEach((session: any) => {
+                      totalHours += (session.lights || 0) * (session.exposureSec || 0) / 3600;
+                      totalLights += session.lights || 0;
+                      uniqueDates.add(session.date);
+                      totalSessions++;
+                    });
+                  });
+                });
+                
+                const totalNights = uniqueDates.size;
+                
+                // Calculate camera usage
+                const cameraCounts: Record<string, number> = {};
+                objects.forEach(obj => {
+                  obj.projects.forEach(proj => {
+                    proj.sessions.forEach((session: any) => {
+                      if (session.camera) {
+                        cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
+                      }
+                    });
+                  });
+                });
+                const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+                
+                return (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-blue-500/10">
+                            <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
+                            <div className="text-2xl font-bold">{totalObjects} / {totalProjects}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-purple-500/10">
+                            <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
+                            <div className="text-2xl font-bold">{totalHours.toFixed(1)}h / {totalLights}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-green-500/10">
+                            <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Noches y Sesiones</div>
+                            <div className="text-2xl font-bold">{totalNights} / {totalSessions}</div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+                    
+                    {/* Camera Usage Statistics */}
+                    {Object.keys(cameraCounts).length > 0 && (
+                      <Card className="p-5 mb-4">
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de cámaras (% de lights)</div>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(cameraCounts).sort(([,a], [,b]) => b - a).map(([camera, count]) => {
+                            const percentage = totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
+                            return (
+                              <div key={camera} className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
+                                <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
+                                <div className="text-xs text-blue-700 dark:text-blue-300">{count} lights ({percentage}%)</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    )}
+                  </>
+                );
+              })()}
+
               {/* Calendario mensual y estadísticas de sesiones */}
               {(() => {
                 const now = new Date();
@@ -1375,65 +1479,79 @@ export default function AstroTracker() {
                                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                 
                 return (
-                  <div className="grid md:grid-cols-3 gap-4 mb-4">
-                    {/* Calendario */}
-                    <Card className="p-4 md:col-span-2">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold">{monthNames[month]} {year}</h3>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones marcados</p>
-                      </div>
-                      <div className="grid grid-cols-7 gap-2">
-                        {/* Cabecera días de la semana */}
-                        {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
-                          <div key={i} className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1">
-                            {day}
-                          </div>
-                        ))}
-                        
-                        {/* Espacios vacíos antes del primer día */}
-                        {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                          <div key={`empty-${i}`} />
-                        ))}
-                        
-                        {/* Días del mes */}
-                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-                          const hasSession = daysWithSessions.has(day);
-                          const isToday = day === now.getDate();
-                          
-                          return (
-                            <div
-                              key={day}
-                              className={`
-                                aspect-square flex items-center justify-center rounded-lg text-sm
-                                ${hasSession 
-                                  ? 'bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40' 
-                                  : 'text-slate-600 dark:text-slate-400'
-                                }
-                                ${isToday && !hasSession ? 'border-2 border-blue-500/40' : ''}
-                                ${isToday && hasSession ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
-                              `}
-                            >
-                              {day}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
-                    
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     {/* Highlight de días con sesiones */}
-                    <Card className="p-4">
-                      <div className="flex items-center gap-3 h-full">
+                    <Card className="p-5">
+                      <div className="flex items-center gap-3">
                         <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
                           <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
                         <div>
                           <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
-                          <div className="text-3xl font-bold">{daysWithSessions.size}</div>
+                          <div className="text-2xl font-bold">{daysWithSessions.size}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                             en {monthNames[month]}
                           </div>
                         </div>
                       </div>
+                    </Card>
+
+                    {/* Calendario desplegable */}
+                    <Card className="p-5 md:col-span-2">
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-blue-500/10">
+                                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">Calendario</div>
+                                <div className="text-2xl font-bold">{monthNames[month]} {year}</div>
+                              </div>
+                            </div>
+                            <ChevronLeft className="w-5 h-5 transition-transform group-open:rotate-[-90deg] text-slate-400" />
+                          </div>
+                        </summary>
+                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                          <div className="grid grid-cols-7 gap-2">
+                            {/* Cabecera días de la semana */}
+                            {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
+                              <div key={i} className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1">
+                                {day}
+                              </div>
+                            ))}
+                            
+                            {/* Espacios vacíos antes del primer día */}
+                            {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+                              <div key={`empty-${i}`} />
+                            ))}
+                            
+                            {/* Días del mes */}
+                            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                              const hasSession = daysWithSessions.has(day);
+                              const isToday = day === now.getDate();
+                              
+                              return (
+                                <div
+                                  key={day}
+                                  className={`
+                                    aspect-square flex items-center justify-center rounded-lg text-sm
+                                    ${hasSession 
+                                      ? 'bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40' 
+                                      : 'text-slate-600 dark:text-slate-400'
+                                    }
+                                    ${isToday && !hasSession ? 'border-2 border-blue-500/40' : ''}
+                                    ${isToday && hasSession ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                                  `}
+                                >
+                                  {day}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </details>
                     </Card>
                   </div>
                 );
