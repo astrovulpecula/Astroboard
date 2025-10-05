@@ -643,11 +643,11 @@ export default function AstroTracker() {
   const [filterConstellation, setFilterConstellation] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState("astro");
   const [editingProjectName, setEditingProjectName] = useState<string | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
   const [showSettings, setShowSettings] = useState(false);
-  const [defaultTheme, setDefaultTheme] = useState("light");
+  const [defaultTheme, setDefaultTheme] = useState("astro");
   const [jsonPath, setJsonPath] = useState("");
   const [cameras, setCameras] = useState<string[]>([""]);
   const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([{ name: "", focalLength: "" }]);
@@ -1873,13 +1873,14 @@ export default function AstroTracker() {
                   tabs.forEach(tab => {
                     const tabSessions = filt(tab);
                     const totalSeconds = tabSessions.reduce((acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0), 0);
-                    filterHours[tab.name] = totalSeconds / 3600;
+                    if (totalSeconds > 0) {
+                      filterHours[tab.name] = totalSeconds / 3600;
+                    }
                   });
                   
-                  // Ordenar filtros por horas (descendente) y tomar el primero
+                  // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
                   const sortedFilters = Object.entries(filterHours)
-                    .sort(([, a], [, b]) => b - a)
-                    .slice(0, 1);
+                    .sort(([, a], [, b]) => b - a);
                   
                   return sortedFilters.map(([filterName, hours]) => (
                     <Card key={filterName} className="p-4">
