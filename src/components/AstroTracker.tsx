@@ -656,6 +656,8 @@ export default function AstroTracker() {
   const [showEditPanels, setShowEditPanels] = useState(false);
   const [editNumPanels, setEditNumPanels] = useState(1);
   const [userName, setUserName] = useState<string>("");
+  const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
+  const [newObjectId, setNewObjectId] = useState("");
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -1341,6 +1343,102 @@ export default function AstroTracker() {
                 );
               })()}
 
+              {/* Calendario mensual y estadísticas de sesiones */}
+              {(() => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                
+                // Obtener todas las sesiones de todos los proyectos
+                const allSessions = objects.flatMap(o => 
+                  o.projects.flatMap(p => p.sessions || [])
+                );
+                
+                // Filtrar sesiones del mes actual
+                const currentMonthSessions = allSessions.filter(s => {
+                  const sessionDate = new Date(s.date);
+                  return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
+                });
+                
+                // Obtener días únicos con sesiones en el mes actual
+                const daysWithSessions = new Set(
+                  currentMonthSessions.map(s => new Date(s.date).getDate())
+                );
+                
+                // Obtener primer y último día del mes
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
+                
+                const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                                    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                
+                return (
+                  <div className="grid md:grid-cols-3 gap-4 mb-4">
+                    {/* Calendario */}
+                    <Card className="p-4 md:col-span-2">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold">{monthNames[month]} {year}</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones marcados</p>
+                      </div>
+                      <div className="grid grid-cols-7 gap-2">
+                        {/* Cabecera días de la semana */}
+                        {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
+                          <div key={i} className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1">
+                            {day}
+                          </div>
+                        ))}
+                        
+                        {/* Espacios vacíos antes del primer día */}
+                        {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+                          <div key={`empty-${i}`} />
+                        ))}
+                        
+                        {/* Días del mes */}
+                        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
+                          const hasSession = daysWithSessions.has(day);
+                          const isToday = day === now.getDate();
+                          
+                          return (
+                            <div
+                              key={day}
+                              className={`
+                                aspect-square flex items-center justify-center rounded-lg text-sm
+                                ${hasSession 
+                                  ? 'bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40' 
+                                  : 'text-slate-600 dark:text-slate-400'
+                                }
+                                ${isToday && !hasSession ? 'border-2 border-blue-500/40' : ''}
+                                ${isToday && hasSession ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
+                              `}
+                            >
+                              {day}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                    
+                    {/* Highlight de días con sesiones */}
+                    <Card className="p-4">
+                      <div className="flex items-center gap-3 h-full">
+                        <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
+                          <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                          <div className="text-3xl font-bold">{daysWithSessions.size}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            en {monthNames[month]}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                );
+              })()}
+
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
                 <ImageCarousel images={dashboardCarouselImages} />
@@ -1533,7 +1631,45 @@ export default function AstroTracker() {
                           })()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-base font-semibold">{o.id} <span className="text-slate-500 dark:text-slate-400">{o.commonName ? `· ${o.commonName}` : ""}</span></h4>
+                          {editingObjectId === o.id ? (
+                            <input 
+                              value={newObjectId} 
+                              onChange={(e) => setNewObjectId(e.target.value)}
+                              onBlur={() => {
+                                if (newObjectId.trim() && newObjectId !== o.id) {
+                                  setObjects(prev => prev.map(obj => obj.id === o.id ? { ...obj, id: newObjectId.trim() } : obj));
+                                }
+                                setEditingObjectId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  if (newObjectId.trim() && newObjectId !== o.id) {
+                                    setObjects(prev => prev.map(obj => obj.id === o.id ? { ...obj, id: newObjectId.trim() } : obj));
+                                  }
+                                  setEditingObjectId(null);
+                                }
+                                if (e.key === 'Escape') setEditingObjectId(null);
+                              }}
+                              className="px-2 py-1 border rounded text-sm w-full"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-semibold">{o.id} <span className="text-slate-500 dark:text-slate-400">{o.commonName ? `· ${o.commonName}` : ""}</span></h4>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingObjectId(o.id);
+                                  setNewObjectId(o.id);
+                                }}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                                title="Editar código"
+                              >
+                                <Pencil className="w-3 h-3 text-slate-400" />
+                              </button>
+                            </div>
+                          )}
                           <div className="mt-1 flex flex-wrap gap-2 text-sm">
                             {o.type && <Badge>{o.type}</Badge>}
                             {o.constellation && <Badge>{o.constellation}</Badge>}
