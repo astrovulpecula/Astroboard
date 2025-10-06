@@ -658,6 +658,8 @@ export default function AstroTracker() {
   const [userName, setUserName] = useState<string>("");
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [newObjectId, setNewObjectId] = useState("");
+  const [showProjectSettings, setShowProjectSettings] = useState(false);
+  const [projectSettingsData, setProjectSettingsData] = useState<any>({});
   
   const cycleTheme = () => {
     setTheme(prev => {
@@ -1983,9 +1985,16 @@ export default function AstroTracker() {
                 {(() => {
                   // Calcular tiempo activo del proyecto
                   const startDate = new Date((proj as any).startDate || proj.createdAt);
-                  const endDate = proj.status === 'completed' && (proj as any).completedDate
-                    ? new Date((proj as any).completedDate)
-                    : new Date();
+                  
+                  // Si hay endDate definido, usarlo; si no, usar completedDate si está completado; si no, fecha actual
+                  let endDate: Date;
+                  if ((proj as any).endDate) {
+                    endDate = new Date((proj as any).endDate);
+                  } else if (proj.status === 'completed' && (proj as any).completedDate) {
+                    endDate = new Date((proj as any).completedDate);
+                  } else {
+                    endDate = new Date();
+                  }
                   
                   const diffMs = endDate.getTime() - startDate.getTime();
                   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -2010,10 +2019,10 @@ export default function AstroTracker() {
                   
                   return (
                     <Card className="p-4">
-                      <div className="text-sm text-slate-500">Tiempo {proj.status === 'completed' ? 'total' : 'activo'}</div>
+                      <div className="text-sm text-slate-500">Tiempo {proj.status === 'completed' || (proj as any).endDate ? 'total' : 'activo'}</div>
                       <div className="text-xl font-semibold">{displayTime}</div>
                       <div className="text-xs text-slate-500">
-                        {proj.status === 'completed' ? 'Completado' : 'En curso'}
+                        {proj.status === 'completed' || (proj as any).endDate ? 'Completado' : 'En curso'}
                       </div>
                     </Card>
                   );
@@ -2097,6 +2106,9 @@ export default function AstroTracker() {
                 <SectionTitle icon={Database} title="Sesiones" />
                 <div className="flex items-center gap-2">
                   <Btn onClick={() => setMSes(true)}><Plus className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Nueva sesión</span><span className="sm:hidden">Nueva</span></Btn>
+                  <IconBtn title="Configuración del proyecto" onClick={() => setShowProjectSettings(true)}>
+                    <Settings className="w-4 h-4" />
+                  </IconBtn>
                 </div>
               </div>
 
@@ -2474,6 +2486,103 @@ export default function AstroTracker() {
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn outline onClick={() => setShowSettings(false)}>Cancelar</Btn>
               <Btn onClick={saveSettings}>Guardar configuración</Btn>
+            </div>
+          </div>
+        </Modal>
+        
+        {/* Modal de configuración del proyecto */}
+        <Modal open={showProjectSettings} onClose={() => setShowProjectSettings(false)} title="Configuración del Proyecto">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Nombre del proyecto</label>
+              <input 
+                type="text" 
+                value={projectSettingsData.name || proj?.name || ""} 
+                onChange={(e) => setProjectSettingsData({...projectSettingsData, name: e.target.value})}
+                className={INPUT_CLS}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Descripción</label>
+              <textarea 
+                value={projectSettingsData.description || proj?.description || ""} 
+                onChange={(e) => setProjectSettingsData({...projectSettingsData, description: e.target.value})}
+                className={INPUT_CLS}
+                rows={3}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Fecha de inicio</label>
+              <input 
+                type="date" 
+                value={projectSettingsData.startDate ? projectSettingsData.startDate.split('T')[0] : (proj?.startDate ? new Date(proj.startDate).toISOString().split('T')[0] : "")} 
+                onChange={(e) => setProjectSettingsData({...projectSettingsData, startDate: e.target.value ? new Date(e.target.value).toISOString() : ""})}
+                className={INPUT_CLS}
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Fecha de fin del proyecto (opcional)</label>
+              <input 
+                type="date" 
+                value={projectSettingsData.endDate !== undefined 
+                  ? (projectSettingsData.endDate ? new Date(projectSettingsData.endDate).toISOString().split('T')[0] : "") 
+                  : ((proj as any)?.endDate ? new Date((proj as any).endDate).toISOString().split('T')[0] : "")} 
+                onChange={(e) => {
+                  const newEndDate = e.target.value ? new Date(e.target.value).toISOString() : "";
+                  setProjectSettingsData({...projectSettingsData, endDate: newEndDate});
+                }}
+                className={INPUT_CLS}
+              />
+              <p className="text-xs text-slate-500">Si defines una fecha de fin, el proyecto se marcará como "Terminado" y el tiempo del proyecto se calculará hasta esta fecha.</p>
+            </div>
+            
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Estado del proyecto</label>
+              <select 
+                value={projectSettingsData.status || proj?.status || "active"} 
+                onChange={(e) => setProjectSettingsData({...projectSettingsData, status: e.target.value})}
+                className={INPUT_CLS}
+              >
+                <option value="active">Activo</option>
+                <option value="paused">Pausado</option>
+                <option value="completed">Terminado</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <Btn outline onClick={() => {
+                setShowProjectSettings(false);
+                setProjectSettingsData({});
+              }}>Cancelar</Btn>
+              <Btn onClick={() => {
+                if (!proj) return;
+                
+                const updates: any = {
+                  name: projectSettingsData.name || proj.name,
+                  description: projectSettingsData.description !== undefined ? projectSettingsData.description : proj.description,
+                  startDate: projectSettingsData.startDate || proj.startDate,
+                  status: projectSettingsData.status || proj.status
+                };
+                
+                // Si hay fecha de fin definida, marcar como completado y guardar la fecha
+                if (projectSettingsData.endDate !== undefined) {
+                  if (projectSettingsData.endDate) {
+                    updates.endDate = projectSettingsData.endDate;
+                    updates.status = "completed";
+                    updates.completedDate = projectSettingsData.endDate;
+                  } else {
+                    // Si se borra la fecha de fin, quitar también el endDate
+                    updates.endDate = undefined;
+                  }
+                }
+                
+                updateProj(proj.id, updates);
+                setShowProjectSettings(false);
+                setProjectSettingsData({});
+              }}>Guardar cambios</Btn>
             </div>
           </div>
         </Modal>
