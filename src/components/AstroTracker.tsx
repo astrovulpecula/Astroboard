@@ -197,15 +197,18 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   );
 }
 
-function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
+function FProject({ onSubmit, cameras = [], telescopes = [] }: { onSubmit: (proj: any) => void; cameras?: string[]; telescopes?: { name: string; focalLength: string }[] }) {
   const [name, setName] = useState("Proyecto Trevinca");
   const [description, setDescription] = useState("Campaña principal");
   const [projectType, setProjectType] = useState("ONP");
   const [filters, setFilters] = useState<string[]>(["RGB", "HA", "OIII"]);
   const [newFilter, setNewFilter] = useState("");
-  const [equipment, setEquipment] = useState("Predeterminado");
-  const [customEquipment, setCustomEquipment] = useState("");
-  const [showCustomEquipment, setShowCustomEquipment] = useState(false);
+  const [selectedCamera, setSelectedCamera] = useState("");
+  const [selectedTelescope, setSelectedTelescope] = useState("");
+  const [customCamera, setCustomCamera] = useState("");
+  const [customTelescope, setCustomTelescope] = useState("");
+  const [showCustomCamera, setShowCustomCamera] = useState(false);
+  const [showCustomTelescope, setShowCustomTelescope] = useState(false);
   const [numPanels, setNumPanels] = useState(1);
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   
@@ -221,13 +224,17 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   };
   
   const handleSubmit = () => {
-    const finalEquipment = equipment === "Otro" && customEquipment.trim() ? customEquipment.trim() : equipment;
+    const finalCamera = selectedCamera === "Otro" ? customCamera.trim() : selectedCamera;
+    const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
     onSubmit({ 
       name, 
       description, 
       projectType,
       filters,
-      equipment: finalEquipment,
+      equipment: {
+        camera: finalCamera,
+        telescope: finalTelescope
+      },
       numPanels,
       startDate: new Date(startDate).toISOString()
     });
@@ -310,28 +317,63 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
         </div>
       </div>
       
-      <label className="grid gap-1">
+      <div className="grid gap-3">
         <Label>Equipo</Label>
-        <select 
-          value={equipment} 
-          onChange={(e) => {
-            setEquipment(e.target.value);
-            setShowCustomEquipment(e.target.value === "Otro");
-          }} 
-          className={INPUT_CLS}
-        >
-          <option value="Predeterminado">Predeterminado (Configurado en Settings)</option>
-          <option value="Otro">Otro...</option>
-        </select>
-        {showCustomEquipment && (
-          <input 
-            value={customEquipment}
-            onChange={(e) => setCustomEquipment(e.target.value)}
-            className={`${INPUT_CLS} mt-2`}
-            placeholder="Especificar equipo..."
-          />
-        )}
-      </label>
+        
+        <div className="grid gap-3">
+          <label className="grid gap-1">
+            <Label>Cámara</Label>
+            <select 
+              value={selectedCamera} 
+              onChange={(e) => {
+                setSelectedCamera(e.target.value);
+                setShowCustomCamera(e.target.value === "Otro");
+              }} 
+              className={INPUT_CLS}
+            >
+              <option value="">Seleccionar cámara...</option>
+              {cameras.filter(c => c.trim()).map(camera => (
+                <option key={camera} value={camera}>{camera}</option>
+              ))}
+              <option value="Otro">+ Añadir nueva cámara</option>
+            </select>
+            {showCustomCamera && (
+              <input 
+                value={customCamera}
+                onChange={(e) => setCustomCamera(e.target.value)}
+                className={`${INPUT_CLS} mt-2`}
+                placeholder="Nombre de la nueva cámara..."
+              />
+            )}
+          </label>
+          
+          <label className="grid gap-1">
+            <Label>Telescopio</Label>
+            <select 
+              value={selectedTelescope} 
+              onChange={(e) => {
+                setSelectedTelescope(e.target.value);
+                setShowCustomTelescope(e.target.value === "Otro");
+              }} 
+              className={INPUT_CLS}
+            >
+              <option value="">Seleccionar telescopio...</option>
+              {telescopes.filter(t => t.name.trim()).map(telescope => (
+                <option key={telescope.name} value={telescope.name}>{telescope.name} {telescope.focalLength ? `(${telescope.focalLength}mm)` : ''}</option>
+              ))}
+              <option value="Otro">+ Añadir nuevo telescopio</option>
+            </select>
+            {showCustomTelescope && (
+              <input 
+                value={customTelescope}
+                onChange={(e) => setCustomTelescope(e.target.value)}
+                className={`${INPUT_CLS} mt-2`}
+                placeholder="Nombre del nuevo telescopio..."
+              />
+            )}
+          </label>
+        </div>
+      </div>
       
       <label className="grid gap-1">
         <Label>Número de Paneles/Teselas</Label>
@@ -362,13 +404,14 @@ function FProject({ onSubmit }: { onSubmit: (proj: any) => void }) {
   );
 }
 
-function FSession({ onSubmit, initial, availableFilters, cameras }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[]; cameras: string[] }) {
+function FSession({ onSubmit, initial, availableFilters, cameras, projectEquipment }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[]; cameras: string[]; projectEquipment?: any }) {
   const init = initial || {};
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
   const [filter, setFilter] = useState(init.filter || (availableFilters[0] || "RGB"));
-  const [camera, setCamera] = useState(init.camera || "");
+  const [camera, setCamera] = useState(init.camera || projectEquipment?.camera || "");
+  const [telescope, setTelescope] = useState(init.telescope || projectEquipment?.telescope || "");
   const [snrR, setSnrR] = useState(init.snrR ?? "");
   const [snrG, setSnrG] = useState(init.snrG ?? "");
   const [snrB, setSnrB] = useState(init.snrB ?? "");
@@ -389,12 +432,13 @@ function FSession({ onSubmit, initial, availableFilters, cameras }: { onSubmit: 
         exposureSec: num(exposureSec, 1), 
         filter,
         camera,
+        telescope,
         snrR: snrR !== "" ? parseFloat(snrR) : undefined, 
         snrG: snrG !== "" ? parseFloat(snrG) : undefined, 
         snrB: snrB !== "" ? parseFloat(snrB) : undefined, 
         notes,
         moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined
-      }); 
+      });
     }}>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1"><Label>Fecha</Label><input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} /></label>
@@ -2267,13 +2311,13 @@ export default function AstroTracker() {
           <FObject onSubmit={addObj} />
         </Modal>
         <Modal open={mProj} onClose={() => setMProj(false)} title="Nuevo proyecto">
-          <FProject onSubmit={addProj} />
+          <FProject onSubmit={addProj} cameras={cameras} telescopes={telescopes} />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
-          <FSession onSubmit={addSes} availableFilters={availableFilters} cameras={cameras} />
+          <FSession onSubmit={addSes} availableFilters={availableFilters} cameras={cameras} projectEquipment={(proj as any)?.equipment} />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
-          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} cameras={cameras} />}
+          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} cameras={cameras} projectEquipment={(proj as any)?.equipment} />}
         </Modal>
         <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); createTab(); }}>
