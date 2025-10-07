@@ -478,14 +478,23 @@ function FProject({ onSubmit, cameras = [], telescopes = [] }: { onSubmit: (proj
   );
 }
 
-function FSession({ onSubmit, initial, availableFilters, cameras, projectEquipment }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[]; cameras: string[]; projectEquipment?: any }) {
+function FSession({ onSubmit, initial, availableFilters, cameras, projectEquipment, telescopes }: { onSubmit: (session: any) => void; initial?: any; availableFilters: string[]; cameras: string[]; projectEquipment?: any; telescopes?: { name: string; focalLength: string }[] }) {
   const init = initial || {};
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
   const [filter, setFilter] = useState(init.filter || (availableFilters[0] || "RGB"));
   const [camera, setCamera] = useState(init.camera || projectEquipment?.camera || "");
-  const [telescope, setTelescope] = useState(init.telescope || projectEquipment?.telescope || "");
+  const [telescope, setTelescope] = useState(init.telescope || "");
+  const [customTelescope, setCustomTelescope] = useState("");
+  const [showCustomTelescope, setShowCustomTelescope] = useState(false);
+  
+  // Si no hay valor inicial, preseleccionar el telescopio del proyecto
+  useEffect(() => {
+    if (!init.telescope && projectEquipment?.telescope) {
+      setTelescope(projectEquipment.telescope);
+    }
+  }, []);
   const [snrR, setSnrR] = useState(init.snrR ?? "");
   const [snrG, setSnrG] = useState(init.snrG ?? "");
   const [snrB, setSnrB] = useState(init.snrB ?? "");
@@ -537,7 +546,31 @@ function FSession({ onSubmit, initial, availableFilters, cameras, projectEquipme
         
         <label className="grid gap-1">
           <Label>Telescopio</Label>
-          <input value={telescope} onChange={(e) => setTelescope(e.target.value)} className={INPUT_CLS} placeholder="Nombre del telescopio" />
+          <select 
+            value={telescope} 
+            onChange={(e) => {
+              setTelescope(e.target.value);
+              setShowCustomTelescope(e.target.value === "Otro");
+            }} 
+            className={INPUT_CLS}
+          >
+            <option value="">Seleccionar telescopio...</option>
+            {telescopes?.filter(t => t.name.trim()).map(t => (
+              <option key={t.name} value={t.name}>{t.name} {t.focalLength ? `(${t.focalLength}mm)` : ''}</option>
+            ))}
+            <option value="Otro">+ Añadir nuevo telescopio</option>
+          </select>
+          {showCustomTelescope && (
+            <input 
+              value={customTelescope}
+              onChange={(e) => {
+                setCustomTelescope(e.target.value);
+                setTelescope(e.target.value);
+              }}
+              className={`${INPUT_CLS} mt-2`}
+              placeholder="Nombre del nuevo telescopio..."
+            />
+          )}
         </label>
       </div>
       
@@ -1513,6 +1546,19 @@ export default function AstroTracker() {
                 });
                 const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
                 
+                // Calculate telescope usage
+                const telescopeCounts: Record<string, number> = {};
+                objects.forEach(obj => {
+                  obj.projects.forEach(proj => {
+                    proj.sessions.forEach((session: any) => {
+                      if (session.telescope) {
+                        const seconds = (session.lights || 0) * (session.exposureSec || 0);
+                        telescopeCounts[session.telescope] = (telescopeCounts[session.telescope] || 0) + seconds;
+                      }
+                    });
+                  });
+                });
+                
                 return (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1535,7 +1581,7 @@ export default function AstroTracker() {
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
-                            <div className="text-2xl font-bold">{totalHours.toFixed(1)}h / {totalLights}</div>
+                            <div className="text-2xl font-bold">{hh(totalHours * 3600)} / {totalLights}</div>
                           </div>
                         </div>
                       </Card>
@@ -1564,6 +1610,23 @@ export default function AstroTracker() {
                               <div key={camera} className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800">
                                 <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
                                 <div className="text-xs text-blue-700 dark:text-blue-300">{count} lights ({percentage}%)</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    )}
+                    
+                    {/* Telescope Usage Statistics */}
+                    {Object.keys(telescopeCounts).length > 0 && (
+                      <Card className="p-5 mb-4">
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios (horas totales)</div>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(telescopeCounts).sort(([,a], [,b]) => b - a).map(([telescope, seconds]) => {
+                            return (
+                              <div key={telescope} className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800">
+                                <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">{telescope}</div>
+                                <div className="text-xs text-purple-700 dark:text-purple-300">{hh(seconds)}</div>
                               </div>
                             );
                           })}
@@ -1961,6 +2024,35 @@ export default function AstroTracker() {
                               })}
                               {Object.keys(cameraCounts).length === 0 && (
                                 <div className="text-sm text-slate-400">Sin cámaras registradas</div>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })()}
+
+                      {/* Telescopios utilizados */}
+                      {(() => {
+                        const telescopeCounts: Record<string, number> = {};
+                        allSessions.forEach((s: any) => {
+                          if (s.telescope) {
+                            const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                            telescopeCounts[s.telescope] = (telescopeCounts[s.telescope] || 0) + seconds;
+                          }
+                        });
+                        
+                        return (
+                          <Card className="p-4 sm:col-span-2 lg:col-span-2">
+                            <div className="text-sm text-slate-500 dark:text-slate-400 mb-2">Telescopios utilizados</div>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(telescopeCounts).map(([telescope, seconds]) => {
+                                return (
+                                  <div key={telescope} className="px-3 py-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-sm">
+                                    <span className="font-semibold">{telescope}:</span> {hh(seconds)}
+                                  </div>
+                                );
+                              })}
+                              {Object.keys(telescopeCounts).length === 0 && (
+                                <div className="text-sm text-slate-400">Sin telescopios registrados</div>
                               )}
                             </div>
                           </Card>
@@ -2424,10 +2516,10 @@ export default function AstroTracker() {
           <FProject onSubmit={addProj} cameras={cameras} telescopes={telescopes} />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
-          <FSession onSubmit={addSes} availableFilters={availableFilters} cameras={cameras} projectEquipment={(proj as any)?.equipment} />
+          <FSession onSubmit={addSes} availableFilters={availableFilters} cameras={cameras} telescopes={telescopes} projectEquipment={(proj as any)?.equipment} />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
-          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} cameras={cameras} projectEquipment={(proj as any)?.equipment} />}
+          {editSes && <FSession initial={editSes} onSubmit={(val) => { editSession(editSes.id, val); setEditSes(null); }} availableFilters={availableFilters} cameras={cameras} telescopes={telescopes} projectEquipment={(proj as any)?.equipment} />}
         </Modal>
         <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); createTab(); }}>
