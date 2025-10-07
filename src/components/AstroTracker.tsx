@@ -647,7 +647,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 const ExposureChart = ({ sessions }: { sessions: any[] }) => {
-  const d = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)).map((s) => ({ date: s.date, horas: (s.lights * s.exposureSec) / 3600 })), [sessions]);
+  const d = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)).map((s, i) => ({ sesion: i + 1, date: s.date, horas: (s.lights * s.exposureSec) / 3600 })), [sessions]);
   if (!d.length) return null;
   return (
     <Card className="p-4 h-80">
@@ -655,9 +655,9 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={d} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="sesion" tickMargin={8} stroke="#ffffff" label={{ value: 'Número de sesión', position: 'insideBottom', offset: -10, fill: '#ffffff' }} />
           <YAxis tickMargin={8} stroke="#ffffff" />
-          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} />
+          <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155' }} labelFormatter={(value) => `Sesión ${value}`} formatter={(value, name, props) => [value, `${props.payload.date}`]} />
           <Bar dataKey="horas" fill="#3b82f6" />
         </BarChart>
       </ResponsiveContainer>
