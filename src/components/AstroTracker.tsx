@@ -170,9 +170,53 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   const [commonName, setCommonName] = useState("");
   const [constellation, setConstellation] = useState("");
   const [type, setType] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      setImageFile(file);
+    }
+  };
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+    }
+  };
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const x = id.trim();
+    if (!x) return;
+    
+    let imageData = undefined;
+    if (imageFile) {
+      try {
+        imageData = await compressImage(imageFile);
+      } catch (error) {
+        console.error('Error al procesar la imagen:', error);
+      }
+    }
+    
+    onSubmit({ id: x, commonName, constellation, type, image: imageData });
+  };
   
   return (
-    <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); const x = id.trim(); if (!x) return; onSubmit({ id: x, commonName, constellation, type }); }}>
+    <form className="grid gap-3" onSubmit={handleSubmit}>
       <label className="grid gap-1"><Label>Código oficial</Label><input value={id} onChange={(e) => setId(e.target.value)} className={INPUT_CLS} placeholder="M31" /></label>
       <label className="grid gap-1"><Label>Nombre común</Label><input value={commonName} onChange={(e) => setCommonName(e.target.value)} className={INPUT_CLS} placeholder="Galaxia de Andrómeda" /></label>
       <label className="grid gap-1"><Label>Constelación</Label><input value={constellation} onChange={(e) => setConstellation(e.target.value)} className={INPUT_CLS} placeholder="Andrómeda" /></label>
@@ -189,8 +233,38 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
           <option value="Otro">Otro</option>
         </select>
       </label>
+      
+      <div className="grid gap-1">
+        <Label>Imagen del objeto (opcional)</Label>
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+            isDragging 
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' 
+              : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600'
+          }`}
+        >
+          <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+          <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+            {imageFile ? imageFile.name : 'Arrastra una imagen aquí o haz clic para seleccionar'}
+          </p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+            id="object-image-upload"
+          />
+          <label htmlFor="object-image-upload" className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline">
+            Seleccionar archivo
+          </label>
+        </div>
+      </div>
+      
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 mt-2">
-        <Btn outline onClick={() => { setId(""); setCommonName(""); setConstellation(""); setType(""); }}>Limpiar</Btn>
+        <Btn outline onClick={() => { setId(""); setCommonName(""); setConstellation(""); setType(""); setImageFile(null); }}>Limpiar</Btn>
         <Btn type="submit"><Plus className="w-3 h-3 md:w-4 md:h-4" /> Crear objeto</Btn>
       </div>
     </form>
@@ -452,13 +526,20 @@ function FSession({ onSubmit, initial, availableFilters, cameras, projectEquipme
         <label className="grid gap-1"><Label>Exposición por light (s)</Label><input type="number" value={exposureSec} min={1} onChange={(e) => setExposureSec(parseInt(e.target.value || "0", 10))} className={INPUT_CLS} /></label>
       </div>
       
-      <label className="grid gap-1">
-        <Label>Cámara</Label>
-        <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-          <option value="">Seleccionar cámara</option>
-          {cameras.filter(c => c.trim() !== "").map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-      </label>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Cámara</Label>
+          <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
+            <option value="">Seleccionar cámara</option>
+            {cameras.filter(c => c.trim() !== "").map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        
+        <label className="grid gap-1">
+          <Label>Telescopio</Label>
+          <input value={telescope} onChange={(e) => setTelescope(e.target.value)} className={INPUT_CLS} placeholder="Nombre del telescopio" />
+        </label>
+      </div>
       
       {moonPhase && (
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
@@ -2016,15 +2097,37 @@ export default function AstroTracker() {
             <div className="grid gap-4 mt-2">
               <div className="md:hidden flex gap-2 overflow-x-auto pb-1">
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Objeto:</strong> {obj.id}</span>
-                <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Exposición:</strong> {hh(totalExposureSec(ss))}</span>
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Lights:</strong> {ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</span>
+                <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Exposición:</strong> {hh(totalExposureSec(ss))}</span>
                 <span className="shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white/80 dark:bg-slate-900/60"><strong>Sesiones:</strong> {new Set(ss.map((s: any) => s.date)).size}</span>
               </div>
 
               <div className="hidden md:grid grid-cols-2 lg:grid-cols-7 gap-3 md:gap-4">
                 <Card className="p-4"><div className="text-sm text-slate-500">Objeto</div><div className="text-xl font-semibold">{obj.id}</div><div className="text-sm text-slate-500">{obj.commonName}</div></Card>
-                <Card className="p-4"><div className="text-sm text-slate-500">Exposición total</div><div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div></Card>
                 <Card className="p-4"><div className="text-sm text-slate-500">Lights acumulados</div><div className="text-xl font-semibold">{ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}</div></Card>
+                <Card className="p-4"><div className="text-sm text-slate-500">Exposición total</div><div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div></Card>
+                {(() => {
+                  // Calcular horas totales por cada filtro
+                  const filterHours: Record<string, number> = {};
+                  tabs.forEach(tab => {
+                    const tabSessions = filt(tab);
+                    const totalSeconds = tabSessions.reduce((acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0), 0);
+                    if (totalSeconds > 0) {
+                      filterHours[tab.name] = totalSeconds;
+                    }
+                  });
+                  
+                  // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
+                  const sortedFilters = Object.entries(filterHours)
+                    .sort(([, a], [, b]) => b - a);
+                  
+                  return sortedFilters.map(([filterName, seconds]) => (
+                    <Card key={filterName} className="p-4">
+                      <div className="text-sm text-slate-500">{filterName}</div>
+                      <div className="text-xl font-semibold">{hh(seconds)}</div>
+                    </Card>
+                  ));
+                })()}
                 <Card className="p-4"><div className="text-sm text-slate-500">Sesiones</div><div className="text-xl font-semibold">{new Set(ss.map((s: any) => s.date)).size} noche(s)</div><div className="text-xs text-slate-500">Última: {ss.length ? ss[ss.length - 1].date : "–"}</div></Card>
                 {(() => {
                   // Calcular tiempo activo del proyecto
@@ -2072,26 +2175,33 @@ export default function AstroTracker() {
                   );
                 })()}
                 {(() => {
-                  // Calcular horas totales por cada filtro
-                  const filterHours: Record<string, number> = {};
-                  tabs.forEach(tab => {
-                    const tabSessions = filt(tab);
-                    const totalSeconds = tabSessions.reduce((acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0), 0);
-                    if (totalSeconds > 0) {
-                      filterHours[tab.name] = totalSeconds;
+                  // Telescopios utilizados
+                  const telescopeCounts: Record<string, number> = {};
+                  ss.forEach((s: any) => {
+                    if (s.telescope) {
+                      const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                      telescopeCounts[s.telescope] = (telescopeCounts[s.telescope] || 0) + seconds;
                     }
                   });
                   
-                  // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
-                  const sortedFilters = Object.entries(filterHours)
+                  const sortedTelescopes = Object.entries(telescopeCounts)
                     .sort(([, a], [, b]) => b - a);
                   
-                  return sortedFilters.map(([filterName, seconds]) => (
-                    <Card key={filterName} className="p-4">
-                      <div className="text-sm text-slate-500">{filterName}</div>
-                      <div className="text-xl font-semibold">{hh(seconds)}</div>
+                  if (sortedTelescopes.length === 0) return null;
+                  
+                  return (
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500 mb-1">Telescopio usado</div>
+                      <div className="space-y-1">
+                        {sortedTelescopes.map(([telescope, seconds]) => (
+                          <div key={telescope}>
+                            <div className="text-sm font-semibold">{telescope}</div>
+                            <div className="text-xs text-slate-500">{hh(seconds)}</div>
+                          </div>
+                        ))}
+                      </div>
                     </Card>
-                  ));
+                  );
                 })()}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500 mb-2">Estado</div>
