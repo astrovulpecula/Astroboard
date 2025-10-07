@@ -201,7 +201,7 @@ function FProject({ onSubmit, cameras = [], telescopes = [] }: { onSubmit: (proj
   const [name, setName] = useState("Proyecto Trevinca");
   const [description, setDescription] = useState("Campaña principal");
   const [projectType, setProjectType] = useState("ONP");
-  const [filters, setFilters] = useState<string[]>(["RGB", "HA", "OIII"]);
+  const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
   const [selectedTelescope, setSelectedTelescope] = useState("");
@@ -2078,7 +2078,7 @@ export default function AstroTracker() {
                     const tabSessions = filt(tab);
                     const totalSeconds = tabSessions.reduce((acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0), 0);
                     if (totalSeconds > 0) {
-                      filterHours[tab.name] = totalSeconds / 3600;
+                      filterHours[tab.name] = totalSeconds;
                     }
                   });
                   
@@ -2086,10 +2086,10 @@ export default function AstroTracker() {
                   const sortedFilters = Object.entries(filterHours)
                     .sort(([, a], [, b]) => b - a);
                   
-                  return sortedFilters.map(([filterName, hours]) => (
+                  return sortedFilters.map(([filterName, seconds]) => (
                     <Card key={filterName} className="p-4">
                       <div className="text-sm text-slate-500">{filterName}</div>
-                      <div className="text-xl font-semibold">{hours.toFixed(1)}h</div>
+                      <div className="text-xl font-semibold">{hh(seconds)}</div>
                     </Card>
                   ));
                 })()}
