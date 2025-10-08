@@ -1267,30 +1267,79 @@ export default function AstroTracker() {
   const tabLabel = act?.preset === "rgb" ? "RGB" : act?.preset === "haoiii" ? "HA/OIII" : act?.name || "Sin filtro";
   const keyPrefix = act?.preset === "rgb" ? "RGB" : act?.preset === "haoiii" ? "HAOIII" : (act?.name?.replace(/[^a-zA-Z0-9]/g, "") || "default");
 
-  const ImageCard = ({ title, keyName }: { title: string; keyName: string }) => (
-    <Card className="p-4">
-      <SectionTitle title={title} />
-      {proj?.images?.[keyName] ? (
-        <div className="space-y-3">
-          <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
-          <div className="flex gap-2">
-            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-              <Upload className="w-4 h-4" /> Reemplazar
-              <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
+  const ImageCard = ({ title, keyName }: { title: string; keyName: string }) => {
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+        const url = await compressImage(file);
+        upImgs({ [keyName]: url });
+      }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const url = await compressImage(f);
+      upImgs({ [keyName]: url });
+      e.target.value = "";
+    };
+
+    return (
+      <Card className="p-4">
+        <SectionTitle title={title} />
+        {proj?.images?.[keyName] ? (
+          <div className="space-y-3">
+            <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
+            <div className="flex gap-2">
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
+                <Upload className="w-4 h-4" /> Reemplazar
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+              </label>
+              <Btn outline onClick={() => upImgs({ [keyName]: undefined })}><Trash2 className="w-4 h-4" /> Quitar</Btn>
+            </div>
+          </div>
+        ) : (
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className={`grid place-items-center h-52 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+              isDragging
+                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900'
+            }`}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              id={`image-upload-${keyName}`}
+            />
+            <label htmlFor={`image-upload-${keyName}`} className="text-center text-sm text-slate-500 cursor-pointer w-full h-full flex flex-col items-center justify-center">
+              <Upload className="w-5 h-5 mx-auto mb-1" />
+              <p className="mb-1">{isDragging ? 'Suelta la imagen aquí' : 'Arrastra una imagen aquí o haz clic'}</p>
+              <p className="text-xs text-slate-400">para subir {title.toLowerCase()}</p>
             </label>
-            <Btn outline onClick={() => upImgs({ [keyName]: undefined })}><Trash2 className="w-4 h-4" /> Quitar</Btn>
           </div>
-        </div>
-      ) : (
-        <label className="grid place-items-center h-52 rounded-xl border border-dashed cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-          <div className="text-center text-sm text-slate-500">
-            <Upload className="w-5 h-5 mx-auto mb-1" />Subir {title.toLowerCase()}
-          </div>
-          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upImgs({ [keyName]: url }); e.target.value = ""; }} />
-        </label>
-      )}
-    </Card>
-  );
+        )}
+      </Card>
+    );
+  };
 
   return (
     <div className={theme === "dark" ? "dark" : ""} data-theme={theme}>
@@ -1812,6 +1861,30 @@ export default function AstroTracker() {
                             // Usar imagen del objeto, si no existe usar la final del último proyecto
                             const lastProject = o.projects[o.projects.length - 1];
                             const displayImage = o.image || (lastProject as any)?.finalImage;
+                            const [isDragging, setIsDragging] = useState(false);
+
+                            const handleDragOver = (e: React.DragEvent) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDragging(true);
+                            };
+
+                            const handleDragLeave = (e: React.DragEvent) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDragging(false);
+                            };
+
+                            const handleDrop = async (e: React.DragEvent) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setIsDragging(false);
+                              const file = e.dataTransfer.files?.[0];
+                              if (file && file.type.startsWith('image/')) {
+                                const url = await compressImage(file);
+                                upObjImg(o.id, url);
+                              }
+                            };
                             
                             return displayImage ? (
                               <>
@@ -1827,11 +1900,29 @@ export default function AstroTracker() {
                                 </div>
                               </>
                             ) : (
-                              <label className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40 transition" onClick={(e) => e.stopPropagation()}>
-                                <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                                <span className="text-xs text-slate-500">Subir</span>
-                                <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
-                              </label>
+                              <div
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                                onClick={(e) => e.stopPropagation()}
+                                className={`w-24 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition ${
+                                  isDragging
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                    : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+                                }`}
+                              >
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  className="hidden" 
+                                  onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }}
+                                  id={`object-image-${o.id}`}
+                                />
+                                <label htmlFor={`object-image-${o.id}`} className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
+                                  <Upload className="w-5 h-5 text-slate-400 mb-1" />
+                                  <span className="text-xs text-slate-500">{isDragging ? 'Soltar' : 'Subir'}</span>
+                                </label>
+                              </div>
                             );
                           })()}
                         </div>
