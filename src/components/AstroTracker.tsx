@@ -136,6 +136,121 @@ const IconBtn = ({ title, onClick, children }: { title: string; onClick: (e?: an
   </button>
 );
 
+const ObjectThumbnail = ({ objectId, displayImage, onUpload, onDelete }: { 
+  objectId: string; 
+  displayImage: string | null; 
+  onUpload: (id: string, url: string) => void; 
+  onDelete: (id: string) => void; 
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          const maxDim = 800;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+          else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+          canvas.width = w; canvas.height = h;
+          ctx?.drawImage(img, 0, 0, w, h);
+          resolve();
+        };
+      });
+      const url = canvas.toDataURL('image/jpeg', 0.8);
+      onUpload(objectId, url);
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.src = URL.createObjectURL(f);
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > maxDim) { h *= maxDim / w; w = maxDim; } }
+        else { if (h > maxDim) { w *= maxDim / h; h = maxDim; } }
+        canvas.width = w; canvas.height = h;
+        ctx?.drawImage(img, 0, 0, w, h);
+        resolve();
+      };
+    });
+    const url = canvas.toDataURL('image/jpeg', 0.8);
+    onUpload(objectId, url);
+    e.target.value = "";
+  };
+
+  if (displayImage) {
+    return (
+      <div className="relative group flex-shrink-0">
+        <img src={displayImage} alt={objectId} className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
+          <label className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => e.stopPropagation()}>
+            <Upload className="w-4 h-4" />
+            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+          </label>
+          <button className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => { e.stopPropagation(); onDelete(objectId); }}>
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={(e) => e.stopPropagation()}
+      className={`w-24 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition ${
+        isDragging
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+          : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40'
+      }`}
+    >
+      <input 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        onChange={handleFileChange}
+        id={`object-image-${objectId}`}
+      />
+      <label htmlFor={`object-image-${objectId}`} className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
+        <Upload className="w-5 h-5 text-slate-400 mb-1" />
+        <span className="text-xs text-slate-500">{isDragging ? 'Soltar' : 'Subir'}</span>
+      </label>
+    </div>
+  );
+};
+
+
 const Modal = ({ open, onClose, title, children, wide = false }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }) => {
   if (!open) return null;
   return (
@@ -1856,76 +1971,12 @@ export default function AstroTracker() {
                   return (
                     <Card key={o.id} className="p-4" onClick={() => { setSelectedObjectId(o.id); setView("projects"); }}>
                       <div className="flex items-start gap-3">
-                         <div className="relative group flex-shrink-0">
-                          {(() => {
-                            // Usar imagen del objeto, si no existe usar la final del último proyecto
-                            const lastProject = o.projects[o.projects.length - 1];
-                            const displayImage = o.image || (lastProject as any)?.finalImage;
-                            const [isDragging, setIsDragging] = useState(false);
-
-                            const handleDragOver = (e: React.DragEvent) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDragging(true);
-                            };
-
-                            const handleDragLeave = (e: React.DragEvent) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDragging(false);
-                            };
-
-                            const handleDrop = async (e: React.DragEvent) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setIsDragging(false);
-                              const file = e.dataTransfer.files?.[0];
-                              if (file && file.type.startsWith('image/')) {
-                                const url = await compressImage(file);
-                                upObjImg(o.id, url);
-                              }
-                            };
-                            
-                            return displayImage ? (
-                              <>
-                                <img src={displayImage} alt={o.id} className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700" />
-                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
-                                  <label className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => e.stopPropagation()}>
-                                    <Upload className="w-4 h-4" />
-                                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }} />
-                                  </label>
-                                  <button className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition" onClick={(e) => { e.stopPropagation(); upObjImg(o.id, null); }}>
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </>
-                            ) : (
-                              <div
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`w-24 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition ${
-                                  isDragging
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-                                    : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900/40'
-                                }`}
-                              >
-                                <input 
-                                  type="file" 
-                                  accept="image/*" 
-                                  className="hidden" 
-                                  onChange={async (e) => { e.stopPropagation(); const f = e.target.files?.[0]; if (!f) return; const url = await compressImage(f); upObjImg(o.id, url); e.target.value = ""; }}
-                                  id={`object-image-${o.id}`}
-                                />
-                                <label htmlFor={`object-image-${o.id}`} className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
-                                  <Upload className="w-5 h-5 text-slate-400 mb-1" />
-                                  <span className="text-xs text-slate-500">{isDragging ? 'Soltar' : 'Subir'}</span>
-                                </label>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                        <ObjectThumbnail 
+                          objectId={o.id}
+                          displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
+                          onUpload={upObjImg}
+                          onDelete={(id) => upObjImg(id, null)}
+                        />
                         <div className="flex-1 min-w-0">
                           {editingObjectId === o.id ? (
                             <input 
