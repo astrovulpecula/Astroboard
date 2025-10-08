@@ -2423,7 +2423,7 @@ export default function AstroTracker() {
                         <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l">Acciones</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2456,7 +2456,7 @@ export default function AstroTracker() {
                           <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrG) ? s.snrG : "–"}</td>
                           <td className="p-2 md:p-3 whitespace-nowrap align-middle">{Number.isFinite(s.snrB) ? s.snrB : "–"}</td>
                           <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
-                          <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l">
+                          <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">
                             <div className="inline-flex gap-1 md:gap-2">
                               <Dialog>
                                 <DialogTrigger asChild>
