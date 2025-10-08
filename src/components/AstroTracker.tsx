@@ -915,6 +915,7 @@ export default function AstroTracker() {
   const [searchText, setSearchText] = useState("");
   const [filterConstellation, setFilterConstellation] = useState("all");
   const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [theme, setTheme] = useState("astro");
   const [editingProjectName, setEditingProjectName] = useState<string | null>(null);
@@ -1020,8 +1021,11 @@ export default function AstroTracker() {
     }
     if (filterConstellation !== "all") filtered = filtered.filter(o => o.constellation === filterConstellation);
     if (filterType !== "all") filtered = filtered.filter(o => o.type === filterType);
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(o => o.projects.some((p: any) => p.status === filterStatus));
+    }
     return filtered;
-  }, [objects, searchText, filterConstellation, filterType]);
+  }, [objects, searchText, filterConstellation, filterType, filterStatus]);
 
   const constellations = useMemo(() => {
     const cons = new Set(objects.map(o => o.constellation).filter(Boolean));
@@ -1677,6 +1681,8 @@ export default function AstroTracker() {
                 // Calculate global metrics
                 const totalObjects = objects.length;
                 const totalProjects = objects.reduce((acc, obj) => acc + obj.projects.length, 0);
+                const activeProjects = objects.reduce((acc, obj) => acc + obj.projects.filter((p: any) => p.status === 'active').length, 0);
+                const activeProjectsPercentage = totalProjects > 0 ? ((activeProjects / totalProjects) * 100).toFixed(1) : '0';
                 
                 // Calculate total hours and lights
                 let totalHours = 0;
@@ -1710,22 +1716,28 @@ export default function AstroTracker() {
                 });
                 const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
                 
-                // Calculate telescope usage
-                const telescopeCounts: Record<string, number> = {};
+                // Calculate telescope usage (both hours and lights)
+                const telescopeCounts: Record<string, { seconds: number; lights: number }> = {};
                 objects.forEach(obj => {
                   obj.projects.forEach(proj => {
                     proj.sessions.forEach((session: any) => {
                       if (session.telescope) {
                         const seconds = (session.lights || 0) * (session.exposureSec || 0);
-                        telescopeCounts[session.telescope] = (telescopeCounts[session.telescope] || 0) + seconds;
+                        const lights = session.lights || 0;
+                        if (!telescopeCounts[session.telescope]) {
+                          telescopeCounts[session.telescope] = { seconds: 0, lights: 0 };
+                        }
+                        telescopeCounts[session.telescope].seconds += seconds;
+                        telescopeCounts[session.telescope].lights += lights;
                       }
                     });
                   });
                 });
+                const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
                 
                 return (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-blue-500/10">
@@ -1734,6 +1746,19 @@ export default function AstroTracker() {
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
                             <div className="text-2xl font-bold">{totalObjects} / {totalProjects}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-orange-500/10">
+                            <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Proyectos Activos</div>
+                            <div className="text-2xl font-bold">{activeProjects}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">{activeProjectsPercentage}% del total</div>
                           </div>
                         </div>
                       </Card>
@@ -1784,13 +1809,14 @@ export default function AstroTracker() {
                     {/* Telescope Usage Statistics */}
                     {Object.keys(telescopeCounts).length > 0 && (
                       <Card className="p-5 mb-4">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios (horas totales)</div>
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
                         <div className="flex flex-wrap gap-3">
-                          {Object.entries(telescopeCounts).sort(([,a], [,b]) => b - a).map(([telescope, seconds]) => {
+                          {Object.entries(telescopeCounts).sort(([,a], [,b]) => b.seconds - a.seconds).map(([telescope, data]) => {
+                            const percentage = totalTelescopeLights > 0 ? ((data.lights / totalTelescopeLights) * 100).toFixed(1) : '0';
                             return (
                               <div key={telescope} className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800">
                                 <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">{telescope}</div>
-                                <div className="text-xs text-purple-700 dark:text-purple-300">{hh(seconds)}</div>
+                                <div className="text-xs text-purple-700 dark:text-purple-300">{hh(data.seconds)} • {data.lights} lights ({percentage}%)</div>
                               </div>
                             );
                           })}
@@ -1932,7 +1958,7 @@ export default function AstroTracker() {
                 </div>
                 
                 {showFilters && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                     <label className="grid gap-1">
                       <Label>Filtrar por constelación</Label>
                       <select value={filterConstellation} onChange={(e) => setFilterConstellation(e.target.value)} className={INPUT_CLS}>
@@ -1947,9 +1973,18 @@ export default function AstroTracker() {
                         {types.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </label>
-                    {(filterConstellation !== "all" || filterType !== "all") && (
-                      <div className="md:col-span-2">
-                        <Btn outline onClick={() => { setFilterConstellation("all"); setFilterType("all"); }}>Limpiar filtros</Btn>
+                    <label className="grid gap-1">
+                      <Label>Filtrar por estado</Label>
+                      <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className={INPUT_CLS}>
+                        <option value="all">Todos los estados</option>
+                        <option value="active">Activo</option>
+                        <option value="paused">Pausado</option>
+                        <option value="closed">Cerrado</option>
+                      </select>
+                    </label>
+                    {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all") && (
+                      <div className="md:col-span-3">
+                        <Btn outline onClick={() => { setFilterConstellation("all"); setFilterType("all"); setFilterStatus("all"); }}>Limpiar filtros</Btn>
                       </div>
                     )}
                   </div>
