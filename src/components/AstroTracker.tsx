@@ -11,11 +11,13 @@ import {
   Sun,
   Calendar,
   ChevronLeft,
+  ChevronRight,
   Database,
   Pencil,
   MessageCircle,
   Settings,
   User,
+  Flame,
 } from "lucide-react";
 import {
   LineChart,
@@ -2310,18 +2312,65 @@ export default function AstroTracker() {
                 const uniqueDates = new Set<string>();
                 let totalSessions = 0;
 
+                // Object with most exposure
+                const objectExposures: Record<string, number> = {};
+                
                 objects.forEach((obj) => {
+                  let objExposure = 0;
                   obj.projects.forEach((proj) => {
                     proj.sessions.forEach((session: any) => {
-                      totalHours += ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
+                      const sessionExposure = ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
+                      totalHours += sessionExposure;
+                      objExposure += sessionExposure;
                       totalLights += session.lights || 0;
                       uniqueDates.add(session.date);
                       totalSessions++;
                     });
                   });
+                  if (objExposure > 0) {
+                    objectExposures[obj.id] = objExposure;
+                  }
                 });
 
                 const totalNights = uniqueDates.size;
+                
+                // Find object with most exposure
+                const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
+                
+                // Calculate consecutive nights streak
+                const allDates = Array.from(uniqueDates).sort();
+                let currentStreak = 0;
+                let maxStreak = 0;
+                
+                if (allDates.length > 0) {
+                  currentStreak = 1;
+                  maxStreak = 1;
+                  
+                  for (let i = 1; i < allDates.length; i++) {
+                    const prevDate = new Date(allDates[i - 1]);
+                    const currDate = new Date(allDates[i]);
+                    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 1) {
+                      currentStreak++;
+                      maxStreak = Math.max(maxStreak, currentStreak);
+                    } else {
+                      currentStreak = 1;
+                    }
+                  }
+                  
+                  // Check if the last date is today or yesterday to determine current streak
+                  const lastDate = new Date(allDates[allDates.length - 1]);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  lastDate.setHours(0, 0, 0, 0);
+                  
+                  const daysSinceLastSession = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  if (daysSinceLastSession > 1) {
+                    currentStreak = 0;
+                  }
+                }
 
                 // Calculate camera usage
                 const cameraCounts: Record<string, number> = {};
@@ -2443,6 +2492,129 @@ export default function AstroTracker() {
                         </div>
                       </Card>
                     )}
+
+                    {/* Object with Most Exposure */}
+                    {maxExposureObj && (
+                      <Card className="p-5 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-yellow-500/10">
+                            <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Objeto con Mayor Exposición</div>
+                            <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {hh(maxExposureObj[1] * 3600)} de exposición
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Hours by Year */}
+                    {(() => {
+                      const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+                      
+                      // Get all years with sessions
+                      const yearsWithSessions = new Set<number>();
+                      objects.forEach((obj) => {
+                        obj.projects.forEach((proj) => {
+                          proj.sessions.forEach((session: any) => {
+                            const year = new Date(session.date).getFullYear();
+                            yearsWithSessions.add(year);
+                          });
+                        });
+                      });
+                      
+                      const sortedYears = Array.from(yearsWithSessions).sort((a, b) => a - b);
+                      const minYear = sortedYears[0] || new Date().getFullYear();
+                      const currentYear = new Date().getFullYear();
+                      
+                      // Calculate hours for selected year
+                      let yearHours = 0;
+                      objects.forEach((obj) => {
+                        obj.projects.forEach((proj) => {
+                          proj.sessions.forEach((session: any) => {
+                            const sessionYear = new Date(session.date).getFullYear();
+                            if (sessionYear === selectedYear) {
+                              yearHours += ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
+                            }
+                          });
+                        });
+                      });
+                      
+                      // Calculate hours for previous year for comparison
+                      let previousYearHours = 0;
+                      if (selectedYear > minYear) {
+                        objects.forEach((obj) => {
+                          obj.projects.forEach((proj) => {
+                            proj.sessions.forEach((session: any) => {
+                              const sessionYear = new Date(session.date).getFullYear();
+                              if (sessionYear === selectedYear - 1) {
+                                previousYearHours += ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
+                              }
+                            });
+                          });
+                        });
+                      }
+                      
+                      const percentageChange = previousYearHours > 0 
+                        ? (((yearHours - previousYearHours) / previousYearHours) * 100).toFixed(1)
+                        : selectedYear > minYear ? "100" : "0";
+                      
+                      return (
+                        <Card className="p-5 mb-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="p-3 rounded-xl bg-cyan-500/10">
+                                <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">Horas en {selectedYear}</div>
+                                <div className="text-2xl font-bold">{hh(yearHours * 3600)}</div>
+                                {previousYearHours > 0 && (
+                                  <div className={`text-xs ${parseFloat(percentageChange) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {parseFloat(percentageChange) >= 0 ? '+' : ''}{percentageChange}% vs {selectedYear - 1}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedYear(prev => Math.max(minYear, prev - 1))}
+                                disabled={selectedYear <= minYear}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                              >
+                                <ChevronLeft className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => setSelectedYear(prev => Math.min(currentYear, prev + 1))}
+                                disabled={selectedYear >= currentYear}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    })()}
+
+                    {/* Consecutive Nights Streak */}
+                    <Card className="p-5 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-xl bg-pink-500/10">
+                          <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                        </div>
+                        <div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">Racha de Noches Consecutivas</div>
+                          <div className="text-2xl font-bold">{currentStreak > 0 ? currentStreak : maxStreak} noche{(currentStreak > 0 ? currentStreak : maxStreak) !== 1 ? 's' : ''}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
+                            {currentStreak > 0 ? 'Racha actual' : `Récord: ${maxStreak} noche${maxStreak !== 1 ? 's' : ''}`}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
 
                     {/* Telescope Usage Statistics */}
                     {Object.keys(telescopeCounts).length > 0 && (
