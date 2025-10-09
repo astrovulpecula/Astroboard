@@ -862,6 +862,8 @@ function FSession({
   const [snrR, setSnrR] = useState(init.snrR ?? "");
   const [snrG, setSnrG] = useState(init.snrG ?? "");
   const [snrB, setSnrB] = useState(init.snrB ?? "");
+  const [acceptedLights, setAcceptedLights] = useState(init.acceptedLights ?? "");
+  const [rejectedLights, setRejectedLights] = useState(init.rejectedLights ?? "");
   const [notes, setNotes] = useState(init.notes ?? "");
 
   // Calcular fase lunar basado en la fecha seleccionada
@@ -885,6 +887,8 @@ function FSession({
           snrR: snrR !== "" ? parseFloat(snrR) : undefined,
           snrG: snrG !== "" ? parseFloat(snrG) : undefined,
           snrB: snrB !== "" ? parseFloat(snrB) : undefined,
+          acceptedLights: acceptedLights !== "" ? parseInt(acceptedLights) : undefined,
+          rejectedLights: rejectedLights !== "" ? parseInt(rejectedLights) : undefined,
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
         });
@@ -1001,6 +1005,32 @@ function FSession({
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} />
         </label>
       </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Lights aceptados</Label>
+          <input
+            type="number"
+            value={acceptedLights}
+            min={0}
+            onChange={(e) => setAcceptedLights(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Opcional"
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Lights rechazados</Label>
+          <input
+            type="number"
+            value={rejectedLights}
+            min={0}
+            onChange={(e) => setRejectedLights(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Opcional"
+          />
+        </label>
+      </div>
+
       <label className="grid gap-1">
         <Label>Notas</Label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} />
@@ -1210,6 +1240,40 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             name="Iluminación lunar"
           />
         </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+const AcceptedRejectedChart = ({ sessions }: { sessions: any[] }) => {
+  const d = useMemo(
+    () =>
+      sessions
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .filter((s) => (s.acceptedLights !== undefined && s.acceptedLights !== null) || (s.rejectedLights !== undefined && s.rejectedLights !== null))
+        .map((s, i) => ({
+          sesion: i + 1,
+          date: s.date,
+          aceptados: s.acceptedLights || 0,
+          rechazados: s.rejectedLights || 0,
+        })),
+    [sessions],
+  );
+  if (!d.length) return null;
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Star} title="Lights aceptados vs rechazados" />
+      <ResponsiveContainer width="100%" height="90%">
+        <BarChart data={d} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="sesion" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} stroke="#ffffff" />
+          <Tooltip contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }} />
+          <Legend />
+          <Bar dataKey="aceptados" fill="#22c55e" name="Aceptados" />
+          <Bar dataKey="rechazados" fill="#ef4444" name="Rechazados" />
+        </BarChart>
       </ResponsiveContainer>
     </Card>
   );
@@ -3460,9 +3524,10 @@ export default function AstroTracker() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <ExposureChart sessions={filtered} />
+                <MoonIlluminationChart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
-                <MoonIlluminationChart sessions={filtered} />
+                <AcceptedRejectedChart sessions={filtered} />
               </div>
             </div>
           )}
