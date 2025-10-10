@@ -2193,7 +2193,16 @@ export default function AstroTracker() {
               <Btn
                 outline
                 onClick={() => {
-                  const data = JSON.stringify(objects, null, 2),
+                  // Incluir objects y settings en la exportación
+                  const exportData = {
+                    objects,
+                    settings: {
+                      userName,
+                      cameras: cameras.filter((c) => c.trim() !== ""),
+                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+                    },
+                  };
+                  const data = JSON.stringify(exportData, null, 2),
                     blob = new Blob([data], { type: "application/json" }),
                     url = URL.createObjectURL(blob),
                     a = document.createElement("a");
@@ -2223,70 +2232,106 @@ export default function AstroTracker() {
                       e.target.value = "";
                       return;
                     }
-                    if (Array.isArray(json)) {
-                      // Procesar cada objeto para asegurar que los filtros del proyecto incluyan todos los filtros de las sesiones
-                      const processedObjects = json.map((obj) => {
-                        if (obj.projects && Array.isArray(obj.projects)) {
-                          const processedProjects = obj.projects.map((proj: any) => {
-                            // Recopilar todos los filtros únicos de las sesiones
-                            const allFiltersFromSessions = new Set<string>();
 
-                            console.log("📦 Procesando proyecto:", proj.name);
-                            console.log("📦 Sesiones en proyecto:", proj.sessions);
+                    // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
+                    let objectsData;
+                    let settingsData = null;
 
-                            // Buscar filtros directamente en proj.sessions
-                            if (proj.sessions && Array.isArray(proj.sessions)) {
-                              proj.sessions.forEach((session: any) => {
-                                if (session.filter) {
-                                  console.log("✅ Filtro encontrado:", session.filter);
-                                  allFiltersFromSessions.add(session.filter);
-                                }
-                              });
-                            }
-
-                            // También buscar en paneles por compatibilidad con formatos antiguos
-                            if (proj.panels && Array.isArray(proj.panels)) {
-                              proj.panels.forEach((panel: any) => {
-                                if (panel.sessions && Array.isArray(panel.sessions)) {
-                                  panel.sessions.forEach((session: any) => {
-                                    if (session.filter) {
-                                      console.log("✅ Filtro encontrado en panel:", session.filter);
-                                      allFiltersFromSessions.add(session.filter);
-                                    }
-                                  });
-                                }
-                              });
-                            }
-
-                            // Combinar filtros existentes del proyecto con los encontrados en las sesiones
-                            const existingFilters = proj.filters || [];
-                            const combinedFilters = [
-                              ...new Set([...existingFilters, ...Array.from(allFiltersFromSessions)]),
-                            ];
-
-                            console.log("🎯 Filtros finales para proyecto:", proj.name, combinedFilters);
-
-                            return {
-                              ...proj,
-                              filters: combinedFilters,
-                            };
-                          });
-
-                          return {
-                            ...obj,
-                            projects: processedProjects,
-                          };
-                        }
-                        return obj;
-                      });
-
-                      setObjects(processedObjects);
-                      setView("objects");
-                      setSelectedObjectId(null);
-                      setSelectedProjectId(null);
+                    if (json.objects && Array.isArray(json.objects)) {
+                      // Formato nuevo: { objects: [...], settings: {...} }
+                      objectsData = json.objects;
+                      settingsData = json.settings;
+                    } else if (Array.isArray(json)) {
+                      // Formato antiguo: solo array de objetos
+                      objectsData = json;
                     } else {
                       alert("Formato no válido");
+                      e.target.value = "";
+                      return;
                     }
+
+                    // Procesar objetos
+                    const processedObjects = objectsData.map((obj: any) => {
+                      if (obj.projects && Array.isArray(obj.projects)) {
+                        const processedProjects = obj.projects.map((proj: any) => {
+                          // Recopilar todos los filtros únicos de las sesiones
+                          const allFiltersFromSessions = new Set<string>();
+
+                          console.log("📦 Procesando proyecto:", proj.name);
+                          console.log("📦 Sesiones en proyecto:", proj.sessions);
+
+                          // Buscar filtros directamente en proj.sessions
+                          if (proj.sessions && Array.isArray(proj.sessions)) {
+                            proj.sessions.forEach((session: any) => {
+                              if (session.filter) {
+                                console.log("✅ Filtro encontrado:", session.filter);
+                                allFiltersFromSessions.add(session.filter);
+                              }
+                            });
+                          }
+
+                          // También buscar en paneles por compatibilidad con formatos antiguos
+                          if (proj.panels && Array.isArray(proj.panels)) {
+                            proj.panels.forEach((panel: any) => {
+                              if (panel.sessions && Array.isArray(panel.sessions)) {
+                                panel.sessions.forEach((session: any) => {
+                                  if (session.filter) {
+                                    console.log("✅ Filtro encontrado en panel:", session.filter);
+                                    allFiltersFromSessions.add(session.filter);
+                                  }
+                                });
+                              }
+                            });
+                          }
+
+                          // Combinar filtros existentes del proyecto con los encontrados en las sesiones
+                          const existingFilters = proj.filters || [];
+                          const combinedFilters = [
+                            ...new Set([...existingFilters, ...Array.from(allFiltersFromSessions)]),
+                          ];
+
+                          console.log("🎯 Filtros finales para proyecto:", proj.name, combinedFilters);
+
+                          return {
+                            ...proj,
+                            filters: combinedFilters,
+                          };
+                        });
+
+                        return {
+                          ...obj,
+                          projects: processedProjects,
+                        };
+                      }
+                      return obj;
+                    });
+
+                    setObjects(processedObjects);
+                    
+                    // Restaurar settings si existen
+                    if (settingsData) {
+                      if (settingsData.userName) setUserName(settingsData.userName);
+                      if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
+                        setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
+                      }
+                      if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
+                        setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
+                      }
+                      
+                      // Guardar settings en localStorage
+                      const settings = {
+                        defaultTheme,
+                        jsonPath,
+                        cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
+                        telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                        userName: settingsData.userName || userName,
+                      };
+                      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                    }
+
+                    setView("objects");
+                    setSelectedObjectId(null);
+                    setSelectedProjectId(null);
                     e.target.value = "";
                   }}
                 />
