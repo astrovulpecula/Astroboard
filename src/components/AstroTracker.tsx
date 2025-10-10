@@ -1376,6 +1376,96 @@ type TabType = {
   filters?: any[];
 };
 
+// ImageCard component moved outside to avoid hooks issues
+const ImageCard = ({ 
+  title, 
+  keyName, 
+  proj, 
+  upImgs 
+}: { 
+  title: string; 
+  keyName: string;
+  proj: any;
+  upImgs: (patch: any) => void;
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const url = await compressImage(file);
+      upImgs({ [keyName]: url });
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const url = await compressImage(f);
+    upImgs({ [keyName]: url });
+    e.target.value = "";
+  };
+
+  return (
+    <Card className="p-4">
+      <SectionTitle title={title} />
+      {proj?.images?.[keyName] ? (
+        <div className="space-y-3">
+          <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
+          <div className="flex gap-2">
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
+              <Upload className="w-4 h-4" /> Reemplazar
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </label>
+            <Btn outline onClick={() => upImgs({ [keyName]: undefined })}>
+              <Trash2 className="w-4 h-4" /> Quitar
+            </Btn>
+          </div>
+        </div>
+      ) : (
+        <div
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          className={`grid place-items-center h-52 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
+            isDragging
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
+              : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900"
+          }`}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+            id={`image-upload-${keyName}`}
+          />
+          <label
+            htmlFor={`image-upload-${keyName}`}
+            className="text-center text-sm text-slate-500 cursor-pointer w-full h-full flex flex-col items-center justify-center"
+          >
+            <Upload className="w-5 h-5 mx-auto mb-1" />
+            <p className="mb-1">{isDragging ? "Suelta la imagen aquí" : "Arrastra una imagen aquí o haz clic"}</p>
+            <p className="text-xs text-slate-400">para subir {title.toLowerCase()}</p>
+          </label>
+        </div>
+      )}
+    </Card>
+  );
+};
+
 export default function AstroTracker() {
   const [objects, setObjects] = useState(sample);
   const [view, setView] = useState("objects");
@@ -2016,84 +2106,6 @@ export default function AstroTracker() {
         ? "HAOIII"
         : act?.name?.replace(/[^a-zA-Z0-9]/g, "") || "default";
 
-  const ImageCard = ({ title, keyName }: { title: string; keyName: string }) => {
-    const [isDragging, setIsDragging] = useState(false);
-
-    const handleDragOver = (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-    };
-
-    const handleDragLeave = (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-    };
-
-    const handleDrop = async (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith("image/")) {
-        const url = await compressImage(file);
-        upImgs({ [keyName]: url });
-      }
-    };
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      if (!f) return;
-      const url = await compressImage(f);
-      upImgs({ [keyName]: url });
-      e.target.value = "";
-    };
-
-    return (
-      <Card className="p-4">
-        <SectionTitle title={title} />
-        {proj?.images?.[keyName] ? (
-          <div className="space-y-3">
-            <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
-            <div className="flex gap-2">
-              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-                <Upload className="w-4 h-4" /> Reemplazar
-                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-              </label>
-              <Btn outline onClick={() => upImgs({ [keyName]: undefined })}>
-                <Trash2 className="w-4 h-4" /> Quitar
-              </Btn>
-            </div>
-          </div>
-        ) : (
-          <div
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            className={`grid place-items-center h-52 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${
-              isDragging
-                ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
-                : "border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900"
-            }`}
-          >
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-              id={`image-upload-${keyName}`}
-            />
-            <label
-              htmlFor={`image-upload-${keyName}`}
-              className="text-center text-sm text-slate-500 cursor-pointer w-full h-full flex flex-col items-center justify-center"
-            >
-              <Upload className="w-5 h-5 mx-auto mb-1" />
-              <p className="mb-1">{isDragging ? "Suelta la imagen aquí" : "Arrastra una imagen aquí o haz clic"}</p>
-              <p className="text-xs text-slate-400">para subir {title.toLowerCase()}</p>
-            </label>
-          </div>
-        )}
-      </Card>
-    );
-  };
 
   return (
     <div className={theme === "dark" ? "dark" : ""} data-theme={theme}>
@@ -3536,7 +3548,7 @@ export default function AstroTracker() {
               </div>
 
               <SectionTitle title="Imagen final del proyecto" />
-              <ImageCard title="Imagen final" keyName="finalProject" />
+              <ImageCard title="Imagen final" keyName="finalProject" proj={proj} upImgs={upImgs} />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
@@ -3634,8 +3646,8 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} />
-                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} />
+                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} />
+                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} />
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
