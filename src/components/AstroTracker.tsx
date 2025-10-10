@@ -853,6 +853,7 @@ function FSession({
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
   const [filter, setFilter] = useState(init.filter || availableFilters[0] || "RGB");
   const [customFilter, setCustomFilter] = useState("");
+  const [showCustomFilter, setShowCustomFilter] = useState(false);
   const [camera, setCamera] = useState(init.camera || projectEquipment?.camera || "");
   const [telescope, setTelescope] = useState(init.telescope || "");
   const [customTelescope, setCustomTelescope] = useState("");
@@ -910,12 +911,16 @@ function FSession({
         <label className="grid gap-1">
           <Label>Filtro</Label>
           <div className="grid gap-2">
+            {/* Botones de filtros predeterminados */}
             <div className="flex flex-wrap gap-2">
               {predefinedFilters.map((f) => (
                 <button
                   key={f}
                   type="button"
-                  onClick={() => setFilter(f)}
+                  onClick={() => {
+                    setFilter(f);
+                    setShowCustomFilter(false);
+                  }}
                   className={`px-3 py-1.5 rounded-full text-sm transition ${
                     filter === f
                       ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
@@ -926,41 +931,45 @@ function FSession({
                 </button>
               ))}
             </div>
-            <div className="flex gap-2">
-              <select 
-                value={filter && !predefinedFilters.includes(filter) ? filter : ""} 
+            
+            {/* Select para otros filtros */}
+            <select 
+              value={!predefinedFilters.includes(filter) && !showCustomFilter ? filter : ""} 
+              onChange={(e) => {
+                if (e.target.value === "custom") {
+                  setShowCustomFilter(true);
+                  setCustomFilter("");
+                } else if (e.target.value) {
+                  setFilter(e.target.value);
+                  setShowCustomFilter(false);
+                }
+              }} 
+              className={INPUT_CLS}
+            >
+              <option value="">Seleccionar otro filtro...</option>
+              {availableFilters
+                .filter((f) => !predefinedFilters.includes(f))
+                .map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              <option value="custom">+ Añadir filtro personalizado</option>
+            </select>
+            
+            {/* Input para filtro personalizado */}
+            {showCustomFilter && (
+              <input
+                value={customFilter}
                 onChange={(e) => {
-                  if (e.target.value === "custom") {
-                    setCustomFilter("");
-                    setFilter("");
-                  } else if (e.target.value) {
-                    setFilter(e.target.value);
-                  }
-                }} 
+                  setCustomFilter(e.target.value);
+                  setFilter(e.target.value);
+                }}
                 className={INPUT_CLS}
-              >
-                <option value="">Seleccionar otro filtro...</option>
-                {availableFilters
-                  .filter((f) => !predefinedFilters.includes(f))
-                  .map((f) => (
-                    <option key={f} value={f}>
-                      {f}
-                    </option>
-                  ))}
-                <option value="custom">+ Añadir filtro personalizado</option>
-              </select>
-              {filter === "" && (
-                <input
-                  value={customFilter}
-                  onChange={(e) => {
-                    setCustomFilter(e.target.value);
-                    setFilter(e.target.value);
-                  }}
-                  className={INPUT_CLS}
-                  placeholder="Nombre del filtro..."
-                />
-              )}
-            </div>
+                placeholder="Nombre del nuevo filtro..."
+                autoFocus
+              />
+            )}
           </div>
         </label>
         <label className="grid gap-1">
