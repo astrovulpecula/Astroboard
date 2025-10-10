@@ -846,6 +846,8 @@ function FSession({
   telescopes?: { name: string; focalLength: string }[];
 }) {
   const init = initial || {};
+  
+  // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
@@ -855,6 +857,12 @@ function FSession({
   const [telescope, setTelescope] = useState(init.telescope || "");
   const [customTelescope, setCustomTelescope] = useState("");
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
+  const [snrR, setSnrR] = useState(init.snrR ?? "");
+  const [snrG, setSnrG] = useState(init.snrG ?? "");
+  const [snrB, setSnrB] = useState(init.snrB ?? "");
+  const [acceptedLights, setAcceptedLights] = useState(init.acceptedLights ?? "");
+  const [rejectedLights, setRejectedLights] = useState(init.rejectedLights ?? "");
+  const [notes, setNotes] = useState(init.notes ?? "");
 
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
@@ -865,12 +873,6 @@ function FSession({
       setTelescope(projectEquipment.telescope);
     }
   }, []);
-  const [snrR, setSnrR] = useState(init.snrR ?? "");
-  const [snrG, setSnrG] = useState(init.snrG ?? "");
-  const [snrB, setSnrB] = useState(init.snrB ?? "");
-  const [acceptedLights, setAcceptedLights] = useState(init.acceptedLights ?? "");
-  const [rejectedLights, setRejectedLights] = useState(init.rejectedLights ?? "");
-  const [notes, setNotes] = useState(init.notes ?? "");
 
   // Calcular fase lunar basado en la fecha seleccionada
   const moonPhase = useMemo(() => {
