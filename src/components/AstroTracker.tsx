@@ -1467,6 +1467,7 @@ const ImageCard = ({
 };
 
 export default function AstroTracker() {
+  // TODOS los useState deben ir juntos al principio
   const [objects, setObjects] = useState(sample);
   const [view, setView] = useState("objects");
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
@@ -1500,6 +1501,12 @@ export default function AstroTracker() {
   const [newObjectId, setNewObjectId] = useState("");
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [projectSettingsData, setProjectSettingsData] = useState<any>({});
+  const [tabs, setTabs] = useState<TabType[]>([]);
+  const [active, setActive] = useState("");
+  const [show, setShow] = useState(false);
+  const [tabName, setTabName] = useState("");
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingTabName, setEditingTabName] = useState("");
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -1895,8 +1902,6 @@ export default function AstroTracker() {
     return (p.panels?.[selectedPanel] || []).slice().sort((a: any, b: any) => a.date.localeCompare(b.date));
   }, [proj, selectedPanel]);
 
-  const [tabs, setTabs] = useState<TabType[]>([]);
-  const [active, setActive] = useState("");
 
   // Inicializar tabs basándose en los filtros del proyecto
   useEffect(() => {
@@ -1972,10 +1977,6 @@ export default function AstroTracker() {
       }
     });
   }, [proj?.id, JSON.stringify((proj as any)?.filters || [])]);
-  const [show, setShow] = useState(false);
-  const [tabName, setTabName] = useState("");
-  const [editingTabId, setEditingTabId] = useState<string | null>(null);
-  const [editingTabName, setEditingTabName] = useState("");
 
   const createTab = useCallback(() => {
     const name = tabName.trim();
