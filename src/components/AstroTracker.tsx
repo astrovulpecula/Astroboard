@@ -886,7 +886,12 @@ function FSession({
       className="grid gap-3"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit({
+        console.log("📝 Formulario enviado");
+        console.log("📝 Filter seleccionado:", filter);
+        console.log("📝 Lights:", lights);
+        console.log("📝 ExposureSec:", exposureSec);
+        
+        const sessionData = {
           date,
           lights: num(lights),
           exposureSec: num(exposureSec, 1),
@@ -900,7 +905,10 @@ function FSession({
           rejectedLights: rejectedLights !== "" ? parseInt(rejectedLights) : undefined,
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
-        });
+        };
+        
+        console.log("📝 Datos de sesión a enviar:", sessionData);
+        onSubmit(sessionData);
       }}
     >
       <div className="grid sm:grid-cols-2 gap-3">
@@ -1776,8 +1784,19 @@ export default function AstroTracker() {
 
   const addSes = useCallback(
     (base: any) => {
-      if (!obj || !proj) return;
+      console.log("🔍 addSes llamado con:", base);
+      console.log("🔍 obj:", obj);
+      console.log("🔍 proj:", proj);
+      console.log("🔍 selectedPanel:", selectedPanel);
+      
+      if (!obj || !proj) {
+        console.error("❌ No hay obj o proj");
+        return;
+      }
+      
       const s = { ...base, id: uid("ses") };
+      console.log("✅ Nueva sesión creada:", s);
+      
       setObjects(
         objects.map((o: any) =>
           o.id !== obj.id
@@ -1799,6 +1818,7 @@ export default function AstroTracker() {
               },
         ),
       );
+      console.log("✅ setObjects ejecutado");
       setMSes(false);
     },
     [objects, obj, proj, selectedPanel],
