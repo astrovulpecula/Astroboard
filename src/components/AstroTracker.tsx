@@ -850,10 +850,14 @@ function FSession({
   const [lights, setLights] = useState(init.lights ?? 60);
   const [exposureSec, setExposureSec] = useState(init.exposureSec ?? 180);
   const [filter, setFilter] = useState(init.filter || availableFilters[0] || "RGB");
+  const [customFilter, setCustomFilter] = useState("");
   const [camera, setCamera] = useState(init.camera || projectEquipment?.camera || "");
   const [telescope, setTelescope] = useState(init.telescope || "");
   const [customTelescope, setCustomTelescope] = useState("");
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
+
+  // Filtros predeterminados como en FProject
+  const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
   // Si no hay valor inicial, preseleccionar el telescopio del proyecto
   useEffect(() => {
@@ -903,13 +907,59 @@ function FSession({
         </label>
         <label className="grid gap-1">
           <Label>Filtro</Label>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} className={INPUT_CLS}>
-            {availableFilters.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
+          <div className="grid gap-2">
+            <div className="flex flex-wrap gap-2">
+              {predefinedFilters.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition ${
+                    filter === f
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900/40"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <select 
+                value={filter && !predefinedFilters.includes(filter) ? filter : ""} 
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setCustomFilter("");
+                    setFilter("");
+                  } else if (e.target.value) {
+                    setFilter(e.target.value);
+                  }
+                }} 
+                className={INPUT_CLS}
+              >
+                <option value="">Seleccionar otro filtro...</option>
+                {availableFilters
+                  .filter((f) => !predefinedFilters.includes(f))
+                  .map((f) => (
+                    <option key={f} value={f}>
+                      {f}
+                    </option>
+                  ))}
+                <option value="custom">+ Añadir filtro personalizado</option>
+              </select>
+              {filter === "" && (
+                <input
+                  value={customFilter}
+                  onChange={(e) => {
+                    setCustomFilter(e.target.value);
+                    setFilter(e.target.value);
+                  }}
+                  className={INPUT_CLS}
+                  placeholder="Nombre del filtro..."
+                />
+              )}
+            </div>
+          </div>
         </label>
         <label className="grid gap-1">
           <Label>Lights</Label>
