@@ -1507,6 +1507,7 @@ export default function AstroTracker() {
   const [tabName, setTabName] = useState("");
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -2552,8 +2553,6 @@ export default function AstroTracker() {
 
                       {/* Hours by Year */}
                       {(() => {
-                        const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-                        
                         // Get all years with sessions
                         const yearsWithSessions = new Set<number>();
                         objects.forEach((obj) => {
