@@ -108,6 +108,7 @@ const sample = [
         status: "active",
         completedDate: undefined,
         images: {},
+        ratings: {},
         sessions: sampleSessions,
         panels: {
           1: sampleSessions,
@@ -1393,14 +1394,19 @@ const ImageCard = ({
   title, 
   keyName, 
   proj, 
-  upImgs 
+  upImgs,
+  rating,
+  onRatingChange
 }: { 
   title: string; 
   keyName: string;
   proj: any;
   upImgs: (patch: any) => void;
+  rating?: number;
+  onRatingChange?: (rating: number) => void;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [currentRating, setCurrentRating] = useState(rating || 0);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -1430,9 +1436,38 @@ const ImageCard = ({
     e.target.value = "";
   };
 
+  const handleRatingClick = (newRating: number) => {
+    const finalRating = newRating === currentRating ? 0 : newRating;
+    setCurrentRating(finalRating);
+    if (onRatingChange) {
+      onRatingChange(finalRating);
+    }
+  };
+
   return (
     <Card className="p-4">
-      <SectionTitle title={title} />
+      <div className="flex items-center justify-between mb-3">
+        <SectionTitle title={title} />
+        {onRatingChange && (
+          <div className="flex gap-1">
+            {[1, 2, 3].map((star) => (
+              <button
+                key={star}
+                onClick={() => handleRatingClick(star)}
+                className="transition-transform hover:scale-110"
+              >
+                <Star
+                  className={`w-5 h-5 ${
+                    star <= currentRating
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-slate-300 dark:text-slate-600"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       {proj?.images?.[keyName] ? (
         <div className="space-y-3">
           <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
@@ -1708,6 +1743,7 @@ export default function AstroTracker() {
         sessions: [],
         panels,
         images: {},
+        ratings: {},
       };
       setObjects(objects.map((o) => (o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o)));
       setSelectedProjectId(np.id);
@@ -1907,6 +1943,25 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p) =>
                   p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...patch } },
+                ),
+              },
+        ),
+      );
+    },
+    [objects, obj, proj],
+  );
+
+  const updateRating = useCallback(
+    (keyName: string, rating: number) => {
+      if (!obj || !proj) return;
+      setObjects(
+        objects.map((o) =>
+          o.id !== obj.id
+            ? o
+            : {
+                ...o,
+                projects: o.projects.map((p) =>
+                  p.id !== proj.id ? p : { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
                 ),
               },
         ),
@@ -3708,7 +3763,14 @@ export default function AstroTracker() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} />
-                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} />
+                <ImageCard 
+                  title={`Imagen final ${act?.name || tabLabel}`} 
+                  keyName={`final${keyPrefix}`} 
+                  proj={proj} 
+                  upImgs={upImgs}
+                  rating={(proj as any)?.ratings?.[`final${keyPrefix}`] || 0}
+                  onRatingChange={(rating) => updateRating(`final${keyPrefix}`, rating)}
+                />
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
