@@ -3704,9 +3704,6 @@ export default function AstroTracker() {
                     )}
                   </div>
                 ))}
-                <button onClick={() => setShow(true)} className="ml-auto text-sm underline">
-                  + Personalizada
-                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
