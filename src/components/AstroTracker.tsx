@@ -3667,7 +3667,14 @@ export default function AstroTracker() {
               </div>
 
               <SectionTitle title="Imagen final del proyecto" />
-              <ImageCard title="Imagen final" keyName="finalProject" proj={proj} upImgs={upImgs} />
+              <ImageCard 
+                title="Imagen final" 
+                keyName="finalProject" 
+                proj={proj} 
+                upImgs={upImgs}
+                rating={(proj as any)?.ratings?.finalProject || 0}
+                onRatingChange={(rating) => updateRating('finalProject', rating)}
+              />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
@@ -3763,14 +3770,7 @@ export default function AstroTracker() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} />
-                <ImageCard 
-                  title={`Imagen final ${act?.name || tabLabel}`} 
-                  keyName={`final${keyPrefix}`} 
-                  proj={proj} 
-                  upImgs={upImgs}
-                  rating={(proj as any)?.ratings?.[`final${keyPrefix}`] || 0}
-                  onRatingChange={(rating) => updateRating(`final${keyPrefix}`, rating)}
-                />
+                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} />
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
