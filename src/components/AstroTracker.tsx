@@ -1815,12 +1815,17 @@ export default function AstroTracker() {
 
   const addSes = useCallback(
     (base: any) => {
+      console.log("addSes called with:", { base, obj, proj, selectedPanel });
+      
       if (!obj || !proj) {
+        console.error("Cannot add session: obj or proj is null", { obj, proj });
         return;
       }
       
       const s = { ...base, id: uid("ses") };
       const sessionFilter = s.filter || "RGB";
+      
+      console.log("Adding session:", s);
       
       setObjects(
         objects.map((o: any) =>
@@ -1846,6 +1851,7 @@ export default function AstroTracker() {
         ),
       );
       setMSes(false);
+      console.log("Session added successfully");
     },
     [objects, obj, proj, selectedPanel],
   );
@@ -3740,8 +3746,13 @@ export default function AstroTracker() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <button onClick={() => setActive(t.id)} className="flex items-center gap-2">
-                        <span>{t.name}</span>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setActive(t.id)}
+                          className="hover:text-slate-900 dark:hover:text-slate-100"
+                        >
+                          {t.name}
+                        </button>
                         <button
                           className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
                           onClick={(e) => {
@@ -3762,7 +3773,7 @@ export default function AstroTracker() {
                         >
                           <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
                         </button>
-                      </button>
+                      </div>
                     )}
                   </div>
                 ))}
