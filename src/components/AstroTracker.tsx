@@ -1545,7 +1545,8 @@ export default function AstroTracker() {
   const [editNumPanels, setEditNumPanels] = useState(1);
   const [userName, setUserName] = useState<string>("");
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
-  const [newObjectId, setNewObjectId] = useState("");
+  const [editObjectData, setEditObjectData] = useState<any>(null);
+  const [showEditObjectModal, setShowEditObjectModal] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [projectSettingsData, setProjectSettingsData] = useState<any>({});
   const [tabs, setTabs] = useState<TabType[]>([]);
@@ -3096,54 +3097,30 @@ export default function AstroTracker() {
                             onDelete={(id) => upObjImg(id, null)}
                           />
                           <div className="flex-1 min-w-0">
-                            {editingObjectId === o.id ? (
-                              <input
-                                value={newObjectId}
-                                onChange={(e) => setNewObjectId(e.target.value)}
-                                onBlur={() => {
-                                  if (newObjectId.trim() && newObjectId !== o.id) {
-                                    setObjects((prev) =>
-                                      prev.map((obj) => (obj.id === o.id ? { ...obj, id: newObjectId.trim() } : obj)),
-                                    );
-                                  }
-                                  setEditingObjectId(null);
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-semibold">
+                                {o.id}{" "}
+                                <span className="text-slate-500 dark:text-slate-400">
+                                  {o.commonName ? `· ${o.commonName}` : ""}
+                                </span>
+                              </h4>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditObjectData({
+                                    id: o.id,
+                                    commonName: o.commonName || "",
+                                    constellation: o.constellation || "",
+                                    type: o.type || "",
+                                  });
+                                  setShowEditObjectModal(true);
                                 }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    if (newObjectId.trim() && newObjectId !== o.id) {
-                                      setObjects((prev) =>
-                                        prev.map((obj) => (obj.id === o.id ? { ...obj, id: newObjectId.trim() } : obj)),
-                                      );
-                                    }
-                                    setEditingObjectId(null);
-                                  }
-                                  if (e.key === "Escape") setEditingObjectId(null);
-                                }}
-                                className="px-2 py-1 border rounded text-sm w-full"
-                                autoFocus
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-base font-semibold">
-                                  {o.id}{" "}
-                                  <span className="text-slate-500 dark:text-slate-400">
-                                    {o.commonName ? `· ${o.commonName}` : ""}
-                                  </span>
-                                </h4>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingObjectId(o.id);
-                                    setNewObjectId(o.id);
-                                  }}
-                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-                                  title="Editar código"
-                                >
-                                  <Pencil className="w-3 h-3 text-slate-400" />
-                                </button>
-                              </div>
-                            )}
+                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
+                                title="Editar objeto"
+                              >
+                                <Pencil className="w-3 h-3 text-slate-400" />
+                              </button>
+                            </div>
                             <div className="mt-1 flex flex-wrap gap-2 text-sm">
                               {o.type && <Badge>{o.type}</Badge>}
                               {o.constellation && <Badge>{o.constellation}</Badge>}
@@ -4110,11 +4087,35 @@ export default function AstroTracker() {
                     <input
                       type="text"
                       value={camera}
-                      onChange={(e) => {
-                        const newCameras = [...cameras];
-                        newCameras[index] = e.target.value;
-                        setCameras(newCameras);
-                      }}
+              onChange={(e) => {
+                const oldCamera = cameras[index];
+                const newCameras = [...cameras];
+                newCameras[index] = e.target.value;
+                setCameras(newCameras);
+                
+                // Update camera name in all sessions
+                if (oldCamera && oldCamera.trim() !== "" && e.target.value !== oldCamera) {
+                  setObjects((prevObjects) =>
+                    prevObjects.map((obj) => ({
+                      ...obj,
+                      projects: obj.projects.map((proj: any) => ({
+                        ...proj,
+                        sessions: proj.sessions?.map((ses: any) =>
+                          ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses
+                        ) || [],
+                        panels: Object.fromEntries(
+                          Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
+                            key,
+                            sessions.map((ses: any) =>
+                              ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses
+                            ),
+                          ])
+                        ),
+                      })),
+                    }))
+                  );
+                }
+              }}
                       placeholder="Ej: ZWO ASI294MC Pro"
                       className={INPUT_CLS + " flex-1"}
                     />
@@ -4139,11 +4140,35 @@ export default function AstroTracker() {
                       <input
                         type="text"
                         value={telescope.name}
-                        onChange={(e) => {
-                          const newTelescopes = [...telescopes];
-                          newTelescopes[index] = { ...newTelescopes[index], name: e.target.value };
-                          setTelescopes(newTelescopes);
-                        }}
+                      onChange={(e) => {
+                        const oldTelescope = telescopes[index].name;
+                        const newTelescopes = [...telescopes];
+                        newTelescopes[index] = { ...newTelescopes[index], name: e.target.value };
+                        setTelescopes(newTelescopes);
+                        
+                        // Update telescope name in all sessions
+                        if (oldTelescope && oldTelescope.trim() !== "" && e.target.value !== oldTelescope) {
+                          setObjects((prevObjects) =>
+                            prevObjects.map((obj) => ({
+                              ...obj,
+                              projects: obj.projects.map((proj: any) => ({
+                                ...proj,
+                                sessions: proj.sessions?.map((ses: any) =>
+                                  ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses
+                                ) || [],
+                                panels: Object.fromEntries(
+                                  Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
+                                    key,
+                                    sessions.map((ses: any) =>
+                                      ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses
+                                    ),
+                                  ])
+                                ),
+                              })),
+                            }))
+                          );
+                        }
+                      }}
                         placeholder="Ej: Sky-Watcher 80ED"
                         className={INPUT_CLS + " flex-1"}
                       />
@@ -4310,6 +4335,99 @@ export default function AstroTracker() {
                   updateProj(proj.id, updates);
                   setShowProjectSettings(false);
                   setProjectSettingsData({});
+                }}
+              >
+                Guardar cambios
+              </Btn>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Modal editar objeto */}
+        <Modal
+          open={showEditObjectModal}
+          onClose={() => {
+            setShowEditObjectModal(false);
+            setEditObjectData(null);
+          }}
+          title="Editar Objeto"
+        >
+          <div className="grid gap-4">
+            <label className="grid gap-1">
+              <Label>Código oficial</Label>
+              <input
+                value={editObjectData?.id || ""}
+                onChange={(e) => setEditObjectData({ ...editObjectData, id: e.target.value })}
+                className={INPUT_CLS}
+                placeholder="M31"
+              />
+            </label>
+            <label className="grid gap-1">
+              <Label>Nombre común</Label>
+              <input
+                value={editObjectData?.commonName || ""}
+                onChange={(e) => setEditObjectData({ ...editObjectData, commonName: e.target.value })}
+                className={INPUT_CLS}
+                placeholder="Galaxia de Andrómeda"
+              />
+            </label>
+            <label className="grid gap-1">
+              <Label>Constelación</Label>
+              <input
+                value={editObjectData?.constellation || ""}
+                onChange={(e) => setEditObjectData({ ...editObjectData, constellation: e.target.value })}
+                className={INPUT_CLS}
+                placeholder="Andrómeda"
+              />
+            </label>
+            <label className="grid gap-1">
+              <Label>Tipo de objeto</Label>
+              <select
+                value={editObjectData?.type || ""}
+                onChange={(e) => setEditObjectData({ ...editObjectData, type: e.target.value })}
+                className={INPUT_CLS}
+              >
+                <option value="">Seleccionar tipo</option>
+                <option value="Galaxia">Galaxia</option>
+                <option value="Nebulosa">Nebulosa</option>
+                <option value="Cúmulo globular">Cúmulo globular</option>
+                <option value="Cúmulo abierto">Cúmulo abierto</option>
+                <option value="Nebulosa planetaria">Nebulosa planetaria</option>
+                <option value="Remanente de supernova">Remanente de supernova</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </label>
+
+            <div className="flex items-center justify-end gap-2 mt-2">
+              <Btn
+                outline
+                onClick={() => {
+                  setShowEditObjectModal(false);
+                  setEditObjectData(null);
+                }}
+              >
+                Cancelar
+              </Btn>
+              <Btn
+                onClick={() => {
+                  if (!editObjectData) return;
+                  
+                  const originalId = obj?.id;
+                  setObjects((prev) =>
+                    prev.map((o) =>
+                      o.id === originalId
+                        ? {
+                            ...o,
+                            id: editObjectData.id.trim() || o.id,
+                            commonName: editObjectData.commonName.trim(),
+                            constellation: editObjectData.constellation.trim(),
+                            type: editObjectData.type,
+                          }
+                        : o
+                    )
+                  );
+                  setShowEditObjectModal(false);
+                  setEditObjectData(null);
                 }}
               >
                 Guardar cambios
