@@ -3451,7 +3451,7 @@ export default function AstroTracker() {
                               </div>
                             )}
                             <div className="mt-1 text-xs text-slate-500">
-                              Creado: {new Date(p.createdAt).toLocaleDateString()}
+                              Inicio: {new Date(p.startDate).toLocaleDateString()}
                             </div>
                             <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                               {p.sessions.length} sesión(es)
@@ -4239,6 +4239,28 @@ export default function AstroTracker() {
             </div>
 
             <div className="grid gap-2">
+              <label className="text-sm font-medium">Lugar</label>
+              <input
+                type="text"
+                value={projectSettingsData.location !== undefined ? projectSettingsData.location : (proj as any)?.location || ""}
+                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, location: e.target.value })}
+                className={INPUT_CLS}
+                placeholder="Ej: Observatorio de Sierra Nevada"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Coordenadas Google</label>
+              <input
+                type="text"
+                value={projectSettingsData.googleCoords !== undefined ? projectSettingsData.googleCoords : (proj as any)?.googleCoords || ""}
+                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, googleCoords: e.target.value })}
+                className={INPUT_CLS}
+                placeholder="Ej: 37.0644, -3.1706"
+              />
+            </div>
+
+            <div className="grid gap-2">
               <label className="text-sm font-medium">Descripción</label>
               <textarea
                 value={projectSettingsData.description !== undefined ? projectSettingsData.description : proj?.description || ""}
@@ -4418,6 +4440,8 @@ export default function AstroTracker() {
                       projectSettingsData.description !== undefined
                         ? projectSettingsData.description
                         : proj.description,
+                    location: projectSettingsData.location !== undefined ? projectSettingsData.location : (proj as any).location,
+                    googleCoords: projectSettingsData.googleCoords !== undefined ? projectSettingsData.googleCoords : (proj as any).googleCoords,
                     startDate: projectSettingsData.startDate || proj.startDate,
                     status: projectSettingsData.status !== undefined ? projectSettingsData.status : proj.status,
                     projectType: projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any).projectType,
