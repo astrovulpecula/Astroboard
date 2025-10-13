@@ -3508,6 +3508,17 @@ export default function AstroTracker() {
                 </span>
               </div>
 
+              {/* Nueva sección de Configuración */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                <SectionTitle icon={Settings} title="Configuración" />
+                <IconBtn title="Editar configuración del proyecto" onClick={() => {
+                  setProjectSettingsData({});
+                  setShowProjectSettings(true);
+                }}>
+                  <Settings className="w-4 h-4" />
+                </IconBtn>
+              </div>
+
               <div className="hidden md:grid grid-cols-2 lg:grid-cols-7 gap-3 md:gap-4">
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Objeto</div>
@@ -3697,9 +3708,6 @@ export default function AstroTracker() {
                     <Plus className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden sm:inline">Nueva sesión</span>
                     <span className="sm:hidden">Nueva</span>
                   </Btn>
-                  <IconBtn title="Configuración del proyecto" onClick={() => setShowProjectSettings(true)}>
-                    <Settings className="w-4 h-4" />
-                  </IconBtn>
                 </div>
               </div>
 
@@ -4213,7 +4221,10 @@ export default function AstroTracker() {
         {/* Modal de configuración del proyecto */}
         <Modal
           open={showProjectSettings}
-          onClose={() => setShowProjectSettings(false)}
+          onClose={() => {
+            setShowProjectSettings(false);
+            setProjectSettingsData({});
+          }}
           title="Configuración del Proyecto"
         >
           <div className="grid gap-4">
@@ -4221,7 +4232,7 @@ export default function AstroTracker() {
               <label className="text-sm font-medium">Nombre del proyecto</label>
               <input
                 type="text"
-                value={projectSettingsData.name || proj?.name || ""}
+                value={projectSettingsData.name !== undefined ? projectSettingsData.name : proj?.name || ""}
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, name: e.target.value })}
                 className={INPUT_CLS}
               />
@@ -4230,7 +4241,7 @@ export default function AstroTracker() {
             <div className="grid gap-2">
               <label className="text-sm font-medium">Descripción</label>
               <textarea
-                value={projectSettingsData.description || proj?.description || ""}
+                value={projectSettingsData.description !== undefined ? projectSettingsData.description : proj?.description || ""}
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, description: e.target.value })}
                 className={INPUT_CLS}
                 rows={3}
@@ -4238,7 +4249,98 @@ export default function AstroTracker() {
             </div>
 
             <div className="grid gap-2">
-              <label className="text-sm font-medium">Fecha de inicio</label>
+              <label className="text-sm font-medium">Tipo de proyecto</label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="projectType"
+                    value="ONP"
+                    checked={(projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any)?.projectType || "ONP") === "ONP"}
+                    onChange={(e) => setProjectSettingsData({ ...projectSettingsData, projectType: e.target.value })}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">ONP (One-Night Project)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="projectType"
+                    value="SNP"
+                    checked={(projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any)?.projectType || "ONP") === "SNP"}
+                    onChange={(e) => setProjectSettingsData({ ...projectSettingsData, projectType: e.target.value })}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300">SNP (Several-Nights Project)</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <label className="text-sm font-medium">Equipo</label>
+
+              <div className="grid gap-3">
+                <div className="grid gap-1">
+                  <label className="text-sm font-medium">Cámara</label>
+                  <select
+                    value={projectSettingsData.camera !== undefined ? projectSettingsData.camera : (proj as any)?.equipment?.camera || ""}
+                    onChange={(e) => {
+                      setProjectSettingsData({ ...projectSettingsData, camera: e.target.value });
+                    }}
+                    className={INPUT_CLS}
+                  >
+                    <option value="">Seleccionar cámara...</option>
+                    {cameras
+                      .filter((c) => c.trim())
+                      .map((camera) => (
+                        <option key={camera} value={camera}>
+                          {camera}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="grid gap-1">
+                  <label className="text-sm font-medium">Telescopio</label>
+                  <select
+                    value={projectSettingsData.telescope !== undefined ? projectSettingsData.telescope : (proj as any)?.equipment?.telescope || ""}
+                    onChange={(e) => {
+                      setProjectSettingsData({ ...projectSettingsData, telescope: e.target.value });
+                    }}
+                    className={INPUT_CLS}
+                  >
+                    <option value="">Seleccionar telescopio...</option>
+                    {telescopes
+                      .filter((t) => t.name.trim())
+                      .map((telescope) => (
+                        <option key={telescope.name} value={telescope.name}>
+                          {telescope.name} {telescope.focalLength ? `(${telescope.focalLength}mm)` : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Número de Paneles/Teselas</label>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1}
+                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, numPanels: parseInt(e.target.value) || 1 })}
+                className={INPUT_CLS}
+              />
+              {projectSettingsData.numPanels !== undefined && projectSettingsData.numPanels < Object.keys((proj as any)?.panels || {}).length && (
+                <p className="text-xs text-amber-600 dark:text-amber-500">
+                  ⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados.
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <label className="text-sm font-medium">Fecha de inicio del proyecto</label>
               <input
                 type="date"
                 value={
@@ -4286,7 +4388,7 @@ export default function AstroTracker() {
             <div className="grid gap-2">
               <label className="text-sm font-medium">Estado del proyecto</label>
               <select
-                value={projectSettingsData.status || proj?.status || "active"}
+                value={projectSettingsData.status !== undefined ? projectSettingsData.status : proj?.status || "active"}
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, status: e.target.value })}
                 className={INPUT_CLS}
               >
@@ -4311,14 +4413,38 @@ export default function AstroTracker() {
                   if (!proj) return;
 
                   const updates: any = {
-                    name: projectSettingsData.name || proj.name,
+                    name: projectSettingsData.name !== undefined ? projectSettingsData.name : proj.name,
                     description:
                       projectSettingsData.description !== undefined
                         ? projectSettingsData.description
                         : proj.description,
                     startDate: projectSettingsData.startDate || proj.startDate,
-                    status: projectSettingsData.status || proj.status,
+                    status: projectSettingsData.status !== undefined ? projectSettingsData.status : proj.status,
+                    projectType: projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any).projectType,
                   };
+
+                  // Actualizar equipo si se modificó
+                  if (projectSettingsData.camera !== undefined || projectSettingsData.telescope !== undefined) {
+                    updates.equipment = {
+                      camera: projectSettingsData.camera !== undefined ? projectSettingsData.camera : (proj as any)?.equipment?.camera,
+                      telescope: projectSettingsData.telescope !== undefined ? projectSettingsData.telescope : (proj as any)?.equipment?.telescope,
+                    };
+                  }
+
+                  // Actualizar número de paneles si se modificó
+                  if (projectSettingsData.numPanels !== undefined) {
+                    const currentPanels = (proj as any).panels || {};
+                    const currentNumPanels = Object.keys(currentPanels).length;
+                    const newNumPanels = projectSettingsData.numPanels;
+
+                    if (newNumPanels !== currentNumPanels) {
+                      const newPanels: any = {};
+                      for (let i = 1; i <= newNumPanels; i++) {
+                        newPanels[i] = currentPanels[i] || [];
+                      }
+                      updates.panels = newPanels;
+                    }
+                  }
 
                   // Si hay fecha de fin definida, marcar como completado y guardar la fecha
                   if (projectSettingsData.endDate !== undefined) {
