@@ -1458,7 +1458,8 @@ const ImageCard = ({
   proj, 
   upImgs,
   rating,
-  onRatingChange
+  onRatingChange,
+  theme
 }: { 
   title: string; 
   keyName: string;
@@ -1466,6 +1467,7 @@ const ImageCard = ({
   upImgs: (patch: any) => void;
   rating?: number;
   onRatingChange?: (rating: number) => void;
+  theme: string;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentRating, setCurrentRating] = useState(rating || 0);
@@ -1521,7 +1523,9 @@ const ImageCard = ({
                 <Star
                   className={`w-5 h-5 ${
                     star <= currentRating
-                      ? "fill-yellow-400 text-yellow-400"
+                      ? theme === "astro" 
+                        ? "fill-blue-400 text-blue-400" 
+                        : "fill-yellow-400 text-yellow-400"
                       : "text-slate-300 dark:text-slate-600"
                   }`}
                 />
@@ -1624,9 +1628,8 @@ export default function AstroTracker() {
 
   const cycleTheme = () => {
     setTheme((prev) => {
-      if (prev === "light") return "dark";
       if (prev === "dark") return "astro";
-      return "light";
+      return "dark";
     });
   };
 
@@ -3740,6 +3743,7 @@ export default function AstroTracker() {
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
                 onRatingChange={(rating) => updateRating('finalProject', rating)}
+                theme={theme}
               />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
@@ -3837,8 +3841,8 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} />
-                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} />
+                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} theme={theme} />
+                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} theme={theme} />
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
