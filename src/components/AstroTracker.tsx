@@ -593,22 +593,30 @@ function FProject({
   onSubmit,
   cameras = [],
   telescopes = [],
+  locations = [],
 }: {
   onSubmit: (proj: any) => void;
   cameras?: string[];
   telescopes?: { name: string; focalLength: string }[];
+  locations?: { name: string; coords: string }[];
 }) {
   const [name, setName] = useState("Proyecto Trevinca");
   const [description, setDescription] = useState("Campaña principal");
+  const [location, setLocation] = useState(locations[0]?.name || "");
+  const [googleCoords, setGoogleCoords] = useState(locations[0]?.coords || "");
   const [projectType, setProjectType] = useState("ONP");
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
   const [selectedTelescope, setSelectedTelescope] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState(locations[0]?.name || "");
   const [customCamera, setCustomCamera] = useState("");
   const [customTelescope, setCustomTelescope] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
+  const [customGoogleCoords, setCustomGoogleCoords] = useState("");
   const [showCustomCamera, setShowCustomCamera] = useState(false);
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
+  const [showCustomLocation, setShowCustomLocation] = useState(false);
   const [numPanels, setNumPanels] = useState(1);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
@@ -626,9 +634,13 @@ function FProject({
   const handleSubmit = () => {
     const finalCamera = selectedCamera === "Otro" ? customCamera.trim() : selectedCamera;
     const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
+    const finalLocation = selectedLocation === "Otro" ? customLocation.trim() : location;
+    const finalGoogleCoords = selectedLocation === "Otro" ? customGoogleCoords.trim() : googleCoords;
     onSubmit({
       name,
       description,
+      location: finalLocation,
+      googleCoords: finalGoogleCoords,
       projectType,
       filters,
       equipment: {
@@ -657,6 +669,56 @@ function FProject({
           placeholder="Proyecto Trevinca"
         />
       </label>
+
+      <div className="grid gap-3">
+        <Label>Localización</Label>
+        <div className="grid gap-3">
+          <label className="grid gap-1">
+            <Label>Lugar</Label>
+            <select
+              value={selectedLocation}
+              onChange={(e) => {
+                setSelectedLocation(e.target.value);
+                setShowCustomLocation(e.target.value === "Otro");
+                if (e.target.value !== "Otro") {
+                  const selectedLoc = locations.find(l => l.name === e.target.value);
+                  if (selectedLoc) {
+                    setLocation(selectedLoc.name);
+                    setGoogleCoords(selectedLoc.coords);
+                  }
+                }
+              }}
+              className={INPUT_CLS}
+            >
+              <option value="">Seleccionar localización...</option>
+              {locations
+                .filter((l) => l.name.trim())
+                .map((loc) => (
+                  <option key={loc.name} value={loc.name}>
+                    {loc.name}
+                  </option>
+                ))}
+              <option value="Otro">+ Añadir nueva localización</option>
+            </select>
+            {showCustomLocation && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customLocation}
+                  onChange={(e) => setCustomLocation(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva localización..."
+                />
+                <input
+                  value={customGoogleCoords}
+                  onChange={(e) => setCustomGoogleCoords(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Coordenadas Google (Ej: 37.0644, -3.1706)"
+                />
+              </div>
+            )}
+          </label>
+        </div>
+      </div>
 
       <label className="grid gap-1">
         <Label>Descripción</Label>
@@ -1556,6 +1618,9 @@ export default function AstroTracker() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [locations, setLocations] = useState<{ name: string; coords: string }[]>([
+    { name: "", coords: "" },
+  ]);
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -1581,6 +1646,7 @@ export default function AstroTracker() {
         if (settings.cameras) setCameras(settings.cameras);
         if (settings.telescopes) setTelescopes(settings.telescopes);
         if (settings.userName) setUserName(settings.userName);
+        if (settings.locations) setLocations(settings.locations);
       } catch (e) {
         console.error("Error loading settings:", e);
       }
@@ -1620,11 +1686,12 @@ export default function AstroTracker() {
       jsonPath,
       cameras: cameras.filter((c) => c.trim() !== ""),
       telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+      locations: locations.filter((l) => l.name.trim() !== ""),
       userName,
     };
     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
     setShowSettings(false);
-  }, [defaultTheme, jsonPath, cameras, telescopes, userName]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, locations, userName]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -2278,12 +2345,13 @@ export default function AstroTracker() {
                   const exportData = {
                     objects,
                     settings: {
-                      userName,
-                      cameras: cameras.filter((c) => c.trim() !== ""),
-                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-                    },
-                  };
-                  const data = JSON.stringify(exportData, null, 2),
+                  userName,
+                  cameras: cameras.filter((c) => c.trim() !== ""),
+                  telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+                  locations: locations.filter((l) => l.name.trim() !== ""),
+                },
+              };
+              const data = JSON.stringify(exportData, null, 2),
                     blob = new Blob([data], { type: "application/json" }),
                     url = URL.createObjectURL(blob),
                     a = document.createElement("a");
@@ -2391,23 +2459,27 @@ export default function AstroTracker() {
                     
                     // Restaurar settings si existen
                     if (settingsData) {
-                      if (settingsData.userName) setUserName(settingsData.userName);
-                      if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
-                        setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
-                      }
-                      if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
-                        setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
-                      }
-                      
-                      // Guardar settings en localStorage
-                      const settings = {
-                        defaultTheme,
-                        jsonPath,
-                        cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
-                        telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
-                        userName: settingsData.userName || userName,
-                      };
-                      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                    if (settingsData.userName) setUserName(settingsData.userName);
+                    if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
+                      setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
+                    }
+                    if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
+                      setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
+                    }
+                    if (settingsData.locations && Array.isArray(settingsData.locations)) {
+                      setLocations(settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }]);
+                    }
+                    
+                    // Guardar settings en localStorage
+                    const settings = {
+                      defaultTheme,
+                      jsonPath,
+                      cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
+                      telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                      locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
+                      userName: settingsData.userName || userName,
+                    };
+                    localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                     }
 
                     setView("objects");
@@ -3374,9 +3446,9 @@ export default function AstroTracker() {
                     <button className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
                       1-3
                     </button>
-                    <Btn onClick={() => setMProj(true)}>
-                      <Plus className="w-4 h-4" /> Nuevo proyecto
-                    </Btn>
+                  <Btn onClick={() => setMProj(true)}>
+                    <Plus className="w-4 h-4" /> Nuevo proyecto
+                  </Btn>
                   </div>
                 </div>
 
@@ -3911,7 +3983,7 @@ export default function AstroTracker() {
           <FObject onSubmit={addObj} />
         </Modal>
         <Modal open={mProj} onClose={() => setMProj(false)} title="Nuevo proyecto">
-          <FProject onSubmit={addProj} cameras={cameras} telescopes={telescopes} />
+          <FProject onSubmit={addProj} cameras={cameras} telescopes={telescopes} locations={locations} />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
           <FSession
@@ -4204,6 +4276,50 @@ export default function AstroTracker() {
                 ))}
                 <Btn outline onClick={() => setTelescopes([...telescopes, { name: "", focalLength: "" }])}>
                   <Plus className="w-4 h-4" /> Añadir telescopio
+                </Btn>
+              </div>
+
+              {/* Localizaciones */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Localizaciones</span>
+                {locations.map((location, index) => (
+                  <div key={index} className="grid gap-2">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={location.name}
+                        onChange={(e) => {
+                          const newLocations = [...locations];
+                          newLocations[index] = { ...newLocations[index], name: e.target.value };
+                          setLocations(newLocations);
+                        }}
+                        placeholder="Ej: Observatorio de Sierra Nevada"
+                        className={INPUT_CLS + " flex-1"}
+                      />
+                      {locations.length > 1 && (
+                        <IconBtn
+                          title="Eliminar"
+                          onClick={() => setLocations(locations.filter((_, i) => i !== index))}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </IconBtn>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      value={location.coords}
+                      onChange={(e) => {
+                        const newLocations = [...locations];
+                        newLocations[index] = { ...newLocations[index], coords: e.target.value };
+                        setLocations(newLocations);
+                      }}
+                      placeholder="Coordenadas Google (Ej: 37.0644, -3.1706)"
+                      className={INPUT_CLS + " w-full"}
+                    />
+                  </div>
+                ))}
+                <Btn outline onClick={() => setLocations([...locations, { name: "", coords: "" }])}>
+                  <Plus className="w-4 h-4" /> Añadir localización
                 </Btn>
               </div>
             </div>
