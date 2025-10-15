@@ -4859,7 +4859,7 @@ export default function AstroTracker() {
                     // Navegar al proyecto
                     setSelectedObjectId(proj.objectId);
                     setSelectedProjectId(proj.projectId);
-                    setView("sessions");
+                    setView("project");
                     setSelectedDayInfo(null);
                   }}
                   className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition group"
