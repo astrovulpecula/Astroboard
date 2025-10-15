@@ -1625,6 +1625,9 @@ export default function AstroTracker() {
   const [locations, setLocations] = useState<{ name: string; coords: string }[]>([
     { name: "", coords: "" },
   ]);
+  const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
+  const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [selectedDayInfo, setSelectedDayInfo] = useState<{day: number, month: number, year: number, projects: any[]} | null>(null);
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -2920,19 +2923,19 @@ export default function AstroTracker() {
               {/* Calendario mensual y estadísticas de sesiones */}
               {(() => {
                 const now = new Date();
-                const year = now.getFullYear();
-                const month = now.getMonth();
+                const year = calendarYear;
+                const month = calendarMonth;
 
                 // Obtener todas las sesiones de todos los proyectos
                 const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
 
-                // Filtrar sesiones del mes actual
+                // Filtrar sesiones del mes seleccionado
                 const currentMonthSessions = allSessions.filter((s) => {
                   const sessionDate = new Date(s.date);
                   return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
                 });
 
-                // Obtener días únicos con sesiones en el mes actual
+                // Obtener días únicos con sesiones en el mes seleccionado
                 const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
 
                 // Obtener primer y último día del mes
@@ -2956,6 +2959,51 @@ export default function AstroTracker() {
                   "Diciembre",
                 ];
 
+                // Función para manejar clic en día con sesiones
+                const handleDayClick = (day: number) => {
+                  // Obtener proyectos con sesiones en este día
+                  const projectsWithSessions: any[] = [];
+                  
+                  objects.forEach((obj) => {
+                    obj.projects.forEach((proj) => {
+                      const sessionsOnDay = proj.sessions.filter((s: any) => {
+                        const sessionDate = new Date(s.date);
+                        return sessionDate.getFullYear() === year && 
+                               sessionDate.getMonth() === month && 
+                               sessionDate.getDate() === day;
+                      });
+                      
+                      if (sessionsOnDay.length > 0) {
+                        projectsWithSessions.push({
+                          objectId: obj.id,
+                          objectName: obj.commonName || obj.id,
+                          projectId: proj.id,
+                          projectName: proj.name,
+                          sessionsCount: sessionsOnDay.length,
+                        });
+                      }
+                    });
+                  });
+                  
+                  if (projectsWithSessions.length > 0) {
+                    setSelectedDayInfo({ day, month, year, projects: projectsWithSessions });
+                  }
+                };
+
+                // Función para navegar a meses anteriores/siguientes
+                const navigateMonth = (direction: number) => {
+                  const newMonth = month + direction;
+                  if (newMonth < 0) {
+                    setCalendarMonth(11);
+                    setCalendarYear(year - 1);
+                  } else if (newMonth > 11) {
+                    setCalendarMonth(0);
+                    setCalendarYear(year + 1);
+                  } else {
+                    setCalendarMonth(newMonth);
+                  }
+                };
+
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     {/* Highlight de días con sesiones */}
@@ -2974,7 +3022,7 @@ export default function AstroTracker() {
 
                     {/* Calendario desplegable */}
                     <Card className="p-5 md:col-span-2">
-                      <details className="group">
+                      <details className="group" open>
                         <summary className="cursor-pointer list-none">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -2992,6 +3040,31 @@ export default function AstroTracker() {
                           </div>
                         </summary>
                         <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                          {/* Navegación de meses */}
+                          <div className="flex items-center justify-between mb-4">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigateMonth(-1);
+                              }}
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            >
+                              <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <div className="text-sm font-semibold">
+                              {monthNames[month]} {year}
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                navigateMonth(1);
+                              }}
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          </div>
+                          
                           <div className="grid grid-cols-7 gap-2">
                             {/* Cabecera días de la semana */}
                             {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
@@ -3011,16 +3084,17 @@ export default function AstroTracker() {
                             {/* Días del mes */}
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                               const hasSession = daysWithSessions.has(day);
-                              const isToday = day === now.getDate();
+                              const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
 
                               return (
                                 <div
                                   key={day}
+                                  onClick={() => hasSession && handleDayClick(day)}
                                   className={`
                                     aspect-square flex items-center justify-center rounded-lg text-sm
                                     ${
                                       hasSession
-                                        ? "bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40"
+                                        ? "bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40 cursor-pointer hover:bg-green-500/30 transition"
                                         : "text-slate-600 dark:text-slate-400"
                                     }
                                     ${isToday && !hasSession ? "border-2 border-blue-500/40" : ""}
@@ -4766,6 +4840,49 @@ export default function AstroTracker() {
             </Btn>
           </div>
         </Modal>
+
+        {/* Modal para mostrar sesiones del día seleccionado */}
+        {selectedDayInfo && (
+          <Modal
+            open={!!selectedDayInfo}
+            onClose={() => setSelectedDayInfo(null)}
+            title={`Sesiones del ${selectedDayInfo.day} de ${["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][selectedDayInfo.month]} ${selectedDayInfo.year}`}
+          >
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                {selectedDayInfo.projects.length} proyecto{selectedDayInfo.projects.length !== 1 ? 's' : ''} con sesiones en este día:
+              </p>
+              {selectedDayInfo.projects.map((proj, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => {
+                    // Navegar al proyecto
+                    setSelectedObjectId(proj.objectId);
+                    setSelectedProjectId(proj.projectId);
+                    setView("sessions");
+                    setSelectedDayInfo(null);
+                  }}
+                  className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                        {proj.objectName}
+                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {proj.projectName}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
+                        {proj.sessionsCount} sesión{proj.sessionsCount !== 1 ? 'es' : ''}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Modal>
+        )}
       </div>
     </div>
   );
