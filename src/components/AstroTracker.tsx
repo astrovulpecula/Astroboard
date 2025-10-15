@@ -3021,8 +3021,8 @@ export default function AstroTracker() {
                     </Card>
 
                     {/* Calendario desplegable */}
-                    <Card className="p-5 md:col-span-2">
-                      <details className="group" open>
+                    <Card className="p-5">
+                      <details className="group">
                         <summary className="cursor-pointer list-none">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
