@@ -18,6 +18,7 @@ import {
   Settings,
   User,
   Flame,
+  X,
 } from "lucide-react";
 import {
   LineChart,
@@ -1459,7 +1460,8 @@ const ImageCard = ({
   upImgs,
   rating,
   onRatingChange,
-  theme
+  theme,
+  onImageClick
 }: { 
   title: string; 
   keyName: string;
@@ -1468,6 +1470,7 @@ const ImageCard = ({
   rating?: number;
   onRatingChange?: (rating: number) => void;
   theme: string;
+  onImageClick?: (src: string) => void;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentRating, setCurrentRating] = useState(rating || 0);
@@ -1536,7 +1539,16 @@ const ImageCard = ({
       </div>
       {proj?.images?.[keyName] ? (
         <div className="space-y-3">
-          <img src={proj.images[keyName]} alt={title} className="w-full rounded-xl border" />
+          <img 
+            src={proj.images[keyName]} 
+            alt={title} 
+            className="w-full rounded-xl border cursor-pointer hover:opacity-90 transition-opacity" 
+            onClick={() => {
+              if (onImageClick) {
+                onImageClick(proj.images[keyName]);
+              }
+            }}
+          />
           <div className="flex gap-2">
             <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
               <Upload className="w-4 h-4" /> Reemplazar
@@ -1625,6 +1637,8 @@ export default function AstroTracker() {
   const [locations, setLocations] = useState<{ name: string; coords: string }[]>([
     { name: "", coords: "" },
   ]);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [imageModalSrc, setImageModalSrc] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [selectedDayInfo, setSelectedDayInfo] = useState<{day: number, month: number, year: number, projects: any[]} | null>(null);
@@ -3900,6 +3914,10 @@ export default function AstroTracker() {
                 rating={(proj as any)?.ratings?.finalProject || 0}
                 onRatingChange={(rating) => updateRating('finalProject', rating)}
                 theme={theme}
+                onImageClick={(src) => {
+                  setImageModalSrc(src);
+                  setImageModalOpen(true);
+                }}
               />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
@@ -3997,8 +4015,28 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <ImageCard title={`Imagen inicial ${act?.name || tabLabel}`} keyName={`initial${keyPrefix}`} proj={proj} upImgs={upImgs} theme={theme} />
-                <ImageCard title={`Imagen final ${act?.name || tabLabel}`} keyName={`final${keyPrefix}`} proj={proj} upImgs={upImgs} theme={theme} />
+                <ImageCard 
+                  title={`Imagen inicial ${act?.name || tabLabel}`} 
+                  keyName={`initial${keyPrefix}`} 
+                  proj={proj} 
+                  upImgs={upImgs} 
+                  theme={theme}
+                  onImageClick={(src) => {
+                    setImageModalSrc(src);
+                    setImageModalOpen(true);
+                  }}
+                />
+                <ImageCard 
+                  title={`Imagen final ${act?.name || tabLabel}`} 
+                  keyName={`final${keyPrefix}`} 
+                  proj={proj} 
+                  upImgs={upImgs} 
+                  theme={theme}
+                  onImageClick={(src) => {
+                    setImageModalSrc(src);
+                    setImageModalOpen(true);
+                  }}
+                />
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
@@ -4964,6 +5002,28 @@ export default function AstroTracker() {
               ))}
             </div>
           </Modal>
+        )}
+
+        {/* Modal para ver imágenes ampliadas */}
+        {imageModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setImageModalOpen(false)}
+          >
+            <button
+              onClick={() => setImageModalOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+              title="Cerrar"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+            <img
+              src={imageModalSrc}
+              alt="Vista ampliada"
+              className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         )}
       </div>
     </div>
