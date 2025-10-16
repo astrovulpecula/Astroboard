@@ -3677,24 +3677,20 @@ export default function AstroTracker() {
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Lights acumulados</div>
                   <div className="text-xl font-semibold">
-                    {ss.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
+                    {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
                   </div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Exposición total</div>
-                  <div className="text-xl font-semibold">{hh(totalExposureSec(ss))}</div>
+                  <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
                 </Card>
                 {(() => {
-                  // Calcular horas totales por cada filtro
+                  // Calcular horas totales por cada filtro en TODO el proyecto
                   const filterHours: Record<string, number> = {};
-                  tabs.forEach((tab) => {
-                    const tabSessions = filt(tab);
-                    const totalSeconds = tabSessions.reduce(
-                      (acc: number, s: any) => acc + (s.lights || 0) * (s.exposureSec || 0),
-                      0,
-                    );
-                    if (totalSeconds > 0) {
-                      filterHours[tab.name] = totalSeconds;
+                  proj.sessions.forEach((s: any) => {
+                    if (s.filter) {
+                      const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                      filterHours[s.filter] = (filterHours[s.filter] || 0) + seconds;
                     }
                   });
 
@@ -3710,8 +3706,8 @@ export default function AstroTracker() {
                 })()}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
-                  <div className="text-xl font-semibold">{new Set(ss.map((s: any) => s.date)).size} noche(s)</div>
-                  <div className="text-xs text-slate-500">Última: {ss.length ? ss[ss.length - 1].date : "–"}</div>
+                  <div className="text-xl font-semibold">{new Set(proj.sessions.map((s: any) => s.date)).size} noche(s)</div>
+                  <div className="text-xs text-slate-500">Última: {proj.sessions.length ? proj.sessions[proj.sessions.length - 1].date : "–"}</div>
                 </Card>
                 {(() => {
                   // Calcular tiempo activo del proyecto
@@ -3763,9 +3759,9 @@ export default function AstroTracker() {
                   );
                 })()}
                 {(() => {
-                  // Telescopios utilizados
+                  // Telescopios utilizados en TODO el proyecto
                   const telescopeCounts: Record<string, number> = {};
-                  ss.forEach((s: any) => {
+                  proj.sessions.forEach((s: any) => {
                     if (s.telescope) {
                       const seconds = (s.lights || 0) * (s.exposureSec || 0);
                       telescopeCounts[s.telescope] = (telescopeCounts[s.telescope] || 0) + seconds;
@@ -3808,6 +3804,55 @@ export default function AstroTracker() {
                   })()}
                 </Card>
               </div>
+
+              {/* Highlights de Filtro/Panel */}
+              {(() => {
+                const panels = Object.keys((proj as any).panels || {});
+                if (panels.length <= 1) return null;
+
+                // Calcular horas por filtro y panel
+                const filterPanelHours: Record<string, Record<string, number>> = {};
+                
+                proj.sessions.forEach((s: any) => {
+                  if (s.filter && s.panel) {
+                    if (!filterPanelHours[s.filter]) {
+                      filterPanelHours[s.filter] = {};
+                    }
+                    const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                    filterPanelHours[s.filter][s.panel] = (filterPanelHours[s.filter][s.panel] || 0) + seconds;
+                  }
+                });
+
+                const filterEntries = Object.entries(filterPanelHours);
+                if (filterEntries.length === 0) return null;
+
+                return (
+                  <>
+                    <div className="mt-6">
+                      <SectionTitle title="Filtros por Panel" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                      {filterEntries.map(([filterName, panelData]) => (
+                        <Card key={filterName} className="p-4">
+                          <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                            {filterName}
+                          </div>
+                          <div className="space-y-2">
+                            {Object.entries(panelData)
+                              .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                              .map(([panel, seconds]) => (
+                                <div key={panel} className="flex items-center justify-between">
+                                  <span className="text-sm text-slate-500">Panel {panel}</span>
+                                  <span className="text-sm font-medium">{hh(seconds)}</span>
+                                </div>
+                              ))}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
 
               <SectionTitle title="Imagen final del proyecto" />
               <ImageCard 
