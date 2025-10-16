@@ -3704,6 +3704,43 @@ export default function AstroTracker() {
                     </Card>
                   ));
                 })()}
+                {(() => {
+                  // Mostrar highlights de filtros por panel solo si hay más de un panel
+                  const numPanels = Object.keys((proj as any).panels || {}).length;
+                  if (numPanels <= 1) return null;
+
+                  // Calcular horas por filtro y panel
+                  const filterPanelHours: Record<string, Record<string, number>> = {};
+                  
+                  Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
+                    sessions.forEach((s: any) => {
+                      if (s.filter) {
+                        if (!filterPanelHours[s.filter]) {
+                          filterPanelHours[s.filter] = {};
+                        }
+                        const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                        filterPanelHours[s.filter][panelNum] = (filterPanelHours[s.filter][panelNum] || 0) + seconds;
+                      }
+                    });
+                  });
+
+                  // Crear highlights para cada filtro
+                  return Object.entries(filterPanelHours).map(([filterName, panelData]) => (
+                    <Card key={`panel-${filterName}`} className="p-4 col-span-2">
+                      <div className="text-sm text-slate-500 mb-2">Paneles {filterName}</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(panelData)
+                          .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                          .map(([panelNum, seconds]) => (
+                            <div key={panelNum} className="flex items-center justify-between">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
+                              <span className="text-sm font-semibold">{hh(seconds)}</span>
+                            </div>
+                          ))}
+                      </div>
+                    </Card>
+                  ));
+                })()}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
                   <div className="text-xl font-semibold">{new Set(proj.sessions.map((s: any) => s.date)).size} noche(s)</div>
