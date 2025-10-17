@@ -151,9 +151,17 @@ type ImageItem = {
   src: string;
   title: string;
   type?: string;
+  objectId?: string;
+  projectId?: string;
 };
 
-const ImageCarousel = ({ images }: { images: ImageItem[] }) => {
+const ImageCarousel = ({ 
+  images, 
+  onImageClick 
+}: { 
+  images: ImageItem[];
+  onImageClick?: (objectId: string, projectId: string) => void;
+}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -164,13 +172,25 @@ const ImageCarousel = ({ images }: { images: ImageItem[] }) => {
     return () => clearInterval(interval);
   }, [images.length]);
 
+  const handleImageClick = () => {
+    const currentImage = images[currentImageIndex];
+    if (onImageClick && currentImage.objectId && currentImage.projectId) {
+      onImageClick(currentImage.objectId, currentImage.projectId);
+    }
+  };
+
   return (
     <Card className="p-4 mb-4">
       <div className="relative h-48 overflow-hidden rounded-xl">
         <img
           src={images[currentImageIndex].src}
           alt={images[currentImageIndex].title}
-          className="w-full h-full object-cover transition-opacity duration-500"
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            onImageClick && images[currentImageIndex].objectId && images[currentImageIndex].projectId
+              ? "cursor-pointer hover:opacity-90"
+              : ""
+          }`}
+          onClick={handleImageClick}
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
           <div className="text-white text-sm font-medium">{images[currentImageIndex].title}</div>
@@ -1759,16 +1779,23 @@ export default function AstroTracker() {
   const dashboardCarouselImages = useMemo(() => {
     const allImages: ImageItem[] = objects
       .flatMap((obj) => [
-        obj.image ? { src: obj.image, title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}` } : null,
+        obj.image ? { 
+          src: obj.image, 
+          title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`,
+          objectId: obj.id,
+          projectId: obj.projects[0]?.id
+        } : null,
         ...obj.projects.flatMap((proj) =>
           Object.entries(proj.images || {}).map(([key, src]) => ({
             src: src as string,
             title: `${obj.id} - ${proj.name}`,
             type: key,
+            objectId: obj.id,
+            projectId: proj.id,
           })),
         ),
       ])
-      .filter((item): item is ImageItem => item !== null);
+      .filter((item) => item !== null && item.src) as ImageItem[];
 
     if (allImages.length === 0) return [];
     if (allImages.length <= 6) return allImages;
@@ -2576,7 +2603,16 @@ export default function AstroTracker() {
               })()}
 
               {/* Image Carousel */}
-              {dashboardCarouselImages.length > 0 && <ImageCarousel images={dashboardCarouselImages} />}
+              {dashboardCarouselImages.length > 0 && (
+                <ImageCarousel 
+                  images={dashboardCarouselImages} 
+                  onImageClick={(objectId, projectId) => {
+                    setSelectedObjectId(objectId);
+                    setSelectedProjectId(projectId);
+                    setView("sessions");
+                  }}
+                />
+              )}
 
               {/* Global Metrics */}
               {(() => {
@@ -3336,6 +3372,8 @@ export default function AstroTracker() {
                     ? {
                         src: obj.image || lastProjectFinalImage,
                         title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`,
+                        objectId: obj.id,
+                        projectId: obj.projects[0]?.id,
                       }
                     : null,
                   ...obj.projects.flatMap((proj) =>
@@ -3343,13 +3381,24 @@ export default function AstroTracker() {
                       src: src as string,
                       title: `${obj.id} - ${proj.name}`,
                       type: key,
+                      objectId: obj.id,
+                      projectId: proj.id,
                     })),
                   ),
-                ].filter((item): item is ImageItem => item !== null);
+                ].filter((item) => item !== null && item.src) as ImageItem[];
 
                 if (objectImages.length === 0) return null;
 
-                return <ImageCarousel images={objectImages} />;
+                return (
+                  <ImageCarousel 
+                    images={objectImages}
+                    onImageClick={(objectId, projectId) => {
+                      setSelectedObjectId(objectId);
+                      setSelectedProjectId(projectId);
+                      setView("sessions");
+                    }}
+                  />
+                );
               })()}
 
               {/* Highlights/Statistics */}
