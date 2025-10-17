@@ -2609,7 +2609,7 @@ export default function AstroTracker() {
                   onImageClick={(objectId, projectId) => {
                     setSelectedObjectId(objectId);
                     setSelectedProjectId(projectId);
-                    setView("sessions");
+                    setView("project");
                   }}
                 />
               )}
@@ -3395,7 +3395,7 @@ export default function AstroTracker() {
                     onImageClick={(objectId, projectId) => {
                       setSelectedObjectId(objectId);
                       setSelectedProjectId(projectId);
-                      setView("sessions");
+                      setView("project");
                     }}
                   />
                 );
