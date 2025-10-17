@@ -3288,7 +3288,7 @@ export default function AstroTracker() {
                           setView("projects");
                         }}
                       >
-                        <div className="flex items-start gap-3">
+                          <div className="flex items-start gap-3">
                           <ObjectThumbnail
                             objectId={o.id}
                             displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
@@ -3303,22 +3303,6 @@ export default function AstroTracker() {
                                   {o.commonName ? `· ${o.commonName}` : ""}
                                 </span>
                               </h4>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditObjectData({
-                                    id: o.id,
-                                    commonName: o.commonName || "",
-                                    constellation: o.constellation || "",
-                                    type: o.type || "",
-                                  });
-                                  setShowEditObjectModal(true);
-                                }}
-                                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded"
-                                title="Editar objeto"
-                              >
-                                <Pencil className="w-3 h-3 text-slate-400" />
-                              </button>
                             </div>
                             <div className="mt-1 flex flex-wrap gap-2 text-sm">
                               {o.type && <Badge>{o.type}</Badge>}
@@ -3328,8 +3312,26 @@ export default function AstroTracker() {
                               <Badge>{hh(seconds)} totales</Badge>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <IconBtn title="Eliminar" onClick={() => delObj(o.id)}>
+                          <div className="flex flex-col gap-2">
+                            <IconBtn 
+                              title="Editar objeto" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditObjectData({
+                                  id: o.id,
+                                  commonName: o.commonName || "",
+                                  constellation: o.constellation || "",
+                                  type: o.type || "",
+                                });
+                                setShowEditObjectModal(true);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </IconBtn>
+                            <IconBtn title="Eliminar" onClick={(e) => {
+                              e.stopPropagation();
+                              delObj(o.id);
+                            }}>
                               <Trash2 className="w-4 h-4" />
                             </IconBtn>
                           </div>
@@ -4925,7 +4927,7 @@ export default function AstroTracker() {
                 onClick={() => {
                   if (!editObjectData) return;
                   
-                  const originalId = obj?.id;
+                  const originalId = editObjectData.id;
                   setObjects((prev) =>
                     prev.map((o) =>
                       o.id === originalId
