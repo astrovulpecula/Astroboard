@@ -639,6 +639,7 @@ function FProject({
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
   const [showCustomLocation, setShowCustomLocation] = useState(false);
   const [numPanels, setNumPanels] = useState(1);
+  const [goalHours, setGoalHours] = useState<number | "">("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
 
   const handleAddFilter = () => {
@@ -669,6 +670,7 @@ function FProject({
         telescope: finalTelescope,
       },
       numPanels,
+      goalHours: goalHours === "" ? undefined : goalHours,
       startDate: new Date(startDate).toISOString(),
     });
   };
@@ -898,6 +900,24 @@ function FProject({
           onChange={(e) => setNumPanels(parseInt(e.target.value) || 1)}
           className={INPUT_CLS}
         />
+      </label>
+
+      <label className="grid gap-1">
+        <Label>{numPanels > 1 ? "Objetivo horas (por panel)" : "Objetivo horas"}</Label>
+        <input
+          type="number"
+          min={0}
+          step={0.5}
+          value={goalHours}
+          onChange={(e) => setGoalHours(e.target.value === "" ? "" : parseFloat(e.target.value))}
+          className={INPUT_CLS}
+          placeholder="Ej: 10"
+        />
+        <p className="text-xs text-slate-500">
+          {numPanels > 1 
+            ? "Horas objetivo por cada panel (opcional)" 
+            : "Horas totales objetivo para el proyecto (opcional)"}
+        </p>
       </label>
 
       <label className="grid gap-1">
@@ -3750,6 +3770,79 @@ export default function AstroTracker() {
                   <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
                 </Card>
                 {(() => {
+                  // Highlight de objetivo de horas
+                  const goalHours = (proj as any).goalHours;
+                  if (!goalHours) return null;
+
+                  const numPanels = Object.keys((proj as any).panels || {}).length;
+                  const isMultiPanel = numPanels > 1;
+
+                  if (isMultiPanel) {
+                    // Objetivo por panel
+                    const panelProgress: Record<string, { current: number; percentage: number }> = {};
+                    Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
+                      const totalSeconds = sessions.reduce((sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0), 0);
+                      const currentHours = totalSeconds / 3600;
+                      const percentage = Math.min((currentHours / goalHours) * 100, 100);
+                      panelProgress[panelNum] = { current: currentHours, percentage };
+                    });
+
+                    return (
+                      <Card className="p-4 col-span-2">
+                        <div className="text-sm text-slate-500 mb-2">Progreso por panel</div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {Object.entries(panelProgress)
+                            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                            .map(([panelNum, data]) => (
+                              <div key={panelNum} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
+                                  <span className="font-semibold">{data.percentage.toFixed(0)}%</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div 
+                                      className="h-full bg-green-500 transition-all duration-300"
+                                      style={{ width: `${data.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {data.current.toFixed(1)}h / {goalHours}h
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </Card>
+                    );
+                  } else {
+                    // Objetivo total del proyecto
+                    const totalSeconds = totalExposureSec(proj.sessions);
+                    const currentHours = totalSeconds / 3600;
+                    const percentage = Math.min((currentHours / goalHours) * 100, 100);
+
+                    return (
+                      <Card className="p-4 col-span-2">
+                        <div className="text-sm text-slate-500 mb-2">Progreso del objetivo</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-semibold">{percentage.toFixed(0)}%</span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              {currentHours.toFixed(1)}h / {goalHours}h
+                            </span>
+                          </div>
+                          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-green-500 transition-all duration-300"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  }
+                })()}
+                {(() => {
                   // Calcular horas totales por cada filtro en TODO el proyecto
                   const filterHours: Record<string, number> = {};
                   proj.sessions.forEach((s: any) => {
@@ -4727,6 +4820,28 @@ export default function AstroTracker() {
             </div>
 
             <div className="grid gap-2">
+              <label className="text-sm font-medium">
+                {(projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1) > 1 
+                  ? "Objetivo horas (por panel)" 
+                  : "Objetivo horas"}
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={projectSettingsData.goalHours !== undefined ? projectSettingsData.goalHours : (proj as any)?.goalHours || ""}
+                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, goalHours: e.target.value === "" ? "" : parseFloat(e.target.value) })}
+                className={INPUT_CLS}
+                placeholder="Ej: 10"
+              />
+              <p className="text-xs text-slate-500">
+                {(projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1) > 1 
+                  ? "Horas objetivo por cada panel (opcional)" 
+                  : "Horas totales objetivo para el proyecto (opcional)"}
+              </p>
+            </div>
+
+            <div className="grid gap-2">
               <label className="text-sm font-medium">Fecha de inicio del proyecto</label>
               <input
                 type="date"
@@ -4810,6 +4925,7 @@ export default function AstroTracker() {
                     startDate: projectSettingsData.startDate || proj.startDate,
                     status: projectSettingsData.status !== undefined ? projectSettingsData.status : proj.status,
                     projectType: projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any).projectType,
+                    goalHours: projectSettingsData.goalHours !== undefined ? (projectSettingsData.goalHours === "" ? undefined : projectSettingsData.goalHours) : (proj as any).goalHours,
                   };
 
                   // Actualizar equipo si se modificó
