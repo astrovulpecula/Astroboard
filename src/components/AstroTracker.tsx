@@ -19,6 +19,8 @@ import {
   User,
   Flame,
   X,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import {
   LineChart,
@@ -1682,6 +1684,7 @@ export default function AstroTracker() {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [selectedDayInfo, setSelectedDayInfo] = useState<{day: number, month: number, year: number, projects: any[]} | null>(null);
+  const [panelSectionExpanded, setPanelSectionExpanded] = useState(false);
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -4051,16 +4054,27 @@ export default function AstroTracker() {
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
-                <button
-                  onClick={() => {
-                    setEditNumPanels(Object.keys((proj as any).panels || {}).length);
-                    setShowEditPanels(true);
-                  }}
-                  className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
-                  title="Editar cantidad de paneles"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {Object.keys((proj as any).panels || {}).length > 1 && (
+                    <button
+                      onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
+                      className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+                      title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
+                    >
+                      {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditNumPanels(Object.keys((proj as any).panels || {}).length);
+                      setShowEditPanels(true);
+                    }}
+                    className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+                    title="Editar cantidad de paneles"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <Card className="p-3 md:p-4 mb-4">
                 <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pb-2">
@@ -4079,6 +4093,28 @@ export default function AstroTracker() {
                   ))}
                 </div>
               </Card>
+
+              {Object.keys((proj as any).panels || {}).length > 1 && panelSectionExpanded && (
+                <div className="mb-4 space-y-3">
+                  {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
+                    <div key={panelNum}>
+                      <ImageCard 
+                        title={`Panel ${panelNum}`}
+                        keyName={`panel${panelNum}`}
+                        proj={proj} 
+                        upImgs={upImgs}
+                        rating={(proj as any)?.ratings?.[`panel${panelNum}`] || 0}
+                        onRatingChange={(rating) => updateRating(`panel${panelNum}`, rating)}
+                        theme={theme}
+                        onImageClick={(src) => {
+                          setImageModalSrc(src);
+                          setImageModalOpen(true);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <SectionTitle icon={Database} title="Sesiones" />
 
