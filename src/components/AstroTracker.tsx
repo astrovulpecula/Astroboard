@@ -4055,15 +4055,20 @@ export default function AstroTracker() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
                 <div className="flex items-center gap-2">
-                  {Object.keys((proj as any).panels || {}).length > 1 && (
-                    <button
-                      onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
-                      className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
-                      title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
-                    >
-                      {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  )}
+                  {(() => {
+                    const numPanels = Object.keys((proj as any).panels || {}).length;
+                    console.log('Number of panels:', numPanels);
+                    console.log('Should show expand button:', numPanels > 1);
+                    return numPanels > 1 ? (
+                      <button
+                        onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
+                        className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+                        title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
+                      >
+                        {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </button>
+                    ) : null;
+                  })()}
                   <button
                     onClick={() => {
                       setEditNumPanels(Object.keys((proj as any).panels || {}).length);
