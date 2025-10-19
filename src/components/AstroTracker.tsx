@@ -1690,6 +1690,9 @@ export default function AstroTracker() {
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [selectedDayInfo, setSelectedDayInfo] = useState<{day: number, month: number, year: number, projects: any[]} | null>(null);
   const [panelSectionExpanded, setPanelSectionExpanded] = useState(false);
+  const [sortProjects, setSortProjects] = useState("recent");
+  const [projectSearchText, setProjectSearchText] = useState("");
+  const [showProjectFilters, setShowProjectFilters] = useState(false);
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -3644,10 +3647,26 @@ export default function AstroTracker() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Proyectos</h2>
                   <div className="flex items-center gap-3">
-                    <button className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
+                    <button 
+                      onClick={() => setSortProjects("alpha")}
+                      className={`px-4 py-2 rounded-lg border transition-colors font-medium ${
+                        sortProjects === "alpha"
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                      }`}
+                      title="Ordenar alfabéticamente (A-Z)"
+                    >
                       A-Z
                     </button>
-                    <button className="px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
+                    <button 
+                      onClick={() => setSortProjects("recent")}
+                      className={`px-4 py-2 rounded-lg border transition-colors font-medium ${
+                        sortProjects === "recent"
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 border-slate-900 dark:border-slate-100"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+                      }`}
+                      title="Ordenar por más recientes"
+                    >
                       1-3
                     </button>
                   <Btn onClick={() => setMProj(true)}>
@@ -3656,23 +3675,73 @@ export default function AstroTracker() {
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Buscar por código, nombre, constelación o tipo..."
-                    className="flex-1 px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button className="px-6 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium">
-                    Filtros avanzados
-                  </button>
+                <div className="flex gap-3 mb-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Buscar por nombre del proyecto..."
+                      value={projectSearchText}
+                      onChange={(e) => setProjectSearchText(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    {projectSearchText && (
+                      <button
+                        onClick={() => setProjectSearchText("")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Btn outline onClick={() => setShowProjectFilters(!showProjectFilters)}>
+                    {showProjectFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                  </Btn>
                 </div>
+
+                {showProjectFilters && (
+                  <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                    <label className="grid gap-1">
+                      <Label>Filtrar por estado</Label>
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className={INPUT_CLS}
+                      >
+                        <option value="all">Todos</option>
+                        <option value="active">Activos</option>
+                        <option value="paused">Pausados</option>
+                        <option value="completed">Terminados</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                {obj.projects
-                  .slice()
-                  .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                  .map((p: any) => {
+                {(() => {
+                  let filteredProjects = obj.projects.slice();
+                  
+                  // Apply search filter
+                  if (projectSearchText.trim()) {
+                    const search = projectSearchText.toLowerCase();
+                    filteredProjects = filteredProjects.filter((p: any) =>
+                      p.name.toLowerCase().includes(search)
+                    );
+                  }
+                  
+                  // Apply status filter
+                  if (filterStatus !== "all") {
+                    filteredProjects = filteredProjects.filter((p: any) => p.status === filterStatus);
+                  }
+                  
+                  // Apply sorting
+                  if (sortProjects === "alpha") {
+                    filteredProjects.sort((a: any, b: any) => a.name.localeCompare(b.name));
+                  } else {
+                    filteredProjects.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                  }
+                  
+                  return filteredProjects.map((p: any) => {
                     const statusColors = {
                       active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
                       paused: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
@@ -3763,7 +3832,8 @@ export default function AstroTracker() {
                         </div>
                       </Card>
                     );
-                  })}
+                  });
+                })()}
               </div>
             </div>
           )}
