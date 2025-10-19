@@ -57,6 +57,11 @@ const toISODate = (d: string) => {
 };
 const hh = (s: number) =>
   `${String(Math.floor(s / 3600)).padStart(2, "0")}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
+const formatHoursToHHMM = (hours: number) => {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
 const mean = (s: any) => {
   if (!s) return null;
   const a = [s.snrR, s.snrG, s.snrB].filter((v: any) => Number.isFinite(v));
@@ -2618,7 +2623,7 @@ export default function AstroTracker() {
                       </p>
                       <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
                         Sale a las {formatTime(moonTimes.moonrise)} • Se pone a las {formatTime(moonTimes.moonset)} •{" "}
-                        {moonTimes.darkHours.toFixed(1)}h de oscuridad total
+                        {formatHoursToHHMM(moonTimes.darkHours)} de oscuridad total
                       </p>
                     </div>
                   </div>
