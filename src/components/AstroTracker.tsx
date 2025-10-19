@@ -2687,13 +2687,45 @@ export default function AstroTracker() {
                 let maxStreak = 0;
                 
                 if (allDates.length > 0) {
-                  // First pass: calculate max streak
+                  // Calculate current streak from the end (counting backwards)
+                  currentStreak = 1;
+                  for (let i = allDates.length - 2; i >= 0; i--) {
+                    const prevDate = new Date(allDates[i]);
+                    const currDate = new Date(allDates[i + 1]);
+                    prevDate.setHours(0, 0, 0, 0);
+                    currDate.setHours(0, 0, 0, 0);
+                    
+                    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 1) {
+                      currentStreak++;
+                    } else {
+                      break;
+                    }
+                  }
+                  
+                  // Check if streak is still active (last session was today or yesterday)
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  
+                  const lastDate = new Date(allDates[allDates.length - 1]);
+                  lastDate.setHours(0, 0, 0, 0);
+                  
+                  const daysSinceLastSession = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  // If last session was more than 1 day ago, the streak is broken
+                  const isStreakActive = daysSinceLastSession <= 1;
+                  
+                  // Calculate max streak (scan through all dates)
                   let tempStreak = 1;
-                  maxStreak = 1;
+                  maxStreak = currentStreak; // Start with current streak
                   
                   for (let i = 1; i < allDates.length; i++) {
                     const prevDate = new Date(allDates[i - 1]);
                     const currDate = new Date(allDates[i]);
+                    prevDate.setHours(0, 0, 0, 0);
+                    currDate.setHours(0, 0, 0, 0);
+                    
                     const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
                     
                     if (diffDays === 1) {
@@ -2704,33 +2736,9 @@ export default function AstroTracker() {
                     }
                   }
                   
-                  // Second pass: calculate current streak from the end
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  
-                  const lastDate = new Date(allDates[allDates.length - 1]);
-                  lastDate.setHours(0, 0, 0, 0);
-                  
-                  const daysSinceLastSession = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-                  
-                  // Only count as current streak if last session was today or yesterday
-                  if (daysSinceLastSession <= 1) {
-                    currentStreak = 1;
-                    // Count backwards to find the current streak
-                    for (let i = allDates.length - 2; i >= 0; i--) {
-                      const prevDate = new Date(allDates[i]);
-                      const currDate = new Date(allDates[i + 1]);
-                      prevDate.setHours(0, 0, 0, 0);
-                      currDate.setHours(0, 0, 0, 0);
-                      
-                      const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-                      
-                      if (diffDays === 1) {
-                        currentStreak++;
-                      } else {
-                        break;
-                      }
-                    }
+                  // If streak is not active, reset current streak to 0
+                  if (!isStreakActive) {
+                    currentStreak = 0;
                   }
                 }
 
