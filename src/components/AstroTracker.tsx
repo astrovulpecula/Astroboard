@@ -4055,20 +4055,15 @@ export default function AstroTracker() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
                 <div className="flex items-center gap-2">
-                  {(() => {
-                    const numPanels = Object.keys((proj as any).panels || {}).length;
-                    console.log('Number of panels:', numPanels);
-                    console.log('Should show expand button:', numPanels > 1);
-                    return numPanels > 1 ? (
-                      <button
-                        onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
-                        className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
-                        title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
-                      >
-                        {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </button>
-                    ) : null;
-                  })()}
+                  {Object.keys((proj as any).panels || {}).length > 1 && (
+                    <button
+                      onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
+                      className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+                      title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
+                    >
+                      {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setEditNumPanels(Object.keys((proj as any).panels || {}).length);
@@ -4100,24 +4095,20 @@ export default function AstroTracker() {
               </Card>
 
               {Object.keys((proj as any).panels || {}).length > 1 && panelSectionExpanded && (
-                <div className="mb-4 space-y-3">
-                  {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
-                    <div key={panelNum}>
-                      <ImageCard 
-                        title={`Panel ${panelNum}`}
-                        keyName={`panel${panelNum}`}
-                        proj={proj} 
-                        upImgs={upImgs}
-                        rating={(proj as any)?.ratings?.[`panel${panelNum}`] || 0}
-                        onRatingChange={(rating) => updateRating(`panel${panelNum}`, rating)}
-                        theme={theme}
-                        onImageClick={(src) => {
-                          setImageModalSrc(src);
-                          setImageModalOpen(true);
-                        }}
-                      />
-                    </div>
-                  ))}
+                <div className="mb-4">
+                  <ImageCard 
+                    title="Esquema de paneles"
+                    keyName="panelSchema"
+                    proj={proj} 
+                    upImgs={upImgs}
+                    rating={undefined}
+                    onRatingChange={undefined}
+                    theme={theme}
+                    onImageClick={(src) => {
+                      setImageModalSrc(src);
+                      setImageModalOpen(true);
+                    }}
+                  />
                 </div>
               )}
 
