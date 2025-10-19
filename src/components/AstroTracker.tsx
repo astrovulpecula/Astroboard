@@ -2633,6 +2633,7 @@ export default function AstroTracker() {
                     setSelectedObjectId(objectId);
                     setSelectedProjectId(projectId);
                     setView("project");
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                 />
               )}
@@ -3445,6 +3446,7 @@ export default function AstroTracker() {
                       setSelectedObjectId(objectId);
                       setSelectedProjectId(projectId);
                       setView("project");
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                   />
                 );
@@ -3672,6 +3674,7 @@ export default function AstroTracker() {
                         onClick={() => {
                           setSelectedProjectId(p.id);
                           setView("project");
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -5187,6 +5190,7 @@ export default function AstroTracker() {
                     setSelectedProjectId(proj.projectId);
                     setView("project");
                     setSelectedDayInfo(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition group"
                 >
