@@ -2686,7 +2686,8 @@ export default function AstroTracker() {
                 let maxStreak = 0;
                 
                 if (allDates.length > 0) {
-                  currentStreak = 1;
+                  // First pass: calculate max streak
+                  let tempStreak = 1;
                   maxStreak = 1;
                   
                   for (let i = 1; i < allDates.length; i++) {
@@ -2695,23 +2696,40 @@ export default function AstroTracker() {
                     const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
                     
                     if (diffDays === 1) {
-                      currentStreak++;
-                      maxStreak = Math.max(maxStreak, currentStreak);
+                      tempStreak++;
+                      maxStreak = Math.max(maxStreak, tempStreak);
                     } else {
-                      currentStreak = 1;
+                      tempStreak = 1;
                     }
                   }
                   
-                  // Check if the last date is today or yesterday to determine current streak
-                  const lastDate = new Date(allDates[allDates.length - 1]);
+                  // Second pass: calculate current streak from the end
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
+                  
+                  const lastDate = new Date(allDates[allDates.length - 1]);
                   lastDate.setHours(0, 0, 0, 0);
                   
                   const daysSinceLastSession = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
                   
-                  if (daysSinceLastSession > 1) {
-                    currentStreak = 0;
+                  // Only count as current streak if last session was today or yesterday
+                  if (daysSinceLastSession <= 1) {
+                    currentStreak = 1;
+                    // Count backwards to find the current streak
+                    for (let i = allDates.length - 2; i >= 0; i--) {
+                      const prevDate = new Date(allDates[i]);
+                      const currDate = new Date(allDates[i + 1]);
+                      prevDate.setHours(0, 0, 0, 0);
+                      currDate.setHours(0, 0, 0, 0);
+                      
+                      const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+                      
+                      if (diffDays === 1) {
+                        currentStreak++;
+                      } else {
+                        break;
+                      }
+                    }
                   }
                 }
 
@@ -2921,11 +2939,17 @@ export default function AstroTracker() {
                           <div className="p-3 rounded-xl bg-pink-500/10">
                             <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <div className="text-sm text-slate-600 dark:text-slate-400">Racha de Noches Consecutivas</div>
-                            <div className="text-2xl font-bold">{currentStreak > 0 ? currentStreak : maxStreak} noche{(currentStreak > 0 ? currentStreak : maxStreak) !== 1 ? 's' : ''}</div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {currentStreak > 0 ? 'Racha actual' : `Récord: ${maxStreak} noche${maxStreak !== 1 ? 's' : ''}`}
+                            <div className="text-2xl font-bold">
+                              {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? 's' : ''}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {currentStreak > 0 ? (
+                                <>Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? 's' : ''}</>
+                              ) : (
+                                <>Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? 's' : ''}</>
+                              )}
                             </div>
                           </div>
                         </div>
