@@ -2359,7 +2359,7 @@ export default function AstroTracker() {
         }
         [data-theme="astro"] [data-card] {
           background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
-          border-color: rgba(255, 160, 122, 0.3);
+          border: none !important;
         }
         [data-theme="astro"] .astro-btn {
           background: linear-gradient(135deg, #ffa07a 0%, #ff6b4a 100%);
