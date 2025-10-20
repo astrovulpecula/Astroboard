@@ -142,10 +142,10 @@ const Card = ({
   onClick?: () => void;
 }) => (
   <div
-    className={`rounded-2xl border shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`}
+    className={`rounded-2xl shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`}
     data-card
     style={{
-      borderColor: "var(--card-border, rgb(226 232 240))",
+      border: "1px solid var(--card-border, rgb(226 232 240))",
       background: "var(--card-bg, rgba(255, 255, 255, 0.7))",
     }}
     onClick={onClick}
@@ -1826,13 +1826,15 @@ export default function AstroTracker() {
             }
           : null,
         ...obj.projects.flatMap((proj) =>
-          Object.entries(proj.images || {}).map(([key, src]) => ({
-            src: src as string,
-            title: `${obj.id} - ${proj.name}`,
-            type: key,
-            objectId: obj.id,
-            projectId: proj.id,
-          })),
+          Object.entries(proj.images || {})
+            .filter(([key]) => key !== "panelSchema") // Excluir imagen del esquema de paneles
+            .map(([key, src]) => ({
+              src: src as string,
+              title: `${obj.id} - ${proj.name}`,
+              type: key,
+              objectId: obj.id,
+              projectId: proj.id,
+            })),
         ),
       ])
       .filter((item) => item !== null && item.src) as ImageItem[];
@@ -3480,13 +3482,15 @@ export default function AstroTracker() {
                       }
                     : null,
                   ...obj.projects.flatMap((proj) =>
-                    Object.entries(proj.images || {}).map(([key, src]) => ({
-                      src: src as string,
-                      title: `${obj.id} - ${proj.name}`,
-                      type: key,
-                      objectId: obj.id,
-                      projectId: proj.id,
-                    })),
+                    Object.entries(proj.images || {})
+                      .filter(([key]) => key !== "panelSchema") // Excluir imagen del esquema de paneles
+                      .map(([key, src]) => ({
+                        src: src as string,
+                        title: `${obj.id} - ${proj.name}`,
+                        type: key,
+                        objectId: obj.id,
+                        projectId: proj.id,
+                      })),
                   ),
                 ].filter((item) => item !== null && item.src) as ImageItem[];
 
