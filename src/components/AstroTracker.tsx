@@ -1813,6 +1813,25 @@ export default function AstroTracker() {
   const obj = useMemo(() => objects.find((o) => o.id === selectedObjectId) || null, [objects, selectedObjectId]);
   const proj = useMemo(() => obj?.projects.find((p) => p.id === selectedProjectId) || null, [obj, selectedProjectId]);
 
+  // Verificar que los objetos y proyectos seleccionados existan, si no, redirigir a una vista segura
+  useEffect(() => {
+    if (view === "projects" && !obj) {
+      setView("objects");
+      setSelectedObjectId(null);
+      setSelectedProjectId(null);
+    }
+    if (view === "project" && (!obj || !proj)) {
+      if (obj && !proj) {
+        setView("projects");
+        setSelectedProjectId(null);
+      } else {
+        setView("objects");
+        setSelectedObjectId(null);
+        setSelectedProjectId(null);
+      }
+    }
+  }, [view, obj, proj]);
+
   // Memoize random image selection for dashboard carousel
   const dashboardCarouselImages = useMemo(() => {
     const allImages: ImageItem[] = objects
@@ -1856,7 +1875,11 @@ export default function AstroTracker() {
 
   const addObj = useCallback(
     (base: any) => {
-      if (!base.id || objects.some((o) => o.id.toLowerCase() === base.id.toLowerCase())) {
+      if (!base.id || !base.id.trim()) {
+        alert("Debes proporcionar un código para el objeto.");
+        return;
+      }
+      if (objects.some((o) => o.id.toLowerCase() === base.id.toLowerCase())) {
         alert("Ya existe un objeto con ese código.");
         return;
       }
@@ -1872,7 +1895,8 @@ export default function AstroTracker() {
   const delObj = useCallback(
     (id: string) => {
       if (!confirm("¿Eliminar este objeto?")) return;
-      setObjects(objects.filter((o) => o.id !== id));
+      const newObjects = objects.filter((o) => o.id !== id);
+      setObjects(newObjects);
       if (selectedObjectId === id) {
         setSelectedObjectId(null);
         setSelectedProjectId(null);
@@ -2421,7 +2445,19 @@ export default function AstroTracker() {
             </div>
             <div className="flex items-center gap-2">
               {view !== "objects" && (
-                <Btn outline onClick={() => setView(view === "project" ? "projects" : "objects")}>
+                <Btn
+                  outline
+                  onClick={() => {
+                    if (view === "project") {
+                      setView("projects");
+                      setSelectedProjectId(null);
+                    } else {
+                      setView("objects");
+                      setSelectedObjectId(null);
+                      setSelectedProjectId(null);
+                    }
+                  }}
+                >
                   <ChevronLeft className="w-4 h-4" /> Volver
                 </Btn>
               )}
@@ -2605,7 +2641,7 @@ export default function AstroTracker() {
 
         <main className="max-w-7xl mx-auto px-4 py-6">
           {view === "objects" && (
-            <div className="grid gap-4">
+            <div className="grid gap-4" key="view-objects">
               {/* Saludo personalizado con fase lunar */}
               {(() => {
                 const now = new Date();
@@ -3447,7 +3483,7 @@ export default function AstroTracker() {
           )}
 
           {view === "projects" && obj && (
-            <div className="grid gap-4">
+            <div className="grid gap-4" key={`view-projects-${obj.id}`}>
               <div className="flex items-center justify-between">
                 <SectionTitle
                   icon={FolderOpen}
@@ -3880,7 +3916,7 @@ export default function AstroTracker() {
           )}
 
           {view === "project" && obj && proj && (
-            <div className="grid gap-4 mt-2">
+            <div className="grid gap-4 mt-2" key={`view-project-${obj.id}-${proj.id}`}>
               {/* Nueva sección de Configuración */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                 <SectionTitle icon={Settings} title="Configuración" />
