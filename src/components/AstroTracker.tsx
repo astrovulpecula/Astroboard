@@ -4045,7 +4045,7 @@ export default function AstroTracker() {
                         0,
                       );
                       const currentHours = totalSeconds / 3600;
-                      const percentage = Math.min((currentHours / goalHours) * 100, 100);
+                      const percentage = (currentHours / goalHours) * 100;
                       panelProgress[panelNum] = { current: currentHours, percentage };
                     });
 
@@ -4081,7 +4081,7 @@ export default function AstroTracker() {
                     // Objetivo total del proyecto
                     const totalSeconds = totalExposureSec(proj.sessions);
                     const currentHours = totalSeconds / 3600;
-                    const percentage = Math.min((currentHours / goalHours) * 100, 100);
+                    const percentage = (currentHours / goalHours) * 100;
 
                     return (
                       <Card className="p-4 col-span-2">
