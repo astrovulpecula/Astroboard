@@ -3892,154 +3892,14 @@ export default function AstroTracker() {
               </div>
 
               <div className="hidden md:grid grid-cols-2 lg:grid-cols-7 gap-3 md:gap-4">
+                {/* 1. Objeto */}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Objeto</div>
                   <div className="text-xl font-semibold">{obj.id}</div>
                   <div className="text-sm text-slate-500">{obj.commonName}</div>
                 </Card>
-                <Card className="p-4">
-                  <div className="text-sm text-slate-500">Lights acumulados</div>
-                  <div className="text-xl font-semibold">
-                    {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
-                  </div>
-                </Card>
-                <Card className="p-4">
-                  <div className="text-sm text-slate-500">Exposición total</div>
-                  <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
-                </Card>
-                {(() => {
-                  // Highlight de objetivo de horas
-                  const goalHours = (proj as any).goalHours;
-                  if (!goalHours) return null;
 
-                  const numPanels = Object.keys((proj as any).panels || {}).length;
-                  const isMultiPanel = numPanels > 1;
-
-                  if (isMultiPanel) {
-                    // Objetivo por panel
-                    const panelProgress: Record<string, { current: number; percentage: number }> = {};
-                    Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
-                      const totalSeconds = sessions.reduce(
-                        (sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0),
-                        0,
-                      );
-                      const currentHours = totalSeconds / 3600;
-                      const percentage = Math.min((currentHours / goalHours) * 100, 100);
-                      panelProgress[panelNum] = { current: currentHours, percentage };
-                    });
-
-                    return (
-                      <Card className="p-4 col-span-2">
-                        <div className="text-sm text-slate-500 mb-2">Progreso por panel</div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {Object.entries(panelProgress)
-                            .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                            .map(([panelNum, data]) => (
-                              <div key={panelNum} className="space-y-1">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
-                                  <span className="font-semibold">{data.percentage.toFixed(0)}%</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-green-500 transition-all duration-300"
-                                      style={{ width: `${data.percentage}%` }}
-                                    />
-                                  </div>
-                                </div>
-                                <div className="text-xs text-slate-500">
-                                  {data.current.toFixed(1)}h / {goalHours}h
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </Card>
-                    );
-                  } else {
-                    // Objetivo total del proyecto
-                    const totalSeconds = totalExposureSec(proj.sessions);
-                    const currentHours = totalSeconds / 3600;
-                    const percentage = Math.min((currentHours / goalHours) * 100, 100);
-
-                    return (
-                      <Card className="p-4 col-span-2">
-                        <div className="text-sm text-slate-500 mb-2">Progreso del objetivo</div>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-2xl font-semibold">{percentage.toFixed(0)}%</span>
-                            <span className="text-sm text-slate-600 dark:text-slate-400">
-                              {currentHours.toFixed(1)}h / {goalHours}h
-                            </span>
-                          </div>
-                          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-green-500 transition-all duration-300"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  }
-                })()}
-                {(() => {
-                  // Calcular horas totales por cada filtro en TODO el proyecto
-                  const filterHours: Record<string, number> = {};
-                  proj.sessions.forEach((s: any) => {
-                    if (s.filter) {
-                      const seconds = (s.lights || 0) * (s.exposureSec || 0);
-                      filterHours[s.filter] = (filterHours[s.filter] || 0) + seconds;
-                    }
-                  });
-
-                  // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
-                  const sortedFilters = Object.entries(filterHours).sort(([, a], [, b]) => b - a);
-
-                  return sortedFilters.map(([filterName, seconds]) => (
-                    <Card key={filterName} className="p-4">
-                      <div className="text-sm text-slate-500">{filterName}</div>
-                      <div className="text-xl font-semibold">{hh(seconds)}</div>
-                    </Card>
-                  ));
-                })()}
-                {(() => {
-                  // Mostrar highlights de filtros por panel solo si hay más de un panel
-                  const numPanels = Object.keys((proj as any).panels || {}).length;
-                  if (numPanels <= 1) return null;
-
-                  // Calcular horas por filtro y panel
-                  const filterPanelHours: Record<string, Record<string, number>> = {};
-
-                  Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
-                    sessions.forEach((s: any) => {
-                      if (s.filter) {
-                        if (!filterPanelHours[s.filter]) {
-                          filterPanelHours[s.filter] = {};
-                        }
-                        const seconds = (s.lights || 0) * (s.exposureSec || 0);
-                        filterPanelHours[s.filter][panelNum] = (filterPanelHours[s.filter][panelNum] || 0) + seconds;
-                      }
-                    });
-                  });
-
-                  // Crear highlights para cada filtro
-                  return Object.entries(filterPanelHours).map(([filterName, panelData]) => (
-                    <Card key={`panel-${filterName}`} className="p-4 col-span-2">
-                      <div className="text-sm text-slate-500 mb-2">Paneles {filterName}</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {Object.entries(panelData)
-                          .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                          .map(([panelNum, seconds]) => (
-                            <div key={panelNum} className="flex items-center justify-between">
-                              <span className="text-xs text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
-                              <span className="text-sm font-semibold">{hh(seconds)}</span>
-                            </div>
-                          ))}
-                      </div>
-                    </Card>
-                  ));
-                })()}
+                {/* 2. Sesiones */}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
                   <div className="text-xl font-semibold">
@@ -4049,6 +3909,36 @@ export default function AstroTracker() {
                     Última: {proj.sessions.length ? proj.sessions[proj.sessions.length - 1].date : "–"}
                   </div>
                 </Card>
+
+                {/* 3. Estado */}
+                <Card className="p-4">
+                  <div className="text-sm text-slate-500 mb-2">Estado</div>
+                  {(() => {
+                    const statusColors = {
+                      active: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/40",
+                      paused: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/40",
+                      completed: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/40",
+                    };
+                    const statusLabels = {
+                      active: "Activo",
+                      paused: "Pausado",
+                      completed: "Completado",
+                    };
+                    return (
+                      <select
+                        value={proj.status || "active"}
+                        onChange={(e) => updateProj(proj.id, { status: e.target.value })}
+                        className={`text-xs px-2 py-1 rounded-full border ${statusColors[proj.status || "active"]}`}
+                      >
+                        <option value="active">{statusLabels.active}</option>
+                        <option value="paused">{statusLabels.paused}</option>
+                        <option value="completed">{statusLabels.completed}</option>
+                      </select>
+                    );
+                  })()}
+                </Card>
+
+                {/* 4. Tiempo Activo */}
                 {(() => {
                   // Calcular tiempo activo del proyecto
                   const startDate = new Date((proj as any).startDate || proj.createdAt);
@@ -4088,9 +3978,7 @@ export default function AstroTracker() {
 
                   return (
                     <Card className="p-4">
-                      <div className="text-sm text-slate-500">
-                        Tiempo {proj.status === "completed" || (proj as any).endDate ? "total" : "activo"}
-                      </div>
+                      <div className="text-sm text-slate-500">Tiempo Activo</div>
                       <div className="text-xl font-semibold">{displayTime}</div>
                       <div className="text-xs text-slate-500">
                         {proj.status === "completed" || (proj as any).endDate ? "Completado" : "En curso"}
@@ -4098,51 +3986,159 @@ export default function AstroTracker() {
                     </Card>
                   );
                 })()}
+
+                {/* 5. Lights totales acumulados */}
+                <Card className="p-4">
+                  <div className="text-sm text-slate-500">Lights totales acumulados</div>
+                  <div className="text-xl font-semibold">
+                    {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
+                  </div>
+                </Card>
+
+                {/* 6. Exposición total */}
+                <Card className="p-4">
+                  <div className="text-sm text-slate-500">Exposición total</div>
+                  <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
+                </Card>
+
+                {/* 7. Highlights de filtros (ej: "HA/OIII total") */}
                 {(() => {
-                  // Telescopios utilizados en TODO el proyecto
-                  const telescopeCounts: Record<string, number> = {};
+                  // Calcular horas totales por cada filtro en TODO el proyecto
+                  const filterHours: Record<string, number> = {};
                   proj.sessions.forEach((s: any) => {
-                    if (s.telescope) {
+                    if (s.filter) {
                       const seconds = (s.lights || 0) * (s.exposureSec || 0);
-                      telescopeCounts[s.telescope] = (telescopeCounts[s.telescope] || 0) + seconds;
+                      filterHours[s.filter] = (filterHours[s.filter] || 0) + seconds;
                     }
                   });
 
-                  const sortedTelescopes = Object.entries(telescopeCounts).sort(([, a], [, b]) => b - a);
+                  // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
+                  const sortedFilters = Object.entries(filterHours).sort(([, a], [, b]) => b - a);
 
-                  if (sortedTelescopes.length === 0) return null;
+                  return sortedFilters.map(([filterName, seconds]) => (
+                    <Card key={filterName} className="p-4">
+                      <div className="text-sm text-slate-500">{filterName} total</div>
+                      <div className="text-xl font-semibold">{hh(seconds)}</div>
+                    </Card>
+                  ));
+                })()}
 
-                  return (
-                    <Card className="p-4">
-                      <div className="text-sm text-slate-500 mb-1">Telescopio usado</div>
-                      <div className="space-y-1">
-                        {sortedTelescopes.map(([telescope, seconds]) => (
-                          <div key={telescope}>
-                            <div className="text-sm font-semibold">{telescope}</div>
-                            <div className="text-xs text-slate-500">{hh(seconds)}</div>
+                {/* 8. Progreso/Objetivo (si no hay paneles) o Horas totales por panel (si hay paneles) */}
+                {(() => {
+                  // Highlight de objetivo de horas
+                  const goalHours = (proj as any).goalHours;
+                  if (!goalHours) return null;
+
+                  const numPanels = Object.keys((proj as any).panels || {}).length;
+                  const isMultiPanel = numPanels > 1;
+
+                  if (isMultiPanel) {
+                    // Objetivo por panel
+                    const panelProgress: Record<string, { current: number; percentage: number }> = {};
+                    Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
+                      const totalSeconds = sessions.reduce(
+                        (sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0),
+                        0,
+                      );
+                      const currentHours = totalSeconds / 3600;
+                      const percentage = Math.min((currentHours / goalHours) * 100, 100);
+                      panelProgress[panelNum] = { current: currentHours, percentage };
+                    });
+
+                    return (
+                      <Card className="p-4 col-span-2">
+                        <div className="text-sm text-slate-500 mb-2">Horas totales por panel</div>
+                        <div className="grid grid-cols-2 gap-3">
+                          {Object.entries(panelProgress)
+                            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                            .map(([panelNum, data]) => (
+                              <div key={panelNum} className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                  <span className="text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
+                                  <span className="font-semibold">{data.percentage.toFixed(0)}%</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-green-500 transition-all duration-300"
+                                      style={{ width: `${data.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {data.current.toFixed(1)}h / {goalHours}h
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      </Card>
+                    );
+                  } else {
+                    // Objetivo total del proyecto
+                    const totalSeconds = totalExposureSec(proj.sessions);
+                    const currentHours = totalSeconds / 3600;
+                    const percentage = Math.min((currentHours / goalHours) * 100, 100);
+
+                    return (
+                      <Card className="p-4 col-span-2">
+                        <div className="text-sm text-slate-500 mb-2">Progreso/Objetivo</div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-semibold">{percentage.toFixed(0)}%</span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
+                              {currentHours.toFixed(1)}h / {goalHours}h
+                            </span>
                           </div>
-                        ))}
+                          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-green-500 transition-all duration-300"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  }
+                })()}
+
+                {/* 9. Paneles por filtro (solo si hay más de un panel) */}
+                {(() => {
+                  // Mostrar highlights de filtros por panel solo si hay más de un panel
+                  const numPanels = Object.keys((proj as any).panels || {}).length;
+                  if (numPanels <= 1) return null;
+
+                  // Calcular horas por filtro y panel
+                  const filterPanelHours: Record<string, Record<string, number>> = {};
+
+                  Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
+                    sessions.forEach((s: any) => {
+                      if (s.filter) {
+                        if (!filterPanelHours[s.filter]) {
+                          filterPanelHours[s.filter] = {};
+                        }
+                        const seconds = (s.lights || 0) * (s.exposureSec || 0);
+                        filterPanelHours[s.filter][panelNum] = (filterPanelHours[s.filter][panelNum] || 0) + seconds;
+                      }
+                    });
+                  });
+
+                  // Crear highlights para cada filtro
+                  return Object.entries(filterPanelHours).map(([filterName, panelData]) => (
+                    <Card key={`panel-${filterName}`} className="p-4 col-span-2">
+                      <div className="text-sm text-slate-500 mb-2">Paneles {filterName}</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(panelData)
+                          .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                          .map(([panelNum, seconds]) => (
+                            <div key={panelNum} className="flex items-center justify-between">
+                              <span className="text-xs text-slate-600 dark:text-slate-400">Panel {panelNum}</span>
+                              <span className="text-sm font-semibold">{hh(seconds)}</span>
+                            </div>
+                          ))}
                       </div>
                     </Card>
-                  );
+                  ));
                 })()}
-                <Card className="p-4">
-                  <div className="text-sm text-slate-500 mb-2">Estado</div>
-                  {(() => {
-                    const statusColors = {
-                      active: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/40",
-                      paused: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/40",
-                      completed: "bg-slate-500/20 text-slate-700 dark:text-slate-400 border-slate-500/40",
-                    };
-                    const statusLabels = { active: "Activo", paused: "Pausado", completed: "Terminado" };
-                    const status = proj.status || "active";
-                    return (
-                      <div className={`text-sm font-semibold px-3 py-2 rounded-lg border ${statusColors[status]}`}>
-                        {statusLabels[status]}
-                      </div>
-                    );
-                  })()}
-                </Card>
               </div>
 
               {/* Highlights de Filtro/Panel */}
