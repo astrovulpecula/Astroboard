@@ -162,10 +162,10 @@ type ImageItem = {
   projectId?: string;
 };
 
-const ImageCarousel = ({ 
-  images, 
-  onImageClick 
-}: { 
+const ImageCarousel = ({
+  images,
+  onImageClick,
+}: {
   images: ImageItem[];
   onImageClick?: (objectId: string, projectId: string) => void;
 }) => {
@@ -711,7 +711,7 @@ function FProject({
                 setSelectedLocation(e.target.value);
                 setShowCustomLocation(e.target.value === "Otro");
                 if (e.target.value !== "Otro") {
-                  const selectedLoc = locations.find(l => l.name === e.target.value);
+                  const selectedLoc = locations.find((l) => l.name === e.target.value);
                   if (selectedLoc) {
                     setLocation(selectedLoc.name);
                     setGoogleCoords(selectedLoc.coords);
@@ -921,8 +921,8 @@ function FProject({
           placeholder="Ej: 10"
         />
         <p className="text-xs text-slate-500">
-          {numPanels > 1 
-            ? "Horas objetivo por cada panel (opcional)" 
+          {numPanels > 1
+            ? "Horas objetivo por cada panel (opcional)"
             : "Horas totales objetivo para el proyecto (opcional)"}
         </p>
       </label>
@@ -957,7 +957,7 @@ function FSession({
   telescopes?: { name: string; focalLength: string }[];
 }) {
   const init = initial || {};
-  
+
   // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
   const [lights, setLights] = useState(init.lights ?? 60);
@@ -997,7 +997,7 @@ function FSession({
       className="grid gap-3"
       onSubmit={(e) => {
         e.preventDefault();
-        
+
         const sessionData = {
           date,
           lights: num(lights),
@@ -1013,7 +1013,7 @@ function FSession({
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
         };
-        
+
         onSubmit(sessionData);
       }}
     >
@@ -1045,10 +1045,10 @@ function FSession({
                 </button>
               ))}
             </div>
-            
+
             {/* Select para otros filtros */}
-            <select 
-              value={!predefinedFilters.includes(filter) && !showCustomFilter ? filter : ""} 
+            <select
+              value={!predefinedFilters.includes(filter) && !showCustomFilter ? filter : ""}
               onChange={(e) => {
                 if (e.target.value === "custom") {
                   setShowCustomFilter(true);
@@ -1057,7 +1057,7 @@ function FSession({
                   setFilter(e.target.value);
                   setShowCustomFilter(false);
                 }
-              }} 
+              }}
               className={INPUT_CLS}
             >
               <option value="">Seleccionar otro filtro...</option>
@@ -1070,7 +1070,7 @@ function FSession({
                 ))}
               <option value="custom">+ Añadir filtro personalizado</option>
             </select>
-            
+
             {/* Input para filtro personalizado */}
             {showCustomFilter && (
               <input
@@ -1428,7 +1428,11 @@ const AcceptedRejectedChart = ({ sessions }: { sessions: any[] }) => {
       sessions
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
-        .filter((s) => (s.acceptedLights !== undefined && s.acceptedLights !== null) || (s.rejectedLights !== undefined && s.rejectedLights !== null))
+        .filter(
+          (s) =>
+            (s.acceptedLights !== undefined && s.acceptedLights !== null) ||
+            (s.rejectedLights !== undefined && s.rejectedLights !== null),
+        )
         .map((s, i) => ({
           sesion: i + 1,
           date: s.date,
@@ -1500,17 +1504,17 @@ type TabType = {
 };
 
 // ImageCard component moved outside to avoid hooks issues
-const ImageCard = ({ 
-  title, 
-  keyName, 
-  proj, 
+const ImageCard = ({
+  title,
+  keyName,
+  proj,
   upImgs,
   rating,
   onRatingChange,
   theme,
-  onImageClick
-}: { 
-  title: string; 
+  onImageClick,
+}: {
+  title: string;
   keyName: string;
   proj: any;
   upImgs: (patch: any) => void;
@@ -1573,8 +1577,8 @@ const ImageCard = ({
                 <Star
                   className={`w-5 h-5 ${
                     star <= currentRating
-                      ? theme === "astro" 
-                        ? "fill-blue-400 text-blue-400" 
+                      ? theme === "astro"
+                        ? "fill-blue-400 text-blue-400"
                         : "fill-yellow-400 text-yellow-400"
                       : "text-slate-300 dark:text-slate-600"
                   }`}
@@ -1586,10 +1590,10 @@ const ImageCard = ({
       </div>
       {proj?.images?.[keyName] ? (
         <div className="space-y-3">
-          <img 
-            src={proj.images[keyName]} 
-            alt={title} 
-            className="w-full rounded-xl border cursor-pointer hover:opacity-90 transition-opacity" 
+          <img
+            src={proj.images[keyName]}
+            alt={title}
+            className="w-full rounded-xl border cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => {
               if (onImageClick) {
                 onImageClick(proj.images[keyName]);
@@ -1681,14 +1685,17 @@ export default function AstroTracker() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [locations, setLocations] = useState<{ name: string; coords: string }[]>([
-    { name: "", coords: "" },
-  ]);
+  const [locations, setLocations] = useState<{ name: string; coords: string }[]>([{ name: "", coords: "" }]);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
-  const [selectedDayInfo, setSelectedDayInfo] = useState<{day: number, month: number, year: number, projects: any[]} | null>(null);
+  const [selectedDayInfo, setSelectedDayInfo] = useState<{
+    day: number;
+    month: number;
+    year: number;
+    projects: any[];
+  } | null>(null);
   const [panelSectionExpanded, setPanelSectionExpanded] = useState(false);
   const [sortProjects, setSortProjects] = useState("recent");
   const [projectSearchText, setProjectSearchText] = useState("");
@@ -1810,12 +1817,14 @@ export default function AstroTracker() {
   const dashboardCarouselImages = useMemo(() => {
     const allImages: ImageItem[] = objects
       .flatMap((obj) => [
-        obj.image ? { 
-          src: obj.image, 
-          title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`,
-          objectId: obj.id,
-          projectId: obj.projects[0]?.id
-        } : null,
+        obj.image
+          ? {
+              src: obj.image,
+              title: `${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`,
+              objectId: obj.id,
+              projectId: obj.projects[0]?.id,
+            }
+          : null,
         ...obj.projects.flatMap((proj) =>
           Object.entries(proj.images || {}).map(([key, src]) => ({
             src: src as string,
@@ -1962,17 +1971,17 @@ export default function AstroTracker() {
   const addSes = useCallback(
     (base: any) => {
       console.log("addSes called with:", { base, obj, proj, selectedPanel });
-      
+
       if (!obj || !proj) {
         console.error("Cannot add session: obj or proj is null", { obj, proj });
         return;
       }
-      
+
       const s = { ...base, id: uid("ses") };
       const sessionFilter = s.filter || "RGB";
-      
+
       console.log("Adding session:", s);
-      
+
       setObjects(
         objects.map((o: any) =>
           o.id !== obj.id
@@ -2128,7 +2137,6 @@ export default function AstroTracker() {
     // Obtener sesiones del panel seleccionado
     return (p.panels?.[selectedPanel] || []).slice().sort((a: any, b: any) => a.date.localeCompare(b.date));
   }, [proj, selectedPanel]);
-
 
   // Inicializar tabs basándose en los filtros del proyecto
   useEffect(() => {
@@ -2334,7 +2342,6 @@ export default function AstroTracker() {
         ? "HAOIII"
         : act?.name?.replace(/[^a-zA-Z0-9]/g, "") || "default";
 
-
   return (
     <div className={theme === "dark" ? "dark" : ""} data-theme={theme}>
       <style>{`
@@ -2423,13 +2430,13 @@ export default function AstroTracker() {
                   const exportData = {
                     objects,
                     settings: {
-                  userName,
-                  cameras: cameras.filter((c) => c.trim() !== ""),
-                  telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-                  locations: locations.filter((l) => l.name.trim() !== ""),
-                },
-              };
-              const data = JSON.stringify(exportData, null, 2),
+                      userName,
+                      cameras: cameras.filter((c) => c.trim() !== ""),
+                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+                      locations: locations.filter((l) => l.name.trim() !== ""),
+                    },
+                  };
+                  const data = JSON.stringify(exportData, null, 2),
                     blob = new Blob([data], { type: "application/json" }),
                     url = URL.createObjectURL(blob),
                     a = document.createElement("a");
@@ -2534,30 +2541,36 @@ export default function AstroTracker() {
                     });
 
                     setObjects(processedObjects);
-                    
+
                     // Restaurar settings si existen
                     if (settingsData) {
-                    if (settingsData.userName) setUserName(settingsData.userName);
-                    if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
-                      setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
-                    }
-                    if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
-                      setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
-                    }
-                    if (settingsData.locations && Array.isArray(settingsData.locations)) {
-                      setLocations(settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }]);
-                    }
-                    
-                    // Guardar settings en localStorage
-                    const settings = {
-                      defaultTheme,
-                      jsonPath,
-                      cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
-                      telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
-                      locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
-                      userName: settingsData.userName || userName,
-                    };
-                    localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                      if (settingsData.userName) setUserName(settingsData.userName);
+                      if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
+                        setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
+                      }
+                      if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
+                        setTelescopes(
+                          settingsData.telescopes.length > 0
+                            ? settingsData.telescopes
+                            : [{ name: "", focalLength: "" }],
+                        );
+                      }
+                      if (settingsData.locations && Array.isArray(settingsData.locations)) {
+                        setLocations(
+                          settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }],
+                        );
+                      }
+
+                      // Guardar settings en localStorage
+                      const settings = {
+                        defaultTheme,
+                        jsonPath,
+                        cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
+                        telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                        locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
+                        userName: settingsData.userName || userName,
+                      };
+                      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                     }
 
                     setView("objects");
@@ -2635,13 +2648,13 @@ export default function AstroTracker() {
 
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
-                <ImageCarousel 
-                  images={dashboardCarouselImages} 
+                <ImageCarousel
+                  images={dashboardCarouselImages}
                   onImageClick={(objectId, projectId) => {
                     setSelectedObjectId(objectId);
                     setSelectedProjectId(projectId);
                     setView("project");
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                 />
               )}
@@ -2666,7 +2679,7 @@ export default function AstroTracker() {
 
                 // Object with most exposure
                 const objectExposures: Record<string, number> = {};
-                
+
                 objects.forEach((obj) => {
                   let objExposure = 0;
                   obj.projects.forEach((proj) => {
@@ -2685,15 +2698,15 @@ export default function AstroTracker() {
                 });
 
                 const totalNights = uniqueDates.size;
-                
+
                 // Find object with most exposure
                 const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
-                
+
                 // Calculate consecutive nights streak
                 const allDates = Array.from(uniqueDates).sort();
                 let currentStreak = 0;
                 let maxStreak = 0;
-                
+
                 if (allDates.length > 0) {
                   // Calculate current streak from the end (counting backwards)
                   currentStreak = 1;
@@ -2702,40 +2715,42 @@ export default function AstroTracker() {
                     const currDate = new Date(allDates[i + 1]);
                     prevDate.setHours(0, 0, 0, 0);
                     currDate.setHours(0, 0, 0, 0);
-                    
+
                     const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-                    
+
                     if (diffDays === 1) {
                       currentStreak++;
                     } else {
                       break;
                     }
                   }
-                  
+
                   // Check if streak is still active (last session was today or yesterday)
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
-                  
+
                   const lastDate = new Date(allDates[allDates.length - 1]);
                   lastDate.setHours(0, 0, 0, 0);
-                  
-                  const daysSinceLastSession = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
-                  
+
+                  const daysSinceLastSession = Math.floor(
+                    (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+                  );
+
                   // If last session was more than 1 day ago, the streak is broken
                   const isStreakActive = daysSinceLastSession <= 1;
-                  
+
                   // Calculate max streak (scan through all dates)
                   let tempStreak = 1;
                   maxStreak = currentStreak; // Start with current streak
-                  
+
                   for (let i = 1; i < allDates.length; i++) {
                     const prevDate = new Date(allDates[i - 1]);
                     const currDate = new Date(allDates[i]);
                     prevDate.setHours(0, 0, 0, 0);
                     currDate.setHours(0, 0, 0, 0);
-                    
+
                     const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-                    
+
                     if (diffDays === 1) {
                       tempStreak++;
                       maxStreak = Math.max(maxStreak, tempStreak);
@@ -2743,7 +2758,7 @@ export default function AstroTracker() {
                       tempStreak = 1;
                     }
                   }
-                  
+
                   // If streak is not active, reset current streak to 0
                   if (!isStreakActive) {
                     currentStreak = 0;
@@ -2853,7 +2868,9 @@ export default function AstroTracker() {
                               <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                             </div>
                             <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Objeto con Mayor Exposición</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-400">
+                                Objeto con Mayor Exposición
+                              </div>
                               <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
                                 {hh(maxExposureObj[1] * 3600)} de exposición
@@ -2875,11 +2892,11 @@ export default function AstroTracker() {
                             });
                           });
                         });
-                        
+
                         const sortedYears = Array.from(yearsWithSessions).sort((a, b) => a - b);
                         const minYear = sortedYears[0] || new Date().getFullYear();
                         const currentYear = new Date().getFullYear();
-                        
+
                         // Calculate hours for selected year
                         let yearHours = 0;
                         objects.forEach((obj) => {
@@ -2892,7 +2909,7 @@ export default function AstroTracker() {
                             });
                           });
                         });
-                        
+
                         // Calculate hours for previous year for comparison
                         let previousYearHours = 0;
                         if (selectedYear > minYear) {
@@ -2907,11 +2924,14 @@ export default function AstroTracker() {
                             });
                           });
                         }
-                        
-                        const percentageChange = previousYearHours > 0 
-                          ? (((yearHours - previousYearHours) / previousYearHours) * 100).toFixed(1)
-                          : selectedYear > minYear ? "100" : "0";
-                        
+
+                        const percentageChange =
+                          previousYearHours > 0
+                            ? (((yearHours - previousYearHours) / previousYearHours) * 100).toFixed(1)
+                            : selectedYear > minYear
+                              ? "100"
+                              : "0";
+
                         return (
                           <Card className="p-5">
                             <div className="flex items-center justify-between">
@@ -2920,25 +2940,30 @@ export default function AstroTracker() {
                                   <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
                                 </div>
                                 <div>
-                                  <div className="text-sm text-slate-600 dark:text-slate-400">Horas en {selectedYear}</div>
+                                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                                    Horas en {selectedYear}
+                                  </div>
                                   <div className="text-2xl font-bold">{hh(yearHours * 3600)}</div>
                                   {previousYearHours > 0 && (
-                                    <div className={`text-xs ${parseFloat(percentageChange) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                      {parseFloat(percentageChange) >= 0 ? '+' : ''}{percentageChange}% vs {selectedYear - 1}
+                                    <div
+                                      className={`text-xs ${parseFloat(percentageChange) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                                    >
+                                      {parseFloat(percentageChange) >= 0 ? "+" : ""}
+                                      {percentageChange}% vs {selectedYear - 1}
                                     </div>
                                   )}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 <button
-                                  onClick={() => setSelectedYear(prev => Math.max(minYear, prev - 1))}
+                                  onClick={() => setSelectedYear((prev) => Math.max(minYear, prev - 1))}
                                   disabled={selectedYear <= minYear}
                                   className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
                                   <ChevronLeft className="w-5 h-5" />
                                 </button>
                                 <button
-                                  onClick={() => setSelectedYear(prev => Math.min(currentYear, prev + 1))}
+                                  onClick={() => setSelectedYear((prev) => Math.min(currentYear, prev + 1))}
                                   disabled={selectedYear >= currentYear}
                                   className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
                                 >
@@ -2957,15 +2982,21 @@ export default function AstroTracker() {
                             <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                           </div>
                           <div className="flex-1">
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Racha de Noches Consecutivas</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">
+                              Racha de Noches Consecutivas
+                            </div>
                             <div className="text-2xl font-bold">
-                              {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? 's' : ''}
+                              {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? "s" : ""}
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                               {currentStreak > 0 ? (
-                                <>Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? 's' : ''}</>
+                                <>
+                                  Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
+                                </>
                               ) : (
-                                <>Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? 's' : ''}</>
+                                <>
+                                  Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
+                                </>
                               )}
                             </div>
                           </div>
@@ -3077,16 +3108,18 @@ export default function AstroTracker() {
                 const handleDayClick = (day: number) => {
                   // Obtener proyectos con sesiones en este día
                   const projectsWithSessions: any[] = [];
-                  
+
                   objects.forEach((obj) => {
                     obj.projects.forEach((proj) => {
                       const sessionsOnDay = proj.sessions.filter((s: any) => {
                         const sessionDate = new Date(s.date);
-                        return sessionDate.getFullYear() === year && 
-                               sessionDate.getMonth() === month && 
-                               sessionDate.getDate() === day;
+                        return (
+                          sessionDate.getFullYear() === year &&
+                          sessionDate.getMonth() === month &&
+                          sessionDate.getDate() === day
+                        );
                       });
-                      
+
                       if (sessionsOnDay.length > 0) {
                         projectsWithSessions.push({
                           objectId: obj.id,
@@ -3098,7 +3131,7 @@ export default function AstroTracker() {
                       }
                     });
                   });
-                  
+
                   if (projectsWithSessions.length > 0) {
                     setSelectedDayInfo({ day, month, year, projects: projectsWithSessions });
                   }
@@ -3178,7 +3211,7 @@ export default function AstroTracker() {
                               <ChevronRight className="w-5 h-5" />
                             </button>
                           </div>
-                          
+
                           <div className="grid grid-cols-7 gap-2">
                             {/* Cabecera días de la semana */}
                             {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
@@ -3198,7 +3231,8 @@ export default function AstroTracker() {
                             {/* Días del mes */}
                             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
                               const hasSession = daysWithSessions.has(day);
-                              const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+                              const isToday =
+                                day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
 
                               return (
                                 <div
@@ -3352,7 +3386,7 @@ export default function AstroTracker() {
                           setView("projects");
                         }}
                       >
-                          <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3">
                           <ObjectThumbnail
                             objectId={o.id}
                             displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
@@ -3377,8 +3411,8 @@ export default function AstroTracker() {
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <IconBtn 
-                              title="Editar objeto" 
+                            <IconBtn
+                              title="Editar objeto"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditObjectData({
@@ -3392,10 +3426,13 @@ export default function AstroTracker() {
                             >
                               <Pencil className="w-4 h-4" />
                             </IconBtn>
-                            <IconBtn title="Eliminar" onClick={(e) => {
-                              e.stopPropagation();
-                              delObj(o.id);
-                            }}>
+                            <IconBtn
+                              title="Eliminar"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                delObj(o.id);
+                              }}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </IconBtn>
                           </div>
@@ -3456,13 +3493,13 @@ export default function AstroTracker() {
                 if (objectImages.length === 0) return null;
 
                 return (
-                  <ImageCarousel 
+                  <ImageCarousel
                     images={objectImages}
                     onImageClick={(objectId, projectId) => {
                       setSelectedObjectId(objectId);
                       setSelectedProjectId(projectId);
                       setView("project");
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   />
                 );
@@ -3647,7 +3684,7 @@ export default function AstroTracker() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold">Proyectos</h2>
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       onClick={() => setSortProjects("alpha")}
                       className={`px-4 py-2 rounded-lg border transition-colors font-medium ${
                         sortProjects === "alpha"
@@ -3658,7 +3695,7 @@ export default function AstroTracker() {
                     >
                       A-Z
                     </button>
-                    <button 
+                    <button
                       onClick={() => setSortProjects("recent")}
                       className={`px-4 py-2 rounded-lg border transition-colors font-medium ${
                         sortProjects === "recent"
@@ -3669,9 +3706,9 @@ export default function AstroTracker() {
                     >
                       1-3
                     </button>
-                  <Btn onClick={() => setMProj(true)}>
-                    <Plus className="w-4 h-4" /> Nuevo proyecto
-                  </Btn>
+                    <Btn onClick={() => setMProj(true)}>
+                      <Plus className="w-4 h-4" /> Nuevo proyecto
+                    </Btn>
                   </div>
                 </div>
 
@@ -3720,27 +3757,27 @@ export default function AstroTracker() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {(() => {
                   let filteredProjects = obj.projects.slice();
-                  
+
                   // Apply search filter
                   if (projectSearchText.trim()) {
                     const search = projectSearchText.toLowerCase();
-                    filteredProjects = filteredProjects.filter((p: any) =>
-                      p.name.toLowerCase().includes(search)
-                    );
+                    filteredProjects = filteredProjects.filter((p: any) => p.name.toLowerCase().includes(search));
                   }
-                  
+
                   // Apply status filter
                   if (filterStatus !== "all") {
                     filteredProjects = filteredProjects.filter((p: any) => p.status === filterStatus);
                   }
-                  
+
                   // Apply sorting
                   if (sortProjects === "alpha") {
                     filteredProjects.sort((a: any, b: any) => a.name.localeCompare(b.name));
                   } else {
-                    filteredProjects.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    filteredProjects.sort(
+                      (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+                    );
                   }
-                  
+
                   return filteredProjects.map((p: any) => {
                     const statusColors = {
                       active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
@@ -3756,7 +3793,7 @@ export default function AstroTracker() {
                         onClick={() => {
                           setSelectedProjectId(p.id);
                           setView("project");
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
                       >
                         <div className="flex items-start justify-between gap-2">
@@ -3843,10 +3880,13 @@ export default function AstroTracker() {
               {/* Nueva sección de Configuración */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                 <SectionTitle icon={Settings} title="Configuración" />
-                <IconBtn title="Editar configuración del proyecto" onClick={() => {
-                  setProjectSettingsData({});
-                  setShowProjectSettings(true);
-                }}>
+                <IconBtn
+                  title="Editar configuración del proyecto"
+                  onClick={() => {
+                    setProjectSettingsData({});
+                    setShowProjectSettings(true);
+                  }}
+                >
                   <Settings className="w-4 h-4" />
                 </IconBtn>
               </div>
@@ -3879,7 +3919,10 @@ export default function AstroTracker() {
                     // Objetivo por panel
                     const panelProgress: Record<string, { current: number; percentage: number }> = {};
                     Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
-                      const totalSeconds = sessions.reduce((sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0), 0);
+                      const totalSeconds = sessions.reduce(
+                        (sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0),
+                        0,
+                      );
                       const currentHours = totalSeconds / 3600;
                       const percentage = Math.min((currentHours / goalHours) * 100, 100);
                       panelProgress[panelNum] = { current: currentHours, percentage };
@@ -3899,7 +3942,7 @@ export default function AstroTracker() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                                    <div 
+                                    <div
                                       className="h-full bg-green-500 transition-all duration-300"
                                       style={{ width: `${data.percentage}%` }}
                                     />
@@ -3930,7 +3973,7 @@ export default function AstroTracker() {
                             </span>
                           </div>
                           <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-green-500 transition-all duration-300"
                               style={{ width: `${percentage}%` }}
                             />
@@ -3967,7 +4010,7 @@ export default function AstroTracker() {
 
                   // Calcular horas por filtro y panel
                   const filterPanelHours: Record<string, Record<string, number>> = {};
-                  
+
                   Object.entries((proj as any).panels || {}).forEach(([panelNum, sessions]: [string, any]) => {
                     sessions.forEach((s: any) => {
                       if (s.filter) {
@@ -3999,8 +4042,12 @@ export default function AstroTracker() {
                 })()}
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
-                  <div className="text-xl font-semibold">{new Set(proj.sessions.map((s: any) => s.date)).size} noche(s)</div>
-                  <div className="text-xs text-slate-500">Última: {proj.sessions.length ? proj.sessions[proj.sessions.length - 1].date : "–"}</div>
+                  <div className="text-xl font-semibold">
+                    {new Set(proj.sessions.map((s: any) => s.date)).size} noche(s)
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Última: {proj.sessions.length ? proj.sessions[proj.sessions.length - 1].date : "–"}
+                  </div>
                 </Card>
                 {(() => {
                   // Calcular tiempo activo del proyecto
@@ -4105,7 +4152,7 @@ export default function AstroTracker() {
 
                 // Calcular horas por filtro y panel
                 const filterPanelHours: Record<string, Record<string, number>> = {};
-                
+
                 proj.sessions.forEach((s: any) => {
                   if (s.filter && s.panel) {
                     if (!filterPanelHours[s.filter]) {
@@ -4148,13 +4195,13 @@ export default function AstroTracker() {
               })()}
 
               <SectionTitle title="Imagen final del proyecto" />
-              <ImageCard 
-                title="Imagen final" 
-                keyName="finalProject" 
-                proj={proj} 
+              <ImageCard
+                title="Imagen final"
+                keyName="finalProject"
+                proj={proj}
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
-                onRatingChange={(rating) => updateRating('finalProject', rating)}
+                onRatingChange={(rating) => updateRating("finalProject", rating)}
                 theme={theme}
                 onImageClick={(src) => {
                   setImageModalSrc(src);
@@ -4206,10 +4253,10 @@ export default function AstroTracker() {
 
               {Object.keys((proj as any).panels || {}).length > 1 && panelSectionExpanded && (
                 <div className="mb-4">
-                  <ImageCard 
+                  <ImageCard
                     title="Esquema de paneles"
                     keyName="panelSchema"
-                    proj={proj} 
+                    proj={proj}
                     upImgs={upImgs}
                     rating={undefined}
                     onRatingChange={undefined}
@@ -4245,7 +4292,7 @@ export default function AstroTracker() {
                       />
                     ) : (
                       <div className="flex items-center gap-2">
-                        <button 
+                        <button
                           onClick={() => setActive(t.id)}
                           className="hover:text-slate-900 dark:hover:text-slate-100"
                         >
@@ -4278,22 +4325,22 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <ImageCard 
-                  title={`Imagen inicial ${act?.name || tabLabel}`} 
-                  keyName={`initial${keyPrefix}`} 
-                  proj={proj} 
-                  upImgs={upImgs} 
+                <ImageCard
+                  title={`Imagen inicial ${act?.name || tabLabel}`}
+                  keyName={`initial${keyPrefix}`}
+                  proj={proj}
+                  upImgs={upImgs}
                   theme={theme}
                   onImageClick={(src) => {
                     setImageModalSrc(src);
                     setImageModalOpen(true);
                   }}
                 />
-                <ImageCard 
-                  title={`Imagen final ${act?.name || tabLabel}`} 
-                  keyName={`final${keyPrefix}`} 
-                  proj={proj} 
-                  upImgs={upImgs} 
+                <ImageCard
+                  title={`Imagen final ${act?.name || tabLabel}`}
+                  keyName={`final${keyPrefix}`}
+                  proj={proj}
+                  upImgs={upImgs}
                   theme={theme}
                   onImageClick={(src) => {
                     setImageModalSrc(src);
@@ -4622,9 +4669,9 @@ export default function AstroTracker() {
               </div>
             </div>
 
-            {/* Equipo astronofotográfico */}
+            {/* Equipo astrofotográfico */}
             <div className="grid gap-3">
-              <Label>Equipo astronofotográfico</Label>
+              <Label>Equipo astrofotográfico</Label>
 
               {/* Cámaras */}
               <div className="grid gap-2">
@@ -4634,35 +4681,36 @@ export default function AstroTracker() {
                     <input
                       type="text"
                       value={camera}
-              onChange={(e) => {
-                const oldCamera = cameras[index];
-                const newCameras = [...cameras];
-                newCameras[index] = e.target.value;
-                setCameras(newCameras);
-                
-                // Update camera name in all sessions
-                if (oldCamera && oldCamera.trim() !== "" && e.target.value !== oldCamera) {
-                  setObjects((prevObjects) =>
-                    prevObjects.map((obj) => ({
-                      ...obj,
-                      projects: obj.projects.map((proj: any) => ({
-                        ...proj,
-                        sessions: proj.sessions?.map((ses: any) =>
-                          ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses
-                        ) || [],
-                        panels: Object.fromEntries(
-                          Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
-                            key,
-                            sessions.map((ses: any) =>
-                              ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses
-                            ),
-                          ])
-                        ),
-                      })),
-                    }))
-                  );
-                }
-              }}
+                      onChange={(e) => {
+                        const oldCamera = cameras[index];
+                        const newCameras = [...cameras];
+                        newCameras[index] = e.target.value;
+                        setCameras(newCameras);
+
+                        // Update camera name in all sessions
+                        if (oldCamera && oldCamera.trim() !== "" && e.target.value !== oldCamera) {
+                          setObjects((prevObjects) =>
+                            prevObjects.map((obj) => ({
+                              ...obj,
+                              projects: obj.projects.map((proj: any) => ({
+                                ...proj,
+                                sessions:
+                                  proj.sessions?.map((ses: any) =>
+                                    ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses,
+                                  ) || [],
+                                panels: Object.fromEntries(
+                                  Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
+                                    key,
+                                    sessions.map((ses: any) =>
+                                      ses.camera === oldCamera ? { ...ses, camera: e.target.value } : ses,
+                                    ),
+                                  ]),
+                                ),
+                              })),
+                            })),
+                          );
+                        }
+                      }}
                       placeholder="Ej: ZWO ASI294MC Pro"
                       className={INPUT_CLS + " flex-1"}
                     />
@@ -4687,35 +4735,36 @@ export default function AstroTracker() {
                       <input
                         type="text"
                         value={telescope.name}
-                      onChange={(e) => {
-                        const oldTelescope = telescopes[index].name;
-                        const newTelescopes = [...telescopes];
-                        newTelescopes[index] = { ...newTelescopes[index], name: e.target.value };
-                        setTelescopes(newTelescopes);
-                        
-                        // Update telescope name in all sessions
-                        if (oldTelescope && oldTelescope.trim() !== "" && e.target.value !== oldTelescope) {
-                          setObjects((prevObjects) =>
-                            prevObjects.map((obj) => ({
-                              ...obj,
-                              projects: obj.projects.map((proj: any) => ({
-                                ...proj,
-                                sessions: proj.sessions?.map((ses: any) =>
-                                  ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses
-                                ) || [],
-                                panels: Object.fromEntries(
-                                  Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
-                                    key,
-                                    sessions.map((ses: any) =>
-                                      ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses
-                                    ),
-                                  ])
-                                ),
+                        onChange={(e) => {
+                          const oldTelescope = telescopes[index].name;
+                          const newTelescopes = [...telescopes];
+                          newTelescopes[index] = { ...newTelescopes[index], name: e.target.value };
+                          setTelescopes(newTelescopes);
+
+                          // Update telescope name in all sessions
+                          if (oldTelescope && oldTelescope.trim() !== "" && e.target.value !== oldTelescope) {
+                            setObjects((prevObjects) =>
+                              prevObjects.map((obj) => ({
+                                ...obj,
+                                projects: obj.projects.map((proj: any) => ({
+                                  ...proj,
+                                  sessions:
+                                    proj.sessions?.map((ses: any) =>
+                                      ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses,
+                                    ) || [],
+                                  panels: Object.fromEntries(
+                                    Object.entries(proj.panels || {}).map(([key, sessions]: [string, any]) => [
+                                      key,
+                                      sessions.map((ses: any) =>
+                                        ses.telescope === oldTelescope ? { ...ses, telescope: e.target.value } : ses,
+                                      ),
+                                    ]),
+                                  ),
+                                })),
                               })),
-                            }))
-                          );
-                        }
-                      }}
+                            );
+                          }
+                        }}
                         placeholder="Ej: Sky-Watcher 80ED"
                         className={INPUT_CLS + " flex-1"}
                       />
@@ -4764,10 +4813,7 @@ export default function AstroTracker() {
                         className={INPUT_CLS + " flex-1"}
                       />
                       {locations.length > 1 && (
-                        <IconBtn
-                          title="Eliminar"
-                          onClick={() => setLocations(locations.filter((_, i) => i !== index))}
-                        >
+                        <IconBtn title="Eliminar" onClick={() => setLocations(locations.filter((_, i) => i !== index))}>
                           <Trash2 className="w-4 h-4" />
                         </IconBtn>
                       )}
@@ -4825,7 +4871,11 @@ export default function AstroTracker() {
               <label className="text-sm font-medium">Lugar</label>
               <input
                 type="text"
-                value={projectSettingsData.location !== undefined ? projectSettingsData.location : (proj as any)?.location || ""}
+                value={
+                  projectSettingsData.location !== undefined
+                    ? projectSettingsData.location
+                    : (proj as any)?.location || ""
+                }
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, location: e.target.value })}
                 className={INPUT_CLS}
                 placeholder="Ej: Observatorio de Sierra Nevada"
@@ -4836,7 +4886,11 @@ export default function AstroTracker() {
               <label className="text-sm font-medium">Coordenadas Google</label>
               <input
                 type="text"
-                value={projectSettingsData.googleCoords !== undefined ? projectSettingsData.googleCoords : (proj as any)?.googleCoords || ""}
+                value={
+                  projectSettingsData.googleCoords !== undefined
+                    ? projectSettingsData.googleCoords
+                    : (proj as any)?.googleCoords || ""
+                }
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, googleCoords: e.target.value })}
                 className={INPUT_CLS}
                 placeholder="Ej: 37.0644, -3.1706"
@@ -4846,7 +4900,11 @@ export default function AstroTracker() {
             <div className="grid gap-2">
               <label className="text-sm font-medium">Descripción</label>
               <textarea
-                value={projectSettingsData.description !== undefined ? projectSettingsData.description : proj?.description || ""}
+                value={
+                  projectSettingsData.description !== undefined
+                    ? projectSettingsData.description
+                    : proj?.description || ""
+                }
                 onChange={(e) => setProjectSettingsData({ ...projectSettingsData, description: e.target.value })}
                 className={INPUT_CLS}
                 rows={3}
@@ -4861,7 +4919,11 @@ export default function AstroTracker() {
                     type="radio"
                     name="projectType"
                     value="ONP"
-                    checked={(projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any)?.projectType || "ONP") === "ONP"}
+                    checked={
+                      (projectSettingsData.projectType !== undefined
+                        ? projectSettingsData.projectType
+                        : (proj as any)?.projectType || "ONP") === "ONP"
+                    }
                     onChange={(e) => setProjectSettingsData({ ...projectSettingsData, projectType: e.target.value })}
                     className="w-4 h-4"
                   />
@@ -4872,7 +4934,11 @@ export default function AstroTracker() {
                     type="radio"
                     name="projectType"
                     value="SNP"
-                    checked={(projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any)?.projectType || "ONP") === "SNP"}
+                    checked={
+                      (projectSettingsData.projectType !== undefined
+                        ? projectSettingsData.projectType
+                        : (proj as any)?.projectType || "ONP") === "SNP"
+                    }
                     onChange={(e) => setProjectSettingsData({ ...projectSettingsData, projectType: e.target.value })}
                     className="w-4 h-4"
                   />
@@ -4888,7 +4954,11 @@ export default function AstroTracker() {
                 <div className="grid gap-1">
                   <label className="text-sm font-medium">Cámara</label>
                   <select
-                    value={projectSettingsData.camera !== undefined ? projectSettingsData.camera : (proj as any)?.equipment?.camera || ""}
+                    value={
+                      projectSettingsData.camera !== undefined
+                        ? projectSettingsData.camera
+                        : (proj as any)?.equipment?.camera || ""
+                    }
                     onChange={(e) => {
                       setProjectSettingsData({ ...projectSettingsData, camera: e.target.value });
                     }}
@@ -4908,7 +4978,11 @@ export default function AstroTracker() {
                 <div className="grid gap-1">
                   <label className="text-sm font-medium">Telescopio</label>
                   <select
-                    value={projectSettingsData.telescope !== undefined ? projectSettingsData.telescope : (proj as any)?.equipment?.telescope || ""}
+                    value={
+                      projectSettingsData.telescope !== undefined
+                        ? projectSettingsData.telescope
+                        : (proj as any)?.equipment?.telescope || ""
+                    }
                     onChange={(e) => {
                       setProjectSettingsData({ ...projectSettingsData, telescope: e.target.value });
                     }}
@@ -4933,35 +5007,55 @@ export default function AstroTracker() {
                 type="number"
                 min={1}
                 max={10}
-                value={projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1}
-                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, numPanels: parseInt(e.target.value) || 1 })}
+                value={
+                  projectSettingsData.numPanels !== undefined
+                    ? projectSettingsData.numPanels
+                    : Object.keys((proj as any)?.panels || {}).length || 1
+                }
+                onChange={(e) =>
+                  setProjectSettingsData({ ...projectSettingsData, numPanels: parseInt(e.target.value) || 1 })
+                }
                 className={INPUT_CLS}
               />
-              {projectSettingsData.numPanels !== undefined && projectSettingsData.numPanels < Object.keys((proj as any)?.panels || {}).length && (
-                <p className="text-xs text-amber-600 dark:text-amber-500">
-                  ⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados.
-                </p>
-              )}
+              {projectSettingsData.numPanels !== undefined &&
+                projectSettingsData.numPanels < Object.keys((proj as any)?.panels || {}).length && (
+                  <p className="text-xs text-amber-600 dark:text-amber-500">
+                    ⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados.
+                  </p>
+                )}
             </div>
 
             <div className="grid gap-2">
               <label className="text-sm font-medium">
-                {(projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1) > 1 
-                  ? "Objetivo horas (por panel)" 
+                {(projectSettingsData.numPanels !== undefined
+                  ? projectSettingsData.numPanels
+                  : Object.keys((proj as any)?.panels || {}).length || 1) > 1
+                  ? "Objetivo horas (por panel)"
                   : "Objetivo horas"}
               </label>
               <input
                 type="number"
                 min={0}
                 step={0.5}
-                value={projectSettingsData.goalHours !== undefined ? projectSettingsData.goalHours : (proj as any)?.goalHours || ""}
-                onChange={(e) => setProjectSettingsData({ ...projectSettingsData, goalHours: e.target.value === "" ? "" : parseFloat(e.target.value) })}
+                value={
+                  projectSettingsData.goalHours !== undefined
+                    ? projectSettingsData.goalHours
+                    : (proj as any)?.goalHours || ""
+                }
+                onChange={(e) =>
+                  setProjectSettingsData({
+                    ...projectSettingsData,
+                    goalHours: e.target.value === "" ? "" : parseFloat(e.target.value),
+                  })
+                }
                 className={INPUT_CLS}
                 placeholder="Ej: 10"
               />
               <p className="text-xs text-slate-500">
-                {(projectSettingsData.numPanels !== undefined ? projectSettingsData.numPanels : Object.keys((proj as any)?.panels || {}).length || 1) > 1 
-                  ? "Horas objetivo por cada panel (opcional)" 
+                {(projectSettingsData.numPanels !== undefined
+                  ? projectSettingsData.numPanels
+                  : Object.keys((proj as any)?.panels || {}).length || 1) > 1
+                  ? "Horas objetivo por cada panel (opcional)"
                   : "Horas totales objetivo para el proyecto (opcional)"}
               </p>
             </div>
@@ -5045,19 +5139,39 @@ export default function AstroTracker() {
                       projectSettingsData.description !== undefined
                         ? projectSettingsData.description
                         : proj.description,
-                    location: projectSettingsData.location !== undefined ? projectSettingsData.location : (proj as any).location,
-                    googleCoords: projectSettingsData.googleCoords !== undefined ? projectSettingsData.googleCoords : (proj as any).googleCoords,
+                    location:
+                      projectSettingsData.location !== undefined
+                        ? projectSettingsData.location
+                        : (proj as any).location,
+                    googleCoords:
+                      projectSettingsData.googleCoords !== undefined
+                        ? projectSettingsData.googleCoords
+                        : (proj as any).googleCoords,
                     startDate: projectSettingsData.startDate || proj.startDate,
                     status: projectSettingsData.status !== undefined ? projectSettingsData.status : proj.status,
-                    projectType: projectSettingsData.projectType !== undefined ? projectSettingsData.projectType : (proj as any).projectType,
-                    goalHours: projectSettingsData.goalHours !== undefined ? (projectSettingsData.goalHours === "" ? undefined : projectSettingsData.goalHours) : (proj as any).goalHours,
+                    projectType:
+                      projectSettingsData.projectType !== undefined
+                        ? projectSettingsData.projectType
+                        : (proj as any).projectType,
+                    goalHours:
+                      projectSettingsData.goalHours !== undefined
+                        ? projectSettingsData.goalHours === ""
+                          ? undefined
+                          : projectSettingsData.goalHours
+                        : (proj as any).goalHours,
                   };
 
                   // Actualizar equipo si se modificó
                   if (projectSettingsData.camera !== undefined || projectSettingsData.telescope !== undefined) {
                     updates.equipment = {
-                      camera: projectSettingsData.camera !== undefined ? projectSettingsData.camera : (proj as any)?.equipment?.camera,
-                      telescope: projectSettingsData.telescope !== undefined ? projectSettingsData.telescope : (proj as any)?.equipment?.telescope,
+                      camera:
+                        projectSettingsData.camera !== undefined
+                          ? projectSettingsData.camera
+                          : (proj as any)?.equipment?.camera,
+                      telescope:
+                        projectSettingsData.telescope !== undefined
+                          ? projectSettingsData.telescope
+                          : (proj as any)?.equipment?.telescope,
                     };
                   }
 
@@ -5167,7 +5281,7 @@ export default function AstroTracker() {
               <Btn
                 onClick={() => {
                   if (!editObjectData) return;
-                  
+
                   const originalId = editObjectData.id;
                   setObjects((prev) =>
                     prev.map((o) =>
@@ -5179,8 +5293,8 @@ export default function AstroTracker() {
                             constellation: editObjectData.constellation.trim(),
                             type: editObjectData.type,
                           }
-                        : o
-                    )
+                        : o,
+                    ),
                   );
                   setShowEditObjectModal(false);
                   setEditObjectData(null);
@@ -5262,7 +5376,8 @@ export default function AstroTracker() {
           >
             <div className="space-y-3">
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                {selectedDayInfo.projects.length} proyecto{selectedDayInfo.projects.length !== 1 ? 's' : ''} con sesiones en este día:
+                {selectedDayInfo.projects.length} proyecto{selectedDayInfo.projects.length !== 1 ? "s" : ""} con
+                sesiones en este día:
               </p>
               {selectedDayInfo.projects.map((proj, idx) => (
                 <div
@@ -5273,7 +5388,7 @@ export default function AstroTracker() {
                     setSelectedProjectId(proj.projectId);
                     setView("project");
                     setSelectedDayInfo(null);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition group"
                 >
@@ -5282,11 +5397,9 @@ export default function AstroTracker() {
                       <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
                         {proj.objectName}
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
-                        {proj.projectName}
-                      </div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">{proj.projectName}</div>
                       <div className="text-xs text-slate-500 dark:text-slate-500 mt-1">
-                        {proj.sessionsCount} sesión{proj.sessionsCount !== 1 ? 'es' : ''}
+                        {proj.sessionsCount} sesión{proj.sessionsCount !== 1 ? "es" : ""}
                       </div>
                     </div>
                     <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition" />
