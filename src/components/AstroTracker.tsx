@@ -2185,9 +2185,9 @@ export default function AstroTracker() {
         currentTabs.map((t) => `${t.name} (${t.custom ? "custom" : "auto"})`),
       );
 
-      // Obtener nombres de tabs automáticas actuales
+      // Obtener nombres de tabs automáticas actuales (excluyendo la tab "?")
       const currentAutoTabNames = currentTabs
-        .filter((t) => !t.custom)
+        .filter((t) => !t.custom && t.id !== "unclassified")
         .map((t) => t.name)
         .sort();
       const projectFilterNames = [...projectFilters].sort();
@@ -2197,7 +2197,46 @@ export default function AstroTracker() {
 
       console.log("🔍 ¿Tabs coinciden con filtros?", tabsMatchFilters);
 
+      // Verificar si hay sesiones sin clasificar
+      const up = (x: string) => (x || "").toUpperCase().trim();
+      const unclassifiedSessions = ss.filter((s: any) => {
+        const sessionFilter = up(s.filter);
+        if (!sessionFilter) return true; // Sesiones sin filtro
+        
+        // Verificar si coincide con algún filtro del proyecto
+        const matchesProjectFilter = projectFilters.some((filter: string) => {
+          return sessionFilter === up(filter);
+        });
+        
+        return !matchesProjectFilter; // Sesiones que NO coinciden
+      });
+
+      const hasUnclassifiedSessions = unclassifiedSessions.length > 0;
+      console.log("🔍 Sesiones sin clasificar:", unclassifiedSessions.length);
+
       if (tabsMatchFilters && currentTabs.length > 0) {
+        // Verificar si necesitamos agregar/quitar la tab "?"
+        const hasUnclassifiedTab = currentTabs.some((t) => t.id === "unclassified");
+        
+        if (hasUnclassifiedSessions && !hasUnclassifiedTab) {
+          console.log("➕ Agregando tab '?' para sesiones sin clasificar");
+          return [
+            ...currentTabs,
+            {
+              id: "unclassified",
+              name: "?",
+              custom: false,
+            },
+          ];
+        } else if (!hasUnclassifiedSessions && hasUnclassifiedTab) {
+          console.log("➖ Eliminando tab '?' (ya no hay sesiones sin clasificar)");
+          const newTabs = currentTabs.filter((t) => t.id !== "unclassified");
+          if (active === "unclassified") {
+            setActive(newTabs[0]?.id || "");
+          }
+          return newTabs;
+        }
+        
         console.log("✅ Manteniendo tabs existentes");
         return currentTabs;
       }
@@ -2210,6 +2249,15 @@ export default function AstroTracker() {
           name: filter,
           custom: false,
         }));
+
+        // Agregar tab "?" si hay sesiones sin clasificar
+        if (hasUnclassifiedSessions) {
+          newTabs.push({
+            id: "unclassified",
+            name: "?",
+            custom: false,
+          });
+        }
 
         console.log(
           "📋 Nuevas tabs creadas:",
@@ -2230,14 +2278,24 @@ export default function AstroTracker() {
       } else {
         console.log("⚠️ Proyecto sin filtros, solo tabs personalizadas");
         // Si el proyecto no tiene filtros definidos, solo mantener tabs personalizadas
-        const customTabs = currentTabs.filter((t) => t.custom);
+        const customTabs = currentTabs.filter((t) => t.custom && t.id !== "unclassified");
+        
+        // Agregar tab "?" si hay sesiones
+        if (hasUnclassifiedSessions) {
+          customTabs.push({
+            id: "unclassified",
+            name: "?",
+            custom: false,
+          });
+        }
+        
         if (customTabs.length > 0 && !customTabs.find((t) => t.id === active)) {
           setActive(customTabs[0]?.id || "");
         }
         return customTabs;
       }
     });
-  }, [proj?.id, JSON.stringify((proj as any)?.filters || [])]);
+  }, [proj?.id, JSON.stringify((proj as any)?.filters || []), ss.length]);
 
   const createTab = useCallback(() => {
     const name = tabName.trim();
@@ -2339,6 +2397,25 @@ export default function AstroTracker() {
   const filt = useCallback(
     (t: TabType | undefined) => {
       const up = (x: string) => (x || "").toUpperCase().trim();
+      
+      // Pestaña especial "?" para sesiones sin clasificar
+      if (t?.id === "unclassified") {
+        return ss.filter((s: any) => {
+          const sessionFilter = up(s.filter);
+          if (!sessionFilter) return true; // Sesiones sin filtro
+          
+          // Verificar si coincide con alguna pestaña existente
+          const matchesAnyTab = tabs.some((tab) => {
+            if (tab.id === "unclassified") return false;
+            if (tab.preset === "rgb") return sessionFilter === "RGB";
+            if (tab.preset === "haoiii") return sessionFilter.includes("HA") || sessionFilter.includes("OIII");
+            return sessionFilter === up(tab.name);
+          });
+          
+          return !matchesAnyTab; // Devolver sesiones que NO coinciden con ninguna pestaña
+        });
+      }
+      
       if (t?.preset === "rgb") return ss.filter((s: any) => up(s.filter) === "RGB");
       if (t?.preset === "haoiii")
         return ss.filter((s: any) => {
@@ -2355,7 +2432,7 @@ export default function AstroTracker() {
       }
       return ss;
     },
-    [ss],
+    [ss, tabs],
   );
 
   const act = tabs.find((t) => t.id === active) || tabs[0] || { id: "", name: "Sin filtro", custom: false };
@@ -4376,29 +4453,34 @@ export default function AstroTracker() {
                         <button
                           onClick={() => setActive(t.id)}
                           className="hover:text-slate-900 dark:hover:text-slate-100"
+                          title={t.id === "unclassified" ? "Sesiones sin clasificar o que no coinciden con ningún filtro" : ""}
                         >
                           {t.name}
                         </button>
-                        <button
-                          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditTab(t);
-                          }}
-                          title="Editar nombre"
-                        >
-                          <Pencil className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
-                        </button>
-                        <button
-                          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            rm(t.id);
-                          }}
-                          title="Eliminar filtro"
-                        >
-                          <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
-                        </button>
+                        {t.id !== "unclassified" && (
+                          <>
+                            <button
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditTab(t);
+                              }}
+                              title="Editar nombre"
+                            >
+                              <Pencil className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
+                            </button>
+                            <button
+                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                rm(t.id);
+                              }}
+                              title="Eliminar filtro"
+                            >
+                              <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
