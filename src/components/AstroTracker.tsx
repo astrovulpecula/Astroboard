@@ -3007,24 +3007,33 @@ export default function AstroTracker() {
                       })()}
 
                       {/* Object with Most Exposure */}
-                      {maxExposureObj && (
-                        <Card className="p-5">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-yellow-500/10">
-                              <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                            </div>
-                            <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">
-                                Objeto con Mayor Exposición
+                      {maxExposureObj && (() => {
+                        const maxExpObj = objects.find((o) => o.id === maxExposureObj[0]);
+                        const commonName = maxExpObj?.commonName || maxExposureObj[0];
+                        return (
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-yellow-500/10">
+                                <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
                               </div>
-                              <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {hh(maxExposureObj[1] * 3600)} de exposición
+                              <div className="flex-1">
+                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                  Objeto con Mayor Exposición
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                  <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    {maxExposureObj[1].toFixed(1)}h
+                                  </div>
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  {commonName}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </Card>
-                      )}
+                          </Card>
+                        );
+                      })()}
 
                       {/* Most Photographed Constellation */}
                       {mostPhotographedConstellation && (
