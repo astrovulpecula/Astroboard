@@ -3023,7 +3023,7 @@ export default function AstroTracker() {
                                 <div className="flex items-baseline gap-2">
                                   <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
                                   <div className="text-xs text-slate-500 dark:text-slate-400">
-                                    {maxExposureObj[1].toFixed(1)}h
+                                    {hh(maxExposureObj[1] * 3600)} horas
                                   </div>
                                 </div>
                                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
