@@ -2835,9 +2835,19 @@ export default function AstroTracker() {
                 });
                 const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
 
+                // Calculate most photographed constellation
+                const constellationCounts: Record<string, number> = {};
+                objects.forEach((obj) => {
+                  if (obj.constellation) {
+                    constellationCounts[obj.constellation] = (constellationCounts[obj.constellation] || 0) + 1;
+                  }
+                });
+                const mostPhotographedConstellation = Object.entries(constellationCounts).sort(([, a], [, b]) => b - a)[0];
+
                 return (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      {/* Total Objetos y Proyectos */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-blue-500/10">
@@ -2852,21 +2862,7 @@ export default function AstroTracker() {
                         </div>
                       </Card>
 
-                      <Card className="p-5">
-                        <div className="flex items-center gap-3">
-                          <div className="p-3 rounded-xl bg-orange-500/10">
-                            <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                          </div>
-                          <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Proyectos Activos</div>
-                            <div className="text-2xl font-bold">{activeProjects}</div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {activeProjectsPercentage}% del total
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-
+                      {/* Horas y Lights Totales */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-purple-500/10">
@@ -2881,6 +2877,7 @@ export default function AstroTracker() {
                         </div>
                       </Card>
 
+                      {/* Noches y Sesiones */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-green-500/10">
@@ -2894,30 +2891,26 @@ export default function AstroTracker() {
                           </div>
                         </div>
                       </Card>
+
+                      {/* Proyectos Activos */}
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-orange-500/10">
+                            <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Proyectos Activos</div>
+                            <div className="text-2xl font-bold">{activeProjects}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {activeProjectsPercentage}% del total
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
                     </div>
 
                     {/* Second row of highlights */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      {/* Object with Most Exposure */}
-                      {maxExposureObj && (
-                        <Card className="p-5">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-yellow-500/10">
-                              <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                            </div>
-                            <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">
-                                Objeto con Mayor Exposición
-                              </div>
-                              <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {hh(maxExposureObj[1] * 3600)} de exposición
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      )}
-
                       {/* Hours by Year */}
                       {(() => {
                         // Get all years with sessions
@@ -3013,6 +3006,49 @@ export default function AstroTracker() {
                         );
                       })()}
 
+                      {/* Object with Most Exposure */}
+                      {maxExposureObj && (
+                        <Card className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-yellow-500/10">
+                              <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-slate-600 dark:text-slate-400">
+                                Objeto con Mayor Exposición
+                              </div>
+                              <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {hh(maxExposureObj[1] * 3600)} de exposición
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+
+                      {/* Most Photographed Constellation */}
+                      {mostPhotographedConstellation && (
+                        <Card className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-indigo-500/10">
+                              <Star className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-slate-600 dark:text-slate-400">
+                                Constelación Más Fotografiada
+                              </div>
+                              <div className="text-2xl font-bold">{mostPhotographedConstellation[0]}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">
+                                {mostPhotographedConstellation[1]} objeto{mostPhotographedConstellation[1] !== 1 ? "s" : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      )}
+                    </div>
+
+                    {/* Third row of highlights */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       {/* Consecutive Nights Streak */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
