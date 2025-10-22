@@ -2855,9 +2855,14 @@ export default function AstroTracker() {
                   // If last session was more than 1 day ago, the streak is broken
                   const isStreakActive = daysSinceLastSession <= 1;
 
+                  // If streak is not active, reset current streak to 0
+                  if (!isStreakActive) {
+                    currentStreak = 0;
+                  }
+
                   // Calculate max streak (scan through all dates)
                   let tempStreak = 1;
-                  maxStreak = currentStreak; // Start with current streak
+                  maxStreak = 1;
 
                   for (let i = 1; i < allDates.length; i++) {
                     const prevDate = new Date(allDates[i - 1]);
@@ -2875,9 +2880,9 @@ export default function AstroTracker() {
                     }
                   }
 
-                  // If streak is not active, reset current streak to 0
-                  if (!isStreakActive) {
-                    currentStreak = 0;
+                  // If current streak is active and larger than any historical streak, use it
+                  if (isStreakActive) {
+                    maxStreak = Math.max(maxStreak, currentStreak);
                   }
                 }
 
