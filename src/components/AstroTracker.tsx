@@ -1675,6 +1675,7 @@ export default function AstroTracker() {
   const [userName, setUserName] = useState<string>("");
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [editObjectData, setEditObjectData] = useState<any>(null);
+  const [editObjectOriginalId, setEditObjectOriginalId] = useState<string | null>(null);
   const [showEditObjectModal, setShowEditObjectModal] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [projectSettingsData, setProjectSettingsData] = useState<any>({});
@@ -3575,6 +3576,7 @@ export default function AstroTracker() {
                               title="Editar objeto"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                setEditObjectOriginalId(o.id);
                                 setEditObjectData({
                                   id: o.id,
                                   commonName: o.commonName || "",
@@ -5382,6 +5384,7 @@ export default function AstroTracker() {
           onClose={() => {
             setShowEditObjectModal(false);
             setEditObjectData(null);
+            setEditObjectOriginalId(null);
           }}
           title="Editar Objeto"
         >
@@ -5437,18 +5440,18 @@ export default function AstroTracker() {
                 onClick={() => {
                   setShowEditObjectModal(false);
                   setEditObjectData(null);
+                  setEditObjectOriginalId(null);
                 }}
               >
                 Cancelar
               </Btn>
               <Btn
                 onClick={() => {
-                  if (!editObjectData) return;
+                  if (!editObjectData || !editObjectOriginalId) return;
 
-                  const originalId = editObjectData.id;
                   setObjects((prev) =>
                     prev.map((o) =>
-                      o.id === originalId
+                      o.id === editObjectOriginalId
                         ? {
                             ...o,
                             id: editObjectData.id.trim() || o.id,
@@ -5461,6 +5464,7 @@ export default function AstroTracker() {
                   );
                   setShowEditObjectModal(false);
                   setEditObjectData(null);
+                  setEditObjectOriginalId(null);
                 }}
               >
                 Guardar cambios
