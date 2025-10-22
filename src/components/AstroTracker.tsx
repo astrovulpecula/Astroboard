@@ -42,7 +42,6 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
@@ -4526,119 +4525,116 @@ export default function AstroTracker() {
                 </Btn>
               </div>
 
-              <Card className="p-2 md:p-4">
-                <ScrollArea className="w-full">
-                  <div className="min-w-max">
-                    <table className="text-xs md:text-sm w-full">
-                      <thead>
-                        <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
-                          <th className="p-2 md:p-3 whitespace-nowrap">#</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Fecha</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Fase lunar</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Filtro</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Cámara</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Exposición (s)</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Lights sesión</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Lights acumulados</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Tiempo sesión</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Tiempo acumulado</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">SNR (X̄)</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">SNR-R</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
-                          <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">
-                            Acciones
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtered.map((s: any, i: number, a: any[]) => {
-                          const m = mean(s);
-                          const pm = a[i - 1] ? mean(a[i - 1]) : null;
-                          const inc = Number.isFinite(m) && Number.isFinite(pm) ? +(m - pm).toFixed(3) : 0;
-                          const cumulativeLightsVal = a
-                            .slice(0, i + 1)
-                            .reduce((acc, sess) => acc + (sess.lights || 0), 0);
-                          const sessionTime = s.lights * s.exposureSec;
-                          const cumulativeTime = a
-                            .slice(0, i + 1)
-                            .reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
+              <div className="overflow-x-auto -mx-3 md:mx-0">
+                <Card className="p-2 md:p-4">
+                  <table className="text-xs md:text-sm w-full">
+                    <thead>
+                      <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
+                        <th className="p-2 md:p-3 whitespace-nowrap">#</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Fecha</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Fase lunar</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Filtro</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Cámara</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Exposición (s)</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Lights sesión</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Lights acumulados</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo sesión</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo acumulado</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR (X̄)</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-R</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">
+                          Acciones
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((s: any, i: number, a: any[]) => {
+                        const m = mean(s);
+                        const pm = a[i - 1] ? mean(a[i - 1]) : null;
+                        const inc = Number.isFinite(m) && Number.isFinite(pm) ? +(m - pm).toFixed(3) : 0;
+                        const cumulativeLightsVal = a
+                          .slice(0, i + 1)
+                          .reduce((acc, sess) => acc + (sess.lights || 0), 0);
+                        const sessionTime = s.lights * s.exposureSec;
+                        const cumulativeTime = a
+                          .slice(0, i + 1)
+                          .reduce((acc, sess) => acc + (sess.lights || 0) * (sess.exposureSec || 0), 0);
 
-                          // Calcular fase lunar si no existe
-                          const moonData = s.date ? calculateMoonPhase(s.date) : null;
-                          const moonDisplay = moonData
-                            ? `${moonData.emoji} ${moonData.name} (${moonData.illumination}%)`
-                            : "–";
+                        // Calcular fase lunar si no existe
+                        const moonData = s.date ? calculateMoonPhase(s.date) : null;
+                        const moonDisplay = moonData
+                          ? `${moonData.emoji} ${moonData.name} (${moonData.illumination}%)`
+                          : "–";
 
-                          return (
-                            <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i + 1}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.date}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                                {Number.isFinite(m) ? m!.toFixed(2) : "–"}
-                              </td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                                {Number.isFinite(s.snrR) ? s.snrR : "–"}
-                              </td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                                {Number.isFinite(s.snrG) ? s.snrG : "–"}
-                              </td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                                {Number.isFinite(s.snrB) ? s.snrB : "–"}
-                              </td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">
-                                <div className="inline-flex gap-1 md:gap-2">
-                                  <Dialog>
-                                    <DialogTrigger asChild>
-                                      <button
-                                        className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                        title="Comentarios"
-                                      >
-                                        <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                        {s.notes && s.notes.trim() !== "" && (
-                                          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                                        )}
-                                      </button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                      <DialogHeader>
-                                        <DialogTitle>Comentarios de sesión</DialogTitle>
-                                        <DialogDescription>
-                                          Fecha: {s.date} - Filtro: {s.filter}
-                                        </DialogDescription>
-                                      </DialogHeader>
-                                      <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 min-h-[100px]">
-                                        {s.notes || ""}
-                                      </div>
-                                    </DialogContent>
-                                  </Dialog>
-                                  <IconBtn title="Editar" onClick={() => setEditSes(s)}>
-                                    <Pencil className="w-3 h-3 md:w-4 md:h-4" />
-                                  </IconBtn>
-                                  <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}>
-                                    <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                                  </IconBtn>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </Card>
+                        return (
+                          <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i + 1}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.date}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                              {Number.isFinite(m) ? m!.toFixed(2) : "–"}
+                            </td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                              {Number.isFinite(s.snrR) ? s.snrR : "–"}
+                            </td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                              {Number.isFinite(s.snrG) ? s.snrG : "–"}
+                            </td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                              {Number.isFinite(s.snrB) ? s.snrB : "–"}
+                            </td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white/95 dark:bg-slate-950/95 backdrop-blur-sm border-l border-slate-200 dark:border-slate-700 shadow-[-4px_0_8px_rgba(0,0,0,0.05)]">
+                              <div className="inline-flex gap-1 md:gap-2">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <button
+                                      className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
+                                      title="Comentarios"
+                                    >
+                                      <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
+                                      {s.notes && s.notes.trim() !== "" && (
+                                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                      )}
+                                    </button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Comentarios de sesión</DialogTitle>
+                                      <DialogDescription>
+                                        Fecha: {s.date} - Filtro: {s.filter}
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 min-h-[100px]">
+                                      {s.notes || ""}
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                                <IconBtn title="Editar" onClick={() => setEditSes(s)}>
+                                  <Pencil className="w-3 h-3 md:w-4 md:h-4" />
+                                </IconBtn>
+                                <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}>
+                                  <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                                </IconBtn>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <ExposureChart sessions={filtered} />
