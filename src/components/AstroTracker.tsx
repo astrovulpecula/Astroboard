@@ -42,6 +42,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
@@ -70,6 +71,8 @@ const mean = (s: any) => {
 const totalExposureSec = (sessions: any[]) => sessions.reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0);
 const cumulativeLights = (sessions: any[], i: number) =>
   sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0), 0);
+const cumulativeHours = (sessions: any[], i: number) =>
+  sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0) / 3600;
 
 const sampleSessions = [
   {
@@ -1281,11 +1284,13 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 };
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
+  const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(
     () =>
       s.map((x, i, a) => ({
         lightTotal: cumulativeLights(a, i),
+        hoursTotal: cumulativeHours(a, i),
         snr: mean(x),
       })),
     [s],
@@ -1297,11 +1302,28 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <SectionTitle icon={Star} title="SNR (media) vs acumulado de lights" />
-      <ResponsiveContainer width="100%" height="90%">
+      <div className="flex items-center justify-between mb-2">
+        <SectionTitle icon={Star} title="SNR (media) vs acumulado" />
+        <RadioGroup value={xAxisMode} onValueChange={(v) => setXAxisMode(v as "lights" | "hours")} className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="lights" id="snr-lights" />
+            <label htmlFor="snr-lights" className="text-sm cursor-pointer">Lights</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="hours" id="snr-hours" />
+            <label htmlFor="snr-hours" className="text-sm cursor-pointer">Horas</label>
+          </div>
+        </RadioGroup>
+      </div>
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <XAxis 
+            dataKey={xAxisMode === "lights" ? "lightTotal" : "hoursTotal"} 
+            tickMargin={8} 
+            stroke="#ffffff"
+            tickFormatter={(v) => xAxisMode === "hours" ? v.toFixed(1) : v}
+          />
           <YAxis
             tickMargin={8}
             domain={[Math.max(first - 1, 0), "dataMax"]}
@@ -1320,11 +1342,13 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
+  const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
   const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(
     () =>
       s.map((x, i, a) => ({
         lightTotal: cumulativeLights(a, i),
+        hoursTotal: cumulativeHours(a, i),
         r: Number.isFinite(x.snrR) ? x.snrR : null,
         g: Number.isFinite(x.snrG) ? x.snrG : null,
         b: Number.isFinite(x.snrB) ? x.snrB : null,
@@ -1339,11 +1363,28 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
-      <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado de lights" />
-      <ResponsiveContainer width="100%" height="90%">
+      <div className="flex items-center justify-between mb-2">
+        <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado" />
+        <RadioGroup value={xAxisMode} onValueChange={(v) => setXAxisMode(v as "lights" | "hours")} className="flex gap-4">
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="lights" id="snr-rgb-lights" />
+            <label htmlFor="snr-rgb-lights" className="text-sm cursor-pointer">Lights</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="hours" id="snr-rgb-hours" />
+            <label htmlFor="snr-rgb-hours" className="text-sm cursor-pointer">Horas</label>
+          </div>
+        </RadioGroup>
+      </div>
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="lightTotal" tickMargin={8} stroke="#ffffff" />
+          <XAxis 
+            dataKey={xAxisMode === "lights" ? "lightTotal" : "hoursTotal"} 
+            tickMargin={8} 
+            stroke="#ffffff"
+            tickFormatter={(v) => xAxisMode === "hours" ? v.toFixed(1) : v}
+          />
           <YAxis
             tickMargin={8}
             domain={[Math.max(firstMin - 1, 0), "dataMax"]}
