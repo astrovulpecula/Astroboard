@@ -3140,35 +3140,251 @@ export default function AstroTracker() {
                     </div>
 
                     {/* Third row of highlights */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      {/* Consecutive Nights Streak */}
-                      <Card className="p-5">
-                        <div className="flex items-center gap-3">
-                          <div className="p-3 rounded-xl bg-pink-500/10">
-                            <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm text-slate-600 dark:text-slate-400">
-                              Racha de Noches Consecutivas
+                    {/* First highlights section */}
+                    {(() => {
+                      const now = new Date();
+                      const year = calendarYear;
+                      const month = calendarMonth;
+
+                      // Obtener todas las sesiones de todos los proyectos
+                      const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
+
+                      // Filtrar sesiones del mes seleccionado
+                      const currentMonthSessions = allSessions.filter((s) => {
+                        const sessionDate = new Date(s.date);
+                        return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
+                      });
+
+                      // Obtener días únicos con sesiones en el mes seleccionado
+                      const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
+
+                      // Obtener primer y último día del mes
+                      const firstDay = new Date(year, month, 1);
+                      const lastDay = new Date(year, month + 1, 0);
+                      const daysInMonth = lastDay.getDate();
+                      const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
+
+                      const monthNames = [
+                        "Enero",
+                        "Febrero",
+                        "Marzo",
+                        "Abril",
+                        "Mayo",
+                        "Junio",
+                        "Julio",
+                        "Agosto",
+                        "Septiembre",
+                        "Octubre",
+                        "Noviembre",
+                        "Diciembre",
+                      ];
+
+                      // Función para manejar clic en día con sesiones
+                      const handleDayClick = (day: number) => {
+                        // Obtener proyectos con sesiones en este día
+                        const projectsWithSessions: any[] = [];
+
+                        objects.forEach((obj) => {
+                          obj.projects.forEach((proj) => {
+                            const sessionsOnDay = proj.sessions.filter((s: any) => {
+                              const sessionDate = new Date(s.date);
+                              return (
+                                sessionDate.getFullYear() === year &&
+                                sessionDate.getMonth() === month &&
+                                sessionDate.getDate() === day
+                              );
+                            });
+
+                            if (sessionsOnDay.length > 0) {
+                              projectsWithSessions.push({
+                                objectId: obj.id,
+                                objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
+                                projectId: proj.id,
+                                projectName: proj.name,
+                                sessionsCount: sessionsOnDay.length,
+                              });
+                            }
+                          });
+                        });
+
+                        if (projectsWithSessions.length > 0) {
+                          setSelectedDayInfo({ day, month, year, projects: projectsWithSessions });
+                        }
+                      };
+
+                      // Función para navegar a meses anteriores/siguientes
+                      const navigateMonth = (direction: number) => {
+                        const newMonth = month + direction;
+                        if (newMonth < 0) {
+                          setCalendarMonth(11);
+                          setCalendarYear(year - 1);
+                        } else if (newMonth > 11) {
+                          setCalendarMonth(0);
+                          setCalendarYear(year + 1);
+                        } else {
+                          setCalendarMonth(newMonth);
+                        }
+                      };
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          {/* Racha de noches consecutivas */}
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-pink-500/10">
+                                <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-sm text-slate-600 dark:text-slate-400">
+                                  Racha de Noches Consecutivas
+                                </div>
+                                <div className="text-2xl font-bold">
+                                  {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? "s" : ""}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  {currentStreak > 0 ? (
+                                    <>
+                                      Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
+                                    </>
+                                  ) : (
+                                    <>
+                                      Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-2xl font-bold">
-                              {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? "s" : ""}
+                          </Card>
+
+                          {/* Uso de telescopios (resumen) */}
+                          {Object.keys(telescopeCounts).length > 0 && (
+                            <Card className="p-5">
+                              <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-xl bg-purple-500/10">
+                                  <Telescope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                                </div>
+                                <div className="flex-1">
+                                  <div className="text-sm text-slate-600 dark:text-slate-400">
+                                    Uso de telescopios
+                                  </div>
+                                  <div className="text-2xl font-bold">
+                                    {Object.keys(telescopeCounts).length}
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    {Object.keys(telescopeCounts).length === 1 ? "telescopio" : "telescopios"} usados
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          )}
+
+                          {/* Días con sesiones */}
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
+                                <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                                <div className="text-2xl font-bold">{daysWithSessions.size}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">en {monthNames[month]}</div>
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              {currentStreak > 0 ? (
-                                <>
-                                  Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
-                                </>
-                              ) : (
-                                <>
-                                  Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
-                                </>
-                              )}
-                            </div>
-                          </div>
+                          </Card>
+
+                          {/* Calendario desplegable */}
+                          <Card className="p-5">
+                            <details className="group">
+                              <summary className="cursor-pointer list-none">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3">
+                                    <div className="p-3 rounded-xl bg-blue-500/10">
+                                      <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                                    </div>
+                                    <div>
+                                      <div className="text-sm text-slate-600 dark:text-slate-400">Calendario</div>
+                                      <div className="text-2xl font-bold">
+                                        {monthNames[month]} {year}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <ChevronLeft className="w-5 h-5 transition-transform group-open:rotate-[-90deg] text-slate-400" />
+                                </div>
+                              </summary>
+                              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                {/* Navegación de meses */}
+                                <div className="flex items-center justify-between mb-4">
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      navigateMonth(-1);
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                  >
+                                    <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <div className="text-sm font-semibold">
+                                    {monthNames[month]} {year}
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      navigateMonth(1);
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                                  >
+                                    <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-2">
+                                  {/* Cabecera días de la semana */}
+                                  {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
+                                    <div
+                                      key={i}
+                                      className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1"
+                                    >
+                                      {day}
+                                    </div>
+                                  ))}
+
+                                  {/* Espacios vacíos antes del primer día */}
+                                  {Array.from({ length: startingDayOfWeek }).map((_, i) => (
+                                    <div key={`empty-${i}`} />
+                                  ))}
+
+                                  {/* Días del mes */}
+                                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
+                                    const hasSession = daysWithSessions.has(day);
+                                    const isToday =
+                                      day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+
+                                    return (
+                                      <div
+                                        key={day}
+                                        onClick={() => hasSession && handleDayClick(day)}
+                                        className={`
+                                          aspect-square flex items-center justify-center rounded-lg text-sm
+                                          ${
+                                            hasSession
+                                              ? "bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40 cursor-pointer hover:bg-green-500/30 transition"
+                                              : "text-slate-600 dark:text-slate-400"
+                                          }
+                                          ${isToday && !hasSession ? "border-2 border-blue-500/40" : ""}
+                                          ${isToday && hasSession ? "ring-2 ring-blue-500 ring-offset-2" : ""}
+                                        `}
+                                      >
+                                        {day}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </details>
+                          </Card>
                         </div>
-                      </Card>
-                    </div>
+                      );
+                    })()}
 
                     {/* Camera Usage Statistics */}
                     {Object.keys(cameraCounts).length > 0 && (
@@ -3231,201 +3447,6 @@ export default function AstroTracker() {
                 );
               })()}
 
-              {/* Calendario mensual y estadísticas de sesiones */}
-              {(() => {
-                const now = new Date();
-                const year = calendarYear;
-                const month = calendarMonth;
-
-                // Obtener todas las sesiones de todos los proyectos
-                const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
-
-                // Filtrar sesiones del mes seleccionado
-                const currentMonthSessions = allSessions.filter((s) => {
-                  const sessionDate = new Date(s.date);
-                  return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
-                });
-
-                // Obtener días únicos con sesiones en el mes seleccionado
-                const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
-
-                // Obtener primer y último día del mes
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
-
-                const monthNames = [
-                  "Enero",
-                  "Febrero",
-                  "Marzo",
-                  "Abril",
-                  "Mayo",
-                  "Junio",
-                  "Julio",
-                  "Agosto",
-                  "Septiembre",
-                  "Octubre",
-                  "Noviembre",
-                  "Diciembre",
-                ];
-
-                // Función para manejar clic en día con sesiones
-                const handleDayClick = (day: number) => {
-                  // Obtener proyectos con sesiones en este día
-                  const projectsWithSessions: any[] = [];
-
-                  objects.forEach((obj) => {
-                    obj.projects.forEach((proj) => {
-                      const sessionsOnDay = proj.sessions.filter((s: any) => {
-                        const sessionDate = new Date(s.date);
-                        return (
-                          sessionDate.getFullYear() === year &&
-                          sessionDate.getMonth() === month &&
-                          sessionDate.getDate() === day
-                        );
-                      });
-
-                      if (sessionsOnDay.length > 0) {
-                        projectsWithSessions.push({
-                          objectId: obj.id,
-                          objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
-                          projectId: proj.id,
-                          projectName: proj.name,
-                          sessionsCount: sessionsOnDay.length,
-                        });
-                      }
-                    });
-                  });
-
-                  if (projectsWithSessions.length > 0) {
-                    setSelectedDayInfo({ day, month, year, projects: projectsWithSessions });
-                  }
-                };
-
-                // Función para navegar a meses anteriores/siguientes
-                const navigateMonth = (direction: number) => {
-                  const newMonth = month + direction;
-                  if (newMonth < 0) {
-                    setCalendarMonth(11);
-                    setCalendarYear(year - 1);
-                  } else if (newMonth > 11) {
-                    setCalendarMonth(0);
-                    setCalendarYear(year + 1);
-                  } else {
-                    setCalendarMonth(newMonth);
-                  }
-                };
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    {/* Highlight de días con sesiones */}
-                    <Card className="p-5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
-                          <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
-                          <div className="text-2xl font-bold">{daysWithSessions.size}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">en {monthNames[month]}</div>
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* Calendario desplegable */}
-                    <Card className="p-5">
-                      <details className="group">
-                        <summary className="cursor-pointer list-none">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-blue-500/10">
-                                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                              </div>
-                              <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">Calendario</div>
-                                <div className="text-2xl font-bold">
-                                  {monthNames[month]} {year}
-                                </div>
-                              </div>
-                            </div>
-                            <ChevronLeft className="w-5 h-5 transition-transform group-open:rotate-[-90deg] text-slate-400" />
-                          </div>
-                        </summary>
-                        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                          {/* Navegación de meses */}
-                          <div className="flex items-center justify-between mb-4">
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                navigateMonth(-1);
-                              }}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                            >
-                              <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <div className="text-sm font-semibold">
-                              {monthNames[month]} {year}
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                navigateMonth(1);
-                              }}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                            >
-                              <ChevronRight className="w-5 h-5" />
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-7 gap-2">
-                            {/* Cabecera días de la semana */}
-                            {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
-                              <div
-                                key={i}
-                                className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1"
-                              >
-                                {day}
-                              </div>
-                            ))}
-
-                            {/* Espacios vacíos antes del primer día */}
-                            {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                              <div key={`empty-${i}`} />
-                            ))}
-
-                            {/* Días del mes */}
-                            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                              const hasSession = daysWithSessions.has(day);
-                              const isToday =
-                                day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
-
-                              return (
-                                <div
-                                  key={day}
-                                  onClick={() => hasSession && handleDayClick(day)}
-                                  className={`
-                                    aspect-square flex items-center justify-center rounded-lg text-sm
-                                    ${
-                                      hasSession
-                                        ? "bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40 cursor-pointer hover:bg-green-500/30 transition"
-                                        : "text-slate-600 dark:text-slate-400"
-                                    }
-                                    ${isToday && !hasSession ? "border-2 border-blue-500/40" : ""}
-                                    ${isToday && hasSession ? "ring-2 ring-blue-500 ring-offset-2" : ""}
-                                  `}
-                                >
-                                  {day}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </details>
-                    </Card>
-                  </div>
-                );
-              })()}
 
               <div className="flex items-center justify-between">
                 <SectionTitle icon={Telescope} title="Objetos astronómicos" />
