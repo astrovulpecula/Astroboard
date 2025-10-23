@@ -3289,7 +3289,7 @@ export default function AstroTracker() {
                       if (sessionsOnDay.length > 0) {
                         projectsWithSessions.push({
                           objectId: obj.id,
-                          objectName: obj.commonName || obj.id,
+                          objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
                           projectId: proj.id,
                           projectName: proj.name,
                           sessionsCount: sessionsOnDay.length,
