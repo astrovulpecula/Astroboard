@@ -46,6 +46,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
+import { searchCelestialObjects, getCelestialObjectByCode } from "@/lib/celestial-data";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -492,6 +493,10 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   const [type, setType] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -518,6 +523,58 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     }
   };
 
+  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setId(value);
+    
+    if (value.trim().length > 0) {
+      const results = searchCelestialObjects(value.trim());
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+      setSelectedIndex(-1);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (obj: any) => {
+    setId(obj.code);
+    setCommonName(obj.nameEsp || "");
+    setConstellation(obj.constellation || "");
+    setType(obj.objectType || "");
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const x = id.trim();
@@ -537,9 +594,35 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
 
   return (
     <form className="grid gap-3" onSubmit={handleSubmit}>
-      <label className="grid gap-1">
+      <label className="grid gap-1 relative">
         <Label>Código oficial</Label>
-        <input value={id} onChange={(e) => setId(e.target.value)} className={INPUT_CLS} placeholder="M31" />
+        <input 
+          ref={inputRef}
+          value={id} 
+          onChange={handleIdChange}
+          onKeyDown={handleKeyDown}
+          className={INPUT_CLS} 
+          placeholder="M31, NGC1234, etc." 
+          autoComplete="off"
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+            {suggestions.map((obj, idx) => (
+              <button
+                key={obj.code}
+                type="button"
+                onClick={() => handleSelectSuggestion(obj)}
+                className={`w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${
+                  idx === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
+                }`}
+              >
+                <div className="font-semibold text-sm">{obj.code}</div>
+                {obj.nameEsp && <div className="text-xs text-slate-600 dark:text-slate-400">{obj.nameEsp}</div>}
+                {obj.constellation && <div className="text-xs text-slate-500 dark:text-slate-500">{obj.constellation} · {obj.objectType}</div>}
+              </button>
+            ))}
+          </div>
+        )}
       </label>
       <label className="grid gap-1">
         <Label>Nombre común</Label>
@@ -561,16 +644,12 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
       </label>
       <label className="grid gap-1">
         <Label>Tipo de objeto</Label>
-        <select value={type} onChange={(e) => setType(e.target.value)} className={INPUT_CLS}>
-          <option value="">Seleccionar tipo</option>
-          <option value="Galaxia">Galaxia</option>
-          <option value="Nebulosa">Nebulosa</option>
-          <option value="Cúmulo globular">Cúmulo globular</option>
-          <option value="Cúmulo abierto">Cúmulo abierto</option>
-          <option value="Nebulosa planetaria">Nebulosa planetaria</option>
-          <option value="Remanente de supernova">Remanente de supernova</option>
-          <option value="Otro">Otro</option>
-        </select>
+        <input
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className={INPUT_CLS}
+          placeholder="Galaxia espiral, Nebulosa de emisión, etc."
+        />
       </label>
 
       <div className="grid gap-1">
