@@ -46,7 +46,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
-import { searchCelestialObjects, getCelestialObjectByCode } from "@/lib/celestial-data";
+import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -498,6 +498,13 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  // Precargar datos al montar el componente
+  useEffect(() => {
+    loadCelestialObjects().catch(err => {
+      console.error('Error precargando objetos celestes:', err);
+    });
+  }, []);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -523,15 +530,21 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     }
   };
 
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIdChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setId(value);
     
     if (value.trim().length > 0) {
-      const results = searchCelestialObjects(value.trim());
-      setSuggestions(results);
-      setShowSuggestions(results.length > 0);
-      setSelectedIndex(-1);
+      try {
+        const results = await searchCelestialObjects(value.trim());
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error('Error searching celestial objects:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
