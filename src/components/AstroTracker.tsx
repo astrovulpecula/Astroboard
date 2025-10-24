@@ -3016,6 +3016,44 @@ export default function AstroTracker() {
                         </div>
                       </Card>
 
+                      {/* ONP vs SNP Projects */}
+                      {(() => {
+                        let onpCount = 0;
+                        let snpCount = 0;
+                        
+                        objects.forEach((obj) => {
+                          obj.projects.forEach((proj: any) => {
+                            if (proj.projectType === "ONP") {
+                              onpCount++;
+                            } else if (proj.projectType === "SNP") {
+                              snpCount++;
+                            } else {
+                              // Default to ONP if projectType is not set
+                              onpCount++;
+                            }
+                          });
+                        });
+
+                        return (
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-teal-500/10">
+                                <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">ONP vs SNP</div>
+                                <div className="text-2xl font-bold">
+                                  {onpCount} / {snpCount}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  One-Night / Several-Nights
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })()}
+
                       {/* Proyectos Activos */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
