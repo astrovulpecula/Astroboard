@@ -552,12 +552,14 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   };
 
   const handleSelectSuggestion = (obj: any) => {
-    setId(obj.code);
+    console.log('Selected object:', obj); // Debug
+    setId(obj.code || "");
     setCommonName(obj.nameEsp || "");
     setConstellation(obj.constellation || "");
     setType(obj.objectType || "");
     setShowSuggestions(false);
     setSuggestions([]);
+    setSelectedIndex(-1);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
