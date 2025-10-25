@@ -36,9 +36,9 @@ export async function loadCelestialObjects(): Promise<CelestialObject[]> {
           if (code) {
             objects.push({
               code,
-              nameEsp,
-              constellation,
-              objectType,
+              nameEsp: nameEsp || "",
+              constellation: constellation || "",
+              objectType: objectType || "",
             });
           }
         }

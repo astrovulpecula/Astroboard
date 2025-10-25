@@ -552,7 +552,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   };
 
   const handleSelectSuggestion = (obj: any) => {
-    console.log('Selected object:', obj); // Debug
     setId(obj.code || "");
     setCommonName(obj.nameEsp || "");
     setConstellation(obj.constellation || "");
