@@ -90,7 +90,37 @@ export default function RatingGallery() {
   const rating1Count = allRatedImages.filter((img) => img.rating === 1).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+    <div className={`min-h-screen ${theme === "astro" ? "astro-bg" : "bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"}`}>
+      <style>{`
+        .astro-bg {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+          position: relative;
+        }
+        .astro-bg::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: 
+            radial-gradient(2px 2px at 20% 30%, white, transparent),
+            radial-gradient(2px 2px at 60% 70%, white, transparent),
+            radial-gradient(1px 1px at 50% 50%, white, transparent),
+            radial-gradient(1px 1px at 80% 10%, white, transparent),
+            radial-gradient(2px 2px at 90% 60%, white, transparent),
+            radial-gradient(1px 1px at 33% 80%, white, transparent),
+            radial-gradient(2px 2px at 75% 25%, white, transparent);
+          background-size: 200% 200%;
+          animation: stars 8s linear infinite;
+          opacity: 0.5;
+          pointer-events: none;
+        }
+        @keyframes stars {
+          from { background-position: 0 0; }
+          to { background-position: 100% 100%; }
+        }
+      `}</style>
       <div className="container mx-auto p-4 md:p-6 max-w-7xl">
         {/* Header */}
         <div className="mb-6">

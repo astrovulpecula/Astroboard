@@ -3229,6 +3229,49 @@ export default function AstroTracker() {
                           </Card>
                         );
                       })()}
+
+                      {/* SNR Acumulativo Más Alto */}
+                      {(() => {
+                        let maxCumulativeSNR = 0;
+                        let bestObjectName = "";
+                        
+                        objects.forEach((obj) => {
+                          let objectCumulativeSNR = 0;
+                          
+                          obj.projects.forEach((proj: any) => {
+                            proj.sessions.forEach((session: any) => {
+                              const sessionMeanSNR = mean(session);
+                              if (sessionMeanSNR !== null) {
+                                objectCumulativeSNR += sessionMeanSNR;
+                              }
+                            });
+                          });
+                          
+                          if (objectCumulativeSNR > maxCumulativeSNR) {
+                            maxCumulativeSNR = objectCumulativeSNR;
+                            bestObjectName = obj.commonName || obj.id;
+                          }
+                        });
+
+                        return (
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-green-500/10">
+                                <Flame className="w-6 h-6 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                  SNR Acumulativo Máximo
+                                </div>
+                                <div className="text-2xl font-bold">{maxCumulativeSNR.toFixed(1)}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  {bestObjectName || "Sin datos"}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })()}
                     </div>
 
                     {/* Second row of highlights */}
