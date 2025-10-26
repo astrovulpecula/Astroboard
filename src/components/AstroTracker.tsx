@@ -537,6 +537,10 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     if (value.trim().length > 0) {
       try {
         const results = await searchCelestialObjects(value.trim());
+        console.log("Resultados de búsqueda:", results);
+        if (results.length > 0) {
+          console.log("Primer resultado:", results[0]);
+        }
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
         setSelectedIndex(-1);
