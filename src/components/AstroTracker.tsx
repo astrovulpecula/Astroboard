@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   FolderOpen,
@@ -1786,6 +1787,7 @@ const ImageCard = ({
 };
 
 export default function AstroTracker() {
+  const navigate = useNavigate();
   // TODOS los useState deben ir juntos al principio
   const [objects, setObjects] = useState(sample);
   const [view, setView] = useState("objects");
@@ -3171,6 +3173,62 @@ export default function AstroTracker() {
                           </div>
                         </div>
                       </Card>
+
+                      {/* Valoraciones de Fotos */}
+                      {(() => {
+                        let rating3Count = 0;
+                        let rating2Count = 0;
+                        let rating1Count = 0;
+                        
+                        objects.forEach((obj) => {
+                          obj.projects.forEach((proj: any) => {
+                            const ratings = proj.ratings || {};
+                            Object.values(ratings).forEach((rating: any) => {
+                              if (rating === 3) rating3Count++;
+                              else if (rating === 2) rating2Count++;
+                              else if (rating === 1) rating1Count++;
+                            });
+                          });
+                        });
+
+                        const totalRated = rating3Count + rating2Count + rating1Count;
+
+                        return (
+                          <Card 
+                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
+                            onClick={() => navigate('/ratings', { state: { objects, theme } })}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-purple-500/10">
+                                <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                                  Fotos Valoradas
+                                </div>
+                                <div className="text-2xl font-bold">{totalRated}</div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
+                                  <span className="flex items-center gap-0.5">
+                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                    {rating3Count}
+                                  </span>
+                                  <span className="flex items-center gap-0.5">
+                                    <Star className="w-3 h-3 fill-blue-400 text-blue-400" />
+                                    <Star className="w-3 h-3 fill-blue-400 text-blue-400" />
+                                    {rating2Count}
+                                  </span>
+                                  <span className="flex items-center gap-0.5">
+                                    <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
+                                    {rating1Count}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })()}
                     </div>
 
                     {/* Second row of highlights */}
