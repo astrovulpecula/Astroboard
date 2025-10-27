@@ -3233,27 +3233,21 @@ export default function AstroTracker() {
                         );
                       })()}
 
-                      {/* SNR Acumulativo Más Alto */}
+                      {/* SNR Record */}
                       {(() => {
-                        let maxCumulativeSNR = 0;
+                        let maxSNR = 0;
                         let bestObjectName = "";
                         
                         objects.forEach((obj) => {
-                          let objectCumulativeSNR = 0;
-                          
                           obj.projects.forEach((proj: any) => {
                             proj.sessions.forEach((session: any) => {
                               const sessionMeanSNR = mean(session);
-                              if (sessionMeanSNR !== null) {
-                                objectCumulativeSNR += sessionMeanSNR;
+                              if (sessionMeanSNR !== null && sessionMeanSNR > maxSNR) {
+                                maxSNR = sessionMeanSNR;
+                                bestObjectName = obj.commonName || obj.id;
                               }
                             });
                           });
-                          
-                          if (objectCumulativeSNR > maxCumulativeSNR) {
-                            maxCumulativeSNR = objectCumulativeSNR;
-                            bestObjectName = obj.commonName || obj.id;
-                          }
                         });
 
                         return (
@@ -3264,9 +3258,9 @@ export default function AstroTracker() {
                               </div>
                               <div className="flex-1">
                                 <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                  SNR Acumulativo Máximo
+                                  SNR (record)
                                 </div>
-                                <div className="text-2xl font-bold">{maxCumulativeSNR.toFixed(1)}</div>
+                                <div className="text-2xl font-bold">{maxSNR.toFixed(2)}</div>
                                 <div className="text-xs text-slate-500 dark:text-slate-400">
                                   {bestObjectName || "Sin datos"}
                                 </div>
