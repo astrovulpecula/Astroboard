@@ -1846,6 +1846,7 @@ export default function AstroTracker() {
   const [sortProjects, setSortProjects] = useState("recent");
   const [projectSearchText, setProjectSearchText] = useState("");
   const [showProjectFilters, setShowProjectFilters] = useState(false);
+  const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -2662,7 +2663,7 @@ export default function AstroTracker() {
               <div>
                 <div className="font-semibold">StarBoard</div>
                 <div className="text-xs text-slate-500">
-                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : "Sesiones"}
+                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : "Galería de Valoraciones"}
                 </div>
               </div>
             </div>
@@ -2674,6 +2675,8 @@ export default function AstroTracker() {
                     if (view === "project") {
                       setView("projects");
                       setSelectedProjectId(null);
+                    } else if (view === "ratings") {
+                      setView("objects");
                     } else {
                       setView("objects");
                       setSelectedObjectId(null);
@@ -3196,7 +3199,7 @@ export default function AstroTracker() {
                         return (
                           <Card 
                             className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
-                            onClick={() => navigate('/ratings', { state: { objects, theme } })}
+                            onClick={() => setView("ratings")}
                           >
                             <div className="flex items-center gap-3">
                               <div className="p-3 rounded-xl bg-purple-500/10">
@@ -4946,6 +4949,254 @@ export default function AstroTracker() {
                 <SNRRGBChart sessions={filtered} />
                 <AcceptedRejectedChart sessions={filtered} />
               </div>
+            </div>
+          )}
+
+          {view === "ratings" && (
+            <div className="grid gap-4" key="view-ratings">
+              {/* Header */}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                  Galería de Valoraciones
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Todas tus fotos organizadas por valoración
+                </p>
+              </div>
+
+              {(() => {
+                // Collect all rated images
+                const allRatedImages: Array<{
+                  src: string;
+                  title: string;
+                  rating: number;
+                  objectId: string;
+                  objectName: string;
+                  projectId: string;
+                  projectName: string;
+                  keyName: string;
+                }> = [];
+                
+                objects.forEach((obj) => {
+                  obj.projects.forEach((proj: any) => {
+                    const ratings = proj.ratings || {};
+                    const images = proj.images || {};
+                    
+                    Object.keys(ratings).forEach((keyName) => {
+                      const rating = ratings[keyName];
+                      const imageSrc = images[keyName];
+                      
+                      if (rating > 0 && imageSrc) {
+                        // Generate a readable title based on keyName
+                        let title = keyName;
+                        if (keyName === "finalProject") {
+                          title = "Imagen final del proyecto";
+                        } else if (keyName.startsWith("initial")) {
+                          title = `Imagen inicial ${keyName.replace("initial", "")}`;
+                        } else if (keyName.startsWith("final")) {
+                          title = `Imagen final ${keyName.replace("final", "")}`;
+                        } else if (keyName === "panelSchema") {
+                          title = "Esquema de paneles";
+                        }
+                        
+                        allRatedImages.push({
+                          src: imageSrc,
+                          title,
+                          rating,
+                          objectId: obj.id,
+                          objectName: obj.commonName || obj.id,
+                          projectId: proj.id,
+                          projectName: proj.name,
+                          keyName,
+                        });
+                      }
+                    });
+                  });
+                });
+
+                // Count images by rating
+                const rating3Count = allRatedImages.filter((img) => img.rating === 3).length;
+                const rating2Count = allRatedImages.filter((img) => img.rating === 2).length;
+                const rating1Count = allRatedImages.filter((img) => img.rating === 1).length;
+
+                return (
+                  <>
+                    {/* Statistics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-purple-500/10">
+                            <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Valoradas</div>
+                            <div className="text-2xl font-bold">{allRatedImages.length}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-yellow-500/10">
+                            <div className="flex gap-0.5">
+                              {[1, 2, 3].map((i) => (
+                                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">3 Estrellas</div>
+                            <div className="text-2xl font-bold">{rating3Count}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-blue-500/10">
+                            <div className="flex gap-0.5">
+                              {[1, 2].map((i) => (
+                                <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">2 Estrellas</div>
+                            <div className="text-2xl font-bold">{rating2Count}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-slate-500/10">
+                            <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">1 Estrella</div>
+                            <div className="text-2xl font-bold">{rating1Count}</div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* Filter */}
+                    <Card className="p-5">
+                      <label className="mb-3 block text-base font-semibold">Filtrar por valoración</label>
+                      <RadioGroup
+                        value={filterRating}
+                        onValueChange={(value: any) => setFilterRating(value)}
+                        className="flex flex-wrap gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="all" />
+                          <label htmlFor="all" className="cursor-pointer font-normal">
+                            Todas ({allRatedImages.length})
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="3" id="3stars" />
+                          <label htmlFor="3stars" className="cursor-pointer font-normal flex items-center gap-1">
+                            3 Estrellas
+                            <div className="flex gap-0.5 ml-1">
+                              {[1, 2, 3].map((i) => (
+                                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                              ))}
+                            </div>
+                            ({rating3Count})
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="2" id="2stars" />
+                          <label htmlFor="2stars" className="cursor-pointer font-normal flex items-center gap-1">
+                            2 Estrellas
+                            <div className="flex gap-0.5 ml-1">
+                              {[1, 2].map((i) => (
+                                <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
+                              ))}
+                            </div>
+                            ({rating2Count})
+                          </label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="1" id="1star" />
+                          <label htmlFor="1star" className="cursor-pointer font-normal flex items-center gap-1">
+                            1 Estrella
+                            <Star className="w-3 h-3 fill-slate-400 text-slate-400 ml-1" />
+                            ({rating1Count})
+                          </label>
+                        </div>
+                      </RadioGroup>
+                    </Card>
+
+                    {/* Gallery */}
+                    {(() => {
+                      const filteredImages = allRatedImages
+                        .filter((img) => {
+                          if (filterRating === "all") return true;
+                          return img.rating === parseInt(filterRating);
+                        })
+                        .sort((a, b) => b.rating - a.rating);
+
+                      if (filteredImages.length === 0) {
+                        return (
+                          <Card className="p-8 text-center">
+                            <Star className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                            <p className="text-slate-600 dark:text-slate-400">
+                              No hay imágenes {filterRating !== "all" ? `con ${filterRating} ${filterRating === "1" ? "estrella" : "estrellas"}` : "valoradas"} aún
+                            </p>
+                          </Card>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {filteredImages.map((img, idx) => (
+                            <Card key={`${img.projectId}-${img.keyName}-${idx}`} className="p-4">
+                              <div className="mb-3">
+                                <img
+                                  src={img.src}
+                                  alt={img.title}
+                                  className="w-full h-64 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => {
+                                    setImageModalSrc(img.src);
+                                    setImageModalOpen(true);
+                                  }}
+                                />
+                              </div>
+                              
+                              <div className="flex items-center justify-between mb-2">
+                                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                                  {img.title}
+                                </h3>
+                                <div className="flex gap-0.5">
+                                  {Array.from({ length: 3 }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`w-4 h-4 ${
+                                        i < img.rating
+                                          ? theme === "astro"
+                                            ? "fill-blue-400 text-blue-400"
+                                            : "fill-yellow-400 text-yellow-400"
+                                          : "text-slate-300 dark:text-slate-600"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              
+                              <div className="text-xs text-slate-600 dark:text-slate-400">
+                                <div><strong>Objeto:</strong> {img.objectName}</div>
+                                <div><strong>Proyecto:</strong> {img.projectName}</div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </>
+                );
+              })()}
             </div>
           )}
         </main>
