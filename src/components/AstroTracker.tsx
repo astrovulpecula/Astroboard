@@ -2663,7 +2663,7 @@ export default function AstroTracker() {
               <div>
                 <div className="font-semibold">StarBoard</div>
                 <div className="text-xs text-slate-500">
-                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : "Galería de Valoraciones"}
+                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : "ONP vs SNP"}
                 </div>
               </div>
             </div>
@@ -2675,7 +2675,7 @@ export default function AstroTracker() {
                     if (view === "project") {
                       setView("projects");
                       setSelectedProjectId(null);
-                    } else if (view === "ratings") {
+                    } else if (view === "ratings" || view === "onp-snp") {
                       setView("objects");
                     } else {
                       setView("objects");
@@ -3142,7 +3142,10 @@ export default function AstroTracker() {
                         });
 
                         return (
-                          <Card className="p-5">
+                          <Card 
+                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => setView("onp-snp")}
+                          >
                             <div className="flex items-center gap-3">
                               <div className="p-3 rounded-xl bg-teal-500/10">
                                 <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
@@ -4943,6 +4946,176 @@ export default function AstroTracker() {
                 <SNRRGBChart sessions={filtered} />
                 <AcceptedRejectedChart sessions={filtered} />
               </div>
+            </div>
+          )}
+
+          {view === "onp-snp" && (
+            <div className="grid gap-4" key="view-onp-snp">
+              {/* Header */}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                  Proyectos ONP y SNP
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Todos tus proyectos organizados por tipo: One-Night Projects (ONP) y Several-Nights Projects (SNP)
+                </p>
+              </div>
+
+              {(() => {
+                // Collect all projects with their types
+                const allProjects: Array<{
+                  objectId: string;
+                  objectName: string;
+                  projectId: string;
+                  projectName: string;
+                  projectType: string;
+                  status: string;
+                  totalSessions: number;
+                  totalHours: number;
+                }> = [];
+                
+                objects.forEach((obj) => {
+                  obj.projects.forEach((proj: any) => {
+                    const projectType = proj.projectType || "ONP"; // Default to ONP
+                    const totalSessions = proj.sessions.length;
+                    const totalHours = proj.sessions.reduce((acc: number, s: any) => 
+                      acc + (s.lights || 0) * (s.exposureSec || 0), 0) / 3600;
+                    
+                    allProjects.push({
+                      objectId: obj.id,
+                      objectName: obj.commonName || obj.id,
+                      projectId: proj.id,
+                      projectName: proj.name,
+                      projectType,
+                      status: proj.status || "active",
+                      totalSessions,
+                      totalHours,
+                    });
+                  });
+                });
+
+                // Separate ONP and SNP projects
+                const onpProjects = allProjects.filter((p) => p.projectType === "ONP");
+                const snpProjects = allProjects.filter((p) => p.projectType === "SNP");
+
+                return (
+                  <>
+                    {/* Statistics Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-teal-500/10">
+                            <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">One-Night Projects (ONP)</div>
+                            <div className="text-2xl font-bold">{onpProjects.length}</div>
+                          </div>
+                        </div>
+                      </Card>
+                      
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-purple-500/10">
+                            <Telescope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Several-Nights Projects (SNP)</div>
+                            <div className="text-2xl font-bold">{snpProjects.length}</div>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {/* ONP Projects List */}
+                    {onpProjects.length > 0 && (
+                      <div>
+                        <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
+                          <Telescope className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                          One-Night Projects (ONP)
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {onpProjects.map((proj) => (
+                            <Card
+                              key={`${proj.objectId}-${proj.projectId}`}
+                              className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                              onClick={() => {
+                                setSelectedObjectId(proj.objectId);
+                                setSelectedProjectId(proj.projectId);
+                                setView("project");
+                              }}
+                            >
+                              <div className="mb-2">
+                                <h3 className="font-semibold text-lg">{proj.projectName}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                              </div>
+                              <div className="mt-3 flex items-center justify-between text-sm">
+                                <span className="text-slate-600 dark:text-slate-400">
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                </span>
+                                <span className="font-medium">
+                                  {formatHoursToHHMM(proj.totalHours)} h
+                                </span>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SNP Projects List */}
+                    {snpProjects.length > 0 && (
+                      <div>
+                        <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
+                          <Telescope className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                          Several-Nights Projects (SNP)
+                        </h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {snpProjects.map((proj) => (
+                            <Card
+                              key={`${proj.objectId}-${proj.projectId}`}
+                              className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                              onClick={() => {
+                                setSelectedObjectId(proj.objectId);
+                                setSelectedProjectId(proj.projectId);
+                                setView("project");
+                              }}
+                            >
+                              <div className="mb-2">
+                                <h3 className="font-semibold text-lg">{proj.projectName}</h3>
+                                <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                              </div>
+                              <div className="mt-3 flex items-center justify-between text-sm">
+                                <span className="text-slate-600 dark:text-slate-400">
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                </span>
+                                <span className="font-medium">
+                                  {formatHoursToHHMM(proj.totalHours)} h
+                                </span>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {allProjects.length === 0 && (
+                      <Card className="p-8 text-center">
+                        <Telescope className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                        <p className="text-slate-600 dark:text-slate-400">
+                          No hay proyectos aún
+                        </p>
+                      </Card>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
 
