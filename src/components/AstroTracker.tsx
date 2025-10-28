@@ -1848,6 +1848,26 @@ export default function AstroTracker() {
   const [projectSearchText, setProjectSearchText] = useState("");
   const [showProjectFilters, setShowProjectFilters] = useState(false);
   const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
+  const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
+  const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
+  const [visibleHighlights, setVisibleHighlights] = useState({
+    totalObjects: true,
+    totalProjects: true,
+    totalHours: true,
+    totalLights: true,
+    totalNights: true,
+    totalSessions: true,
+    onpSnp: true,
+    activeProjects: true,
+    ratedPhotos: true,
+    snrRecord: true,
+    hoursByYear: true,
+    mostPhotographedObject: true,
+    mostPhotographedConstellation: true,
+    streaks: true,
+    cameraUsage: true,
+    telescopeUsage: true,
+  });
 
   const cycleTheme = () => {
     setTheme((prev) => {
@@ -1873,6 +1893,7 @@ export default function AstroTracker() {
         if (settings.telescopes) setTelescopes(settings.telescopes);
         if (settings.userName) setUserName(settings.userName);
         if (settings.locations) setLocations(settings.locations);
+        if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       } catch (e) {
         console.error("Error loading settings:", e);
       }
@@ -3078,9 +3099,26 @@ export default function AstroTracker() {
 
                 return (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      {/* Total de Objetos */}
-                      <Card className="p-5">
+                    {/* Título de Highlights con botón de expandir/contraer */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={() => setHighlightsSectionExpanded(!highlightsSectionExpanded)}
+                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                      >
+                        <h3 className="text-xl md:text-2xl font-bold">Highlights</h3>
+                        {highlightsSectionExpanded ? (
+                          <ChevronUp className="w-5 h-5" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {highlightsSectionExpanded && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        {/* Total de Objetos */}
+                        {visibleHighlights.totalObjects && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-blue-500/10">
                             <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -3089,11 +3127,13 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Total de Objetos</div>
                             <div className="text-2xl font-bold">{totalObjects}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Total de Proyectos */}
-                      <Card className="p-5">
+                        {/* Total de Proyectos */}
+                        {visibleHighlights.totalProjects && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-indigo-500/10">
                             <FolderOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -3102,11 +3142,13 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Total de Proyectos</div>
                             <div className="text-2xl font-bold">{totalProjects}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Horas Totales */}
-                      <Card className="p-5">
+                        {/* Horas Totales */}
+                        {visibleHighlights.totalHours && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-purple-500/10">
                             <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -3115,11 +3157,13 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Horas Totales</div>
                             <div className="text-2xl font-bold">{hh(totalHours * 3600)}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Lights Totales */}
-                      <Card className="p-5">
+                        {/* Lights Totales */}
+                        {visibleHighlights.totalLights && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-amber-500/10">
                             <Star className="w-6 h-6 text-amber-600 dark:text-amber-400" />
@@ -3128,11 +3172,13 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Lights Totales</div>
                             <div className="text-2xl font-bold">{totalLights}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Noches */}
-                      <Card className="p-5">
+                        {/* Noches */}
+                        {visibleHighlights.totalNights && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-green-500/10">
                             <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -3141,11 +3187,13 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Noches</div>
                             <div className="text-2xl font-bold">{totalNights}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Sesiones */}
-                      <Card className="p-5">
+                        {/* Sesiones */}
+                        {visibleHighlights.totalSessions && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-cyan-500/10">
                             <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
@@ -3154,11 +3202,12 @@ export default function AstroTracker() {
                             <div className="text-sm text-slate-600 dark:text-slate-400">Sesiones</div>
                             <div className="text-2xl font-bold">{totalSessions}</div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* ONP vs SNP Projects */}
-                      {(() => {
+                        {/* ONP vs SNP Projects */}
+                        {visibleHighlights.onpSnp && (() => {
                         let onpCount = 0;
                         let snpCount = 0;
                         
@@ -3193,13 +3242,14 @@ export default function AstroTracker() {
                                   One-Night / Several-Nights
                                 </div>
                               </div>
-                            </div>
-                          </Card>
-                        );
-                      })()}
+                              </div>
+                            </Card>
+                          );
+                        })()}
 
-                      {/* Proyectos Activos */}
-                      <Card className="p-5">
+                        {/* Proyectos Activos */}
+                        {visibleHighlights.activeProjects && (
+                          <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-orange-500/10">
                             <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
@@ -3211,11 +3261,12 @@ export default function AstroTracker() {
                               {activeProjectsPercentage}% del total
                             </div>
                           </div>
-                        </div>
-                      </Card>
+                          </div>
+                        </Card>
+                        )}
 
-                      {/* Valoraciones de Fotos */}
-                      {(() => {
+                        {/* Valoraciones de Fotos */}
+                        {visibleHighlights.ratedPhotos && (() => {
                         let rating3Count = 0;
                         let rating2Count = 0;
                         let rating1Count = 0;
@@ -3233,45 +3284,26 @@ export default function AstroTracker() {
 
                         const totalRated = rating3Count + rating2Count + rating1Count;
 
-                        return (
-                          <Card 
-                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
-                            onClick={() => setView("ratings")}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-purple-500/10">
-                                <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                  Fotos Valoradas
+                          return (
+                            <Card 
+                              className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
+                              onClick={() => setView("ratings")}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-xl bg-purple-500/10">
+                                  <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                                 </div>
-                                <div className="text-2xl font-bold">{totalRated}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
-                                  <span className="flex items-center gap-0.5">
-                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                                    {rating3Count}
-                                  </span>
-                                  <span className="flex items-center gap-0.5">
-                                    <Star className="w-3 h-3 fill-blue-400 text-blue-400" />
-                                    <Star className="w-3 h-3 fill-blue-400 text-blue-400" />
-                                    {rating2Count}
-                                  </span>
-                                  <span className="flex items-center gap-0.5">
-                                    <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
-                                    {rating1Count}
-                                  </span>
+                                <div>
+                                  <div className="text-sm text-slate-600 dark:text-slate-400">Fotos Valoradas</div>
+                                  <div className="text-2xl font-bold">{totalRated}</div>
                                 </div>
                               </div>
-                            </div>
-                          </Card>
-                        );
-                      })()}
+                            </Card>
+                          );
+                        })()}
 
-                      {/* SNR Record */}
-                      {(() => {
+                        {/* SNR Record */}
+                        {visibleHighlights.snrRecord && (() => {
                         let maxSNR = 0;
                         let bestObjectName = "";
                         
@@ -3304,14 +3336,11 @@ export default function AstroTracker() {
                               </div>
                             </div>
                           </Card>
-                        );
-                      })()}
-                    </div>
+                          );
+                        })()}
 
-                    {/* Second row of highlights */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      {/* Hours by Year */}
-                      {(() => {
+                        {/* Hours by Year */}
+                        {visibleHighlights.hoursByYear && (() => {
                         // Get all years with sessions
                         const yearsWithSessions = new Set<number>();
                         objects.forEach((obj) => {
@@ -3703,7 +3732,7 @@ export default function AstroTracker() {
                     })()}
 
                     {/* Camera Usage Statistics */}
-                    {Object.keys(cameraCounts).length > 0 && (
+                    {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
                       <Card className="p-5 mb-4">
                         <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                           Uso de cámaras (% de lights)
@@ -3731,7 +3760,7 @@ export default function AstroTracker() {
                     )}
 
                     {/* Telescope Usage Statistics */}
-                    {Object.keys(telescopeCounts).length > 0 && (
+                    {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
                       <Card className="p-5 mb-4">
                         <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
                         <div className="flex flex-wrap gap-3">
@@ -3764,8 +3793,19 @@ export default function AstroTracker() {
               })()}
 
 
-              <div className="flex items-center justify-between">
-                <SectionTitle icon={Telescope} title="Objetos astronómicos" />
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={() => setObjectsSectionExpanded(!objectsSectionExpanded)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <Telescope className="w-5 h-5" />
+                  <h3 className="text-xl md:text-2xl font-bold">Objetos astronómicos</h3>
+                  {objectsSectionExpanded ? (
+                    <ChevronUp className="w-5 h-5" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5" />
+                  )}
+                </button>
                 <div className="flex items-center gap-2">
                   <IconBtn title="Ordenar alfabéticamente (A-Z)" onClick={() => setSortObjects("alpha")}>
                     <span className="text-sm font-semibold">A-Z</span>
@@ -3779,8 +3819,10 @@ export default function AstroTracker() {
                 </div>
               </div>
 
-              <div className="grid gap-3">
-                <div className="flex items-center gap-2">
+              {objectsSectionExpanded && (
+                <>
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-2">
                   <div className="relative flex-1">
                     <input
                       type="text"
@@ -3859,17 +3901,17 @@ export default function AstroTracker() {
                         </Btn>
                       </div>
                     )}
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {(searchText || filterConstellation !== "all" || filterType !== "all") && (
+                  {(searchText || filterConstellation !== "all" || filterType !== "all") && (
                   <div className="text-sm text-slate-600 dark:text-slate-400">
                     {filteredObjects.length} objeto(s) encontrado(s)
+                    </div>
+                  )}
                   </div>
-                )}
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredObjects
                   .slice()
                   .sort((a, b) => {
@@ -3942,9 +3984,11 @@ export default function AstroTracker() {
                           </div>
                         </div>
                       </Card>
-                    );
-                  })}
-              </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -5759,6 +5803,157 @@ export default function AstroTracker() {
                 <Btn outline onClick={() => setLocations([...locations, { name: "", coords: "" }])}>
                   <Plus className="w-4 h-4" /> Añadir localización
                 </Btn>
+              </div>
+            </div>
+
+            {/* Configuración de highlights visibles */}
+            <div className="grid gap-3">
+              <Label>Highlights visibles en el dashboard</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalObjects}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalObjects: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Total de Objetos</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalProjects}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalProjects: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Total de Proyectos</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalHours}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalHours: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Horas Totales</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalLights}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalLights: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Lights Totales</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalNights}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalNights: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Noches</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.totalSessions}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalSessions: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Sesiones</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.onpSnp}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, onpSnp: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">ONP vs SNP</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.activeProjects}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, activeProjects: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Proyectos Activos</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.ratedPhotos}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, ratedPhotos: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Fotos Valoradas</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.snrRecord}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, snrRecord: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">SNR (record)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.hoursByYear}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, hoursByYear: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Horas por Año</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.mostPhotographedObject}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedObject: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Objeto Más Fotografiado</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.mostPhotographedConstellation}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedConstellation: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Constelación Más Fotografiada</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.streaks}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, streaks: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Rachas Consecutivas</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.cameraUsage}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, cameraUsage: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Uso de Cámaras</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={visibleHighlights.telescopeUsage}
+                    onChange={(e) => setVisibleHighlights({ ...visibleHighlights, telescopeUsage: e.target.checked })}
+                    className="rounded"
+                  />
+                  <span className="text-sm">Uso de Telescopios</span>
+                </label>
               </div>
             </div>
 
