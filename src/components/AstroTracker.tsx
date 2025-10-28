@@ -22,6 +22,7 @@ import {
   X,
   ChevronUp,
   ChevronDown,
+  Clock,
 } from "lucide-react";
 import {
   LineChart,
@@ -3077,48 +3078,81 @@ export default function AstroTracker() {
 
                 return (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                      {/* Total Objetos y Proyectos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      {/* Total de Objetos */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-blue-500/10">
                             <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Total Objetos y Proyectos</div>
-                            <div className="text-2xl font-bold">
-                              {totalObjects} / {totalProjects}
-                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total de Objetos</div>
+                            <div className="text-2xl font-bold">{totalObjects}</div>
                           </div>
                         </div>
                       </Card>
 
-                      {/* Horas y Lights Totales */}
+                      {/* Total de Proyectos */}
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-indigo-500/10">
+                            <FolderOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Total de Proyectos</div>
+                            <div className="text-2xl font-bold">{totalProjects}</div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Horas Totales */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-purple-500/10">
-                            <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                            <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Horas y Lights Totales</div>
-                            <div className="text-2xl font-bold">
-                              {hh(totalHours * 3600)} / {totalLights}
-                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Horas Totales</div>
+                            <div className="text-2xl font-bold">{hh(totalHours * 3600)}</div>
                           </div>
                         </div>
                       </Card>
 
-                      {/* Noches y Sesiones */}
+                      {/* Lights Totales */}
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-amber-500/10">
+                            <Star className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Lights Totales</div>
+                            <div className="text-2xl font-bold">{totalLights}</div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Noches */}
                       <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-green-500/10">
                             <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Noches y Sesiones</div>
-                            <div className="text-2xl font-bold">
-                              {totalNights} / {totalSessions}
-                            </div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Noches</div>
+                            <div className="text-2xl font-bold">{totalNights}</div>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Sesiones */}
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-cyan-500/10">
+                            <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Sesiones</div>
+                            <div className="text-2xl font-bold">{totalSessions}</div>
                           </div>
                         </div>
                       </Card>
