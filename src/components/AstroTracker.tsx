@@ -3435,7 +3435,7 @@ export default function AstroTracker() {
                       })()}
 
                       {/* Object with Most Exposure */}
-                      {maxExposureObj && (() => {
+                      {visibleHighlights.mostPhotographedObject && maxExposureObj && (() => {
                         const maxExpObj = objects.find((o) => o.id === maxExposureObj[0]);
                         const commonName = maxExpObj?.commonName || maxExposureObj[0];
                         return (
@@ -3464,7 +3464,7 @@ export default function AstroTracker() {
                       })()}
 
                       {/* Most Photographed Constellation */}
-                      {mostPhotographedConstellation && (
+                      {visibleHighlights.mostPhotographedConstellation && mostPhotographedConstellation && (
                         <Card className="p-5">
                           <div className="flex items-center gap-3">
                             <div className="p-3 rounded-xl bg-indigo-500/10">
@@ -3483,70 +3483,70 @@ export default function AstroTracker() {
                         </Card>
                       )}
 
-                    {/* Streaks Highlight */}
-                    {visibleHighlights.streaks && (() => {
-                      const now = new Date();
-                      const year = calendarYear;
-                      const month = calendarMonth;
+                      {/* Streaks Highlight */}
+                      {visibleHighlights.streaks && (() => {
+                        const now = new Date();
+                        const year = calendarYear;
+                        const month = calendarMonth;
 
-                      // Obtener todas las sesiones de todos los proyectos
-                      const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
+                        // Obtener todas las sesiones de todos los proyectos
+                        const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
 
-                      // Filtrar sesiones del mes seleccionado
-                      const currentMonthSessions = allSessions.filter((s) => {
-                        const sessionDate = new Date(s.date);
-                        return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
-                      });
+                        // Filtrar sesiones del mes seleccionado
+                        const currentMonthSessions = allSessions.filter((s) => {
+                          const sessionDate = new Date(s.date);
+                          return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
+                        });
 
-                      // Obtener días únicos con sesiones en el mes seleccionado
-                      const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
+                        // Obtener días únicos con sesiones en el mes seleccionado
+                        const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
 
-                      // Obtener primer y último día del mes
-                      const firstDay = new Date(year, month, 1);
-                      const lastDay = new Date(year, month + 1, 0);
-                      const daysInMonth = lastDay.getDate();
-                      const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
+                        // Obtener primer y último día del mes
+                        const firstDay = new Date(year, month, 1);
+                        const lastDay = new Date(year, month + 1, 0);
+                        const daysInMonth = lastDay.getDate();
+                        const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
 
-                      const monthNames = [
-                        "Enero",
-                        "Febrero",
-                        "Marzo",
-                        "Abril",
-                        "Mayo",
-                        "Junio",
-                        "Julio",
-                        "Agosto",
-                        "Septiembre",
-                        "Octubre",
-                        "Noviembre",
-                        "Diciembre",
-                      ];
+                        const monthNames = [
+                          "Enero",
+                          "Febrero",
+                          "Marzo",
+                          "Abril",
+                          "Mayo",
+                          "Junio",
+                          "Julio",
+                          "Agosto",
+                          "Septiembre",
+                          "Octubre",
+                          "Noviembre",
+                          "Diciembre",
+                        ];
 
-                      // Función para manejar clic en día con sesiones
-                      const handleDayClick = (day: number) => {
-                        // Obtener proyectos con sesiones en este día
-                        const projectsWithSessions: any[] = [];
+                        // Función para manejar clic en día con sesiones
+                        const handleDayClick = (day: number) => {
+                          // Obtener proyectos con sesiones en este día
+                          const projectsWithSessions: any[] = [];
 
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj) => {
-                            const sessionsOnDay = proj.sessions.filter((s: any) => {
-                              const sessionDate = new Date(s.date);
-                              return (
-                                sessionDate.getFullYear() === year &&
-                                sessionDate.getMonth() === month &&
-                                sessionDate.getDate() === day
-                              );
-                            });
-
-                            if (sessionsOnDay.length > 0) {
-                              projectsWithSessions.push({
-                                objectId: obj.id,
-                                objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
-                                projectId: proj.id,
-                                projectName: proj.name,
-                                sessionsCount: sessionsOnDay.length,
+                          objects.forEach((obj) => {
+                            obj.projects.forEach((proj) => {
+                              const sessionsOnDay = proj.sessions.filter((s: any) => {
+                                const sessionDate = new Date(s.date);
+                                return (
+                                  sessionDate.getFullYear() === year &&
+                                  sessionDate.getMonth() === month &&
+                                  sessionDate.getDate() === day
+                                );
                               });
-                            }
+
+                              if (sessionsOnDay.length > 0) {
+                                projectsWithSessions.push({
+                                  objectId: obj.id,
+                                  objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
+                                  projectId: proj.id,
+                                  projectName: proj.name,
+                                  sessionsCount: sessionsOnDay.length,
+                                });
+                              }
                           });
                         });
 
@@ -3570,7 +3570,7 @@ export default function AstroTracker() {
                       };
 
                       return (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <>
                           {/* Racha de noches consecutivas */}
                           <Card className="p-5">
                             <div className="flex items-center gap-3">
@@ -3598,28 +3598,6 @@ export default function AstroTracker() {
                               </div>
                             </div>
                           </Card>
-
-                          {/* Uso de telescopios (resumen) */}
-                          {Object.keys(telescopeCounts).length > 0 && (
-                            <Card className="p-5">
-                              <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-xl bg-purple-500/10">
-                                  <Telescope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                                    Uso de telescopios
-                                  </div>
-                                  <div className="text-2xl font-bold">
-                                    {Object.keys(telescopeCounts).length}
-                                  </div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                    {Object.keys(telescopeCounts).length === 1 ? "telescopio" : "telescopios"} usados
-                                  </div>
-                                </div>
-                              </div>
-                            </Card>
-                          )}
 
                           {/* Días con sesiones */}
                           <Card className="p-5">
@@ -3725,13 +3703,13 @@ export default function AstroTracker() {
                               </div>
                             </details>
                           </Card>
-                        </div>
+                        </>
                       );
                     })()}
 
-                    {/* Camera Usage Statistics */}
-                    {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
-                      <Card className="p-5 mb-4">
+                      {/* Camera Usage Statistics */}
+                      {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
+                        <Card className="p-5">
                         <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
                           Uso de cámaras (% de lights)
                         </div>
@@ -3753,13 +3731,13 @@ export default function AstroTracker() {
                                 </div>
                               );
                             })}
-                        </div>
-                      </Card>
-                    )}
+                          </div>
+                        </Card>
+                      )}
 
-                    {/* Telescope Usage Statistics */}
-                    {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
-                      <Card className="p-5 mb-4">
+                      {/* Telescope Usage Statistics */}
+                      {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
+                        <Card className="p-5">
                         <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
                         <div className="flex flex-wrap gap-3">
                           {Object.entries(telescopeCounts)
@@ -3783,9 +3761,9 @@ export default function AstroTracker() {
                                 </div>
                               );
                             })}
-                        </div>
-                      </Card>
-                    )}
+                          </div>
+                        </Card>
+                      )}
                       </div>
                     )}
                   </>
