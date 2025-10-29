@@ -3706,64 +3706,69 @@ export default function AstroTracker() {
                         </>
                       );
                     })()}
+                      </div>
+                    )}
 
-                      {/* Camera Usage Statistics */}
-                      {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
-                        <Card className="p-5">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                          Uso de cámaras (% de lights)
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          {Object.entries(cameraCounts)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([camera, count]) => {
-                              const percentage =
-                                totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
-                              return (
-                                <div
-                                  key={camera}
-                                  className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
-                                >
-                                  <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
-                                  <div className="text-xs text-blue-700 dark:text-blue-300">
-                                    {count} lights ({percentage}%)
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </Card>
-                      )}
+                    {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
+                    {highlightsSectionExpanded && (visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Camera Usage Statistics */}
+                        {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
+                          <Card className="p-5">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                              Uso de cámaras (% de lights)
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                              {Object.entries(cameraCounts)
+                                .sort(([, a], [, b]) => b - a)
+                                .map(([camera, count]) => {
+                                  const percentage =
+                                    totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
+                                  return (
+                                    <div
+                                      key={camera}
+                                      className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
+                                    >
+                                      <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
+                                      <div className="text-xs text-blue-700 dark:text-blue-300">
+                                        {count} lights ({percentage}%)
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </Card>
+                        )}
 
-                      {/* Telescope Usage Statistics */}
-                      {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
-                        <Card className="p-5">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
-                        <div className="flex flex-wrap gap-3">
-                          {Object.entries(telescopeCounts)
-                            .sort(([, a], [, b]) => b.seconds - a.seconds)
-                            .map(([telescope, data]) => {
-                              const percentage =
-                                totalTelescopeLights > 0
-                                  ? ((data.lights / totalTelescopeLights) * 100).toFixed(1)
-                                  : "0";
-                              return (
-                                <div
-                                  key={telescope}
-                                  className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
-                                >
-                                  <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
-                                    {telescope}
-                                  </div>
-                                  <div className="text-xs text-purple-700 dark:text-purple-300">
-                                    {hh(data.seconds)} • {data.lights} lights ({percentage}%)
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </Card>
-                      )}
+                        {/* Telescope Usage Statistics */}
+                        {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
+                          <Card className="p-5">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
+                            <div className="flex flex-wrap gap-3">
+                              {Object.entries(telescopeCounts)
+                                .sort(([, a], [, b]) => b.seconds - a.seconds)
+                                .map(([telescope, data]) => {
+                                  const percentage =
+                                    totalTelescopeLights > 0
+                                      ? ((data.lights / totalTelescopeLights) * 100).toFixed(1)
+                                      : "0";
+                                  return (
+                                    <div
+                                      key={telescope}
+                                      className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
+                                    >
+                                      <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                                        {telescope}
+                                      </div>
+                                      <div className="text-xs text-purple-700 dark:text-purple-300">
+                                        {hh(data.seconds)} • {data.lights} lights ({percentage}%)
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </Card>
+                        )}
                       </div>
                     )}
                   </>
