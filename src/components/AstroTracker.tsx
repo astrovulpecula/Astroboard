@@ -3482,11 +3482,9 @@ export default function AstroTracker() {
                           </div>
                         </Card>
                       )}
-                    </div>
 
-                    {/* Third row of highlights */}
-                    {/* First highlights section */}
-                    {(() => {
+                    {/* Streaks Highlight */}
+                    {visibleHighlights.streaks && (() => {
                       const now = new Date();
                       const year = calendarYear;
                       const month = calendarMonth;
@@ -3787,6 +3785,8 @@ export default function AstroTracker() {
                             })}
                         </div>
                       </Card>
+                    )}
+                      </div>
                     )}
                   </>
                 );
