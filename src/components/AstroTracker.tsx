@@ -2177,6 +2177,64 @@ export default function AstroTracker() {
     [objects, obj],
   );
 
+  // Function to update rating for any image (used in gallery)
+  const updateImageRating = useCallback(
+    (objectId: string, projectId: string, keyName: string, newRating: number) => {
+      setObjects((prevObjects) =>
+        prevObjects.map((obj) =>
+          obj.id === objectId
+            ? {
+                ...obj,
+                projects: obj.projects.map((proj: any) =>
+                  proj.id === projectId
+                    ? {
+                        ...proj,
+                        ratings: {
+                          ...(proj.ratings || {}),
+                          [keyName]: newRating,
+                        },
+                      }
+                    : proj
+                ),
+              }
+            : obj
+        )
+      );
+    },
+    []
+  );
+
+  // Function to delete image (used in gallery)
+  const deleteImageFromGallery = useCallback(
+    (objectId: string, projectId: string, keyName: string) => {
+      if (!confirm("¿Estás seguro de que quieres eliminar esta imagen?")) return;
+      
+      setObjects((prevObjects) =>
+        prevObjects.map((obj) =>
+          obj.id === objectId
+            ? {
+                ...obj,
+                projects: obj.projects.map((proj: any) =>
+                  proj.id === projectId
+                    ? {
+                        ...proj,
+                        images: Object.fromEntries(
+                          Object.entries(proj.images || {}).filter(([key]) => key !== keyName)
+                        ),
+                        ratings: Object.fromEntries(
+                          Object.entries(proj.ratings || {}).filter(([key]) => key !== keyName)
+                        ),
+                      }
+                    : proj
+                ),
+              }
+            : obj
+        )
+      );
+    },
+    []
+  );
+
   const updatePanelCount = useCallback(
     (newCount: number) => {
       if (!obj || !proj) return;
@@ -5426,11 +5484,11 @@ export default function AstroTracker() {
                         );
                       }
 
-                      return (
+                       return (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                           {filteredImages.map((img, idx) => (
-                            <Card key={`${img.projectId}-${img.keyName}-${idx}`} className="p-4">
-                              <div className="mb-3">
+                            <Card key={`${img.projectId}-${img.keyName}-${idx}`} className="p-4 relative">
+                              <div className="mb-3 relative group">
                                 <img
                                   src={img.src}
                                   alt={img.title}
@@ -5440,22 +5498,35 @@ export default function AstroTracker() {
                                     setImageModalOpen(true);
                                   }}
                                 />
+                                {/* Delete button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteImageFromGallery(img.objectId, img.projectId, img.keyName);
+                                  }}
+                                  className="absolute bottom-2 right-2 bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                  title="Eliminar imagen"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
                               
                               <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                                   {img.title}
                                 </h3>
+                                {/* Interactive rating stars */}
                                 <div className="flex gap-0.5">
                                   {Array.from({ length: 3 }).map((_, i) => (
                                     <Star
                                       key={i}
-                                      className={`w-4 h-4 ${
+                                      onClick={() => updateImageRating(img.objectId, img.projectId, img.keyName, i + 1)}
+                                      className={`w-4 h-4 cursor-pointer transition-all hover:scale-110 ${
                                         i < img.rating
                                           ? theme === "astro"
                                             ? "fill-blue-400 text-blue-400"
                                             : "fill-yellow-400 text-yellow-400"
-                                          : "text-slate-300 dark:text-slate-600"
+                                          : "text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500"
                                       }`}
                                     />
                                   ))}
