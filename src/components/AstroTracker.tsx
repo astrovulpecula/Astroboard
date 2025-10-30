@@ -66,6 +66,46 @@ const formatHoursToHHMM = (hours: number) => {
   const m = Math.round((hours - h) * 60);
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 };
+
+// Función para formatear fechas según la preferencia del usuario
+const formatDateDisplay = (dateStr: string, format: string = "DD/MM/YYYY") => {
+  if (!dateStr) return "–";
+  
+  // Si la fecha ya está en formato ISO (YYYY-MM-DD)
+  let date: Date;
+  if (dateStr.includes("-")) {
+    date = new Date(dateStr + "T00:00:00");
+  } else if (dateStr.includes("/")) {
+    // Si está en formato DD/MM/YYYY o similar
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      const [first, second, third] = parts;
+      // Asumimos DD/MM/YYYY por defecto
+      date = new Date(`${third.length === 2 ? "20" + third : third}-${second}-${first}`);
+    } else {
+      date = new Date(dateStr);
+    }
+  } else {
+    date = new Date(dateStr);
+  }
+
+  if (isNaN(date.getTime())) return dateStr;
+
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  switch (format) {
+    case "DD/MM/YYYY":
+      return `${day}/${month}/${year}`;
+    case "MM/DD/YYYY":
+      return `${month}/${day}/${year}`;
+    case "YYYY/MM/DD":
+      return `${year}/${month}/${day}`;
+    default:
+      return `${day}/${month}/${year}`;
+  }
+};
 const mean = (s: any) => {
   if (!s) return null;
   const a = [s.snrR, s.snrG, s.snrB].filter((v: any) => Number.isFinite(v));
@@ -1567,7 +1607,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
-const AcceptedRejectedChart = ({ sessions }: { sessions: any[] }) => {
+const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[]; dateFormat?: string }) => {
   const d = useMemo(
     () =>
       sessions
@@ -1581,10 +1621,11 @@ const AcceptedRejectedChart = ({ sessions }: { sessions: any[] }) => {
         .map((s, i) => ({
           sesion: i + 1,
           date: s.date,
+          dateFormatted: formatDateDisplay(s.date, dateFormat),
           aceptados: s.acceptedLights || 0,
           rechazados: s.rejectedLights || 0,
         })),
-    [sessions],
+    [sessions, dateFormat],
   );
   if (!d.length) return null;
   return (
@@ -1605,14 +1646,19 @@ const AcceptedRejectedChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
-const ExposureChart = ({ sessions }: { sessions: any[] }) => {
+const ExposureChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[]; dateFormat?: string }) => {
   const d = useMemo(
     () =>
       sessions
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
-        .map((s, i) => ({ sesion: i + 1, date: s.date, horas: (s.lights * s.exposureSec) / 3600 })),
-    [sessions],
+        .map((s, i) => ({ 
+          sesion: i + 1, 
+          date: s.date, 
+          dateFormatted: formatDateDisplay(s.date, dateFormat),
+          horas: (s.lights * s.exposureSec) / 3600 
+        })),
+    [sessions, dateFormat],
   );
   if (!d.length) return null;
   return (
@@ -1631,7 +1677,7 @@ const ExposureChart = ({ sessions }: { sessions: any[] }) => {
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(value) => `Sesión ${value}`}
-            formatter={(value, name, props) => [value, `${props.payload.date}`]}
+            formatter={(value, name, props) => [value, `${props.payload.dateFormatted}`]}
           />
           <Bar dataKey="horas" fill="#3b82f6" />
         </BarChart>
@@ -1819,6 +1865,7 @@ export default function AstroTracker() {
   const [showEditPanels, setShowEditPanels] = useState(false);
   const [editNumPanels, setEditNumPanels] = useState(1);
   const [userName, setUserName] = useState<string>("");
+  const [dateFormat, setDateFormat] = useState<string>("DD/MM/YYYY");
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [editObjectData, setEditObjectData] = useState<any>(null);
   const [editObjectOriginalId, setEditObjectOriginalId] = useState<string | null>(null);
@@ -1892,6 +1939,7 @@ export default function AstroTracker() {
         if (settings.cameras) setCameras(settings.cameras);
         if (settings.telescopes) setTelescopes(settings.telescopes);
         if (settings.userName) setUserName(settings.userName);
+        if (settings.dateFormat) setDateFormat(settings.dateFormat);
         if (settings.locations) setLocations(settings.locations);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       } catch (e) {
@@ -1935,10 +1983,11 @@ export default function AstroTracker() {
       telescopes: telescopes.filter((t) => t.name.trim() !== ""),
       locations: locations.filter((l) => l.name.trim() !== ""),
       userName,
+      dateFormat,
     };
     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
     setShowSettings(false);
-  }, [defaultTheme, jsonPath, cameras, telescopes, locations, userName]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, locations, userName, dateFormat]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -4095,7 +4144,7 @@ export default function AstroTracker() {
                         <div className="text-2xl font-bold mt-1">{uniqueNights} noche(s)</div>
                         {lastSession && (
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Última: {lastSession.date}
+                            Última: {formatDateDisplay(lastSession.date, dateFormat)}
                           </div>
                         )}
                       </Card>
@@ -4367,7 +4416,7 @@ export default function AstroTracker() {
                               </div>
                             )}
                             <div className="mt-1 text-xs text-slate-500">
-                              Inicio: {new Date(p.startDate).toLocaleDateString()}
+                              Inicio: {formatDateDisplay(p.startDate, dateFormat)}
                             </div>
                             <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                               {p.sessions.length} sesión(es)
@@ -4439,7 +4488,7 @@ export default function AstroTracker() {
                     {new Set(proj.sessions.map((s: any) => s.date)).size} noche(s)
                   </div>
                   <div className="text-xs text-slate-500">
-                    Última: {proj.sessions.length ? proj.sessions[proj.sessions.length - 1].date : "–"}
+                    Última: {proj.sessions.length ? formatDateDisplay(proj.sessions[proj.sessions.length - 1].date, dateFormat) : "–"}
                   </div>
                 </Card>
 
@@ -4936,7 +4985,7 @@ export default function AstroTracker() {
                         return (
                           <tr key={s.id} className="border-b hover:bg-slate-50/40 dark:hover:bg-slate-900/40">
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i + 1}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.date}</td>
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{formatDateDisplay(s.date, dateFormat)}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
@@ -4976,7 +5025,7 @@ export default function AstroTracker() {
                                     <DialogHeader>
                                       <DialogTitle>Comentarios de sesión</DialogTitle>
                                       <DialogDescription>
-                                        Fecha: {s.date} - Filtro: {s.filter}
+                                        Fecha: {formatDateDisplay(s.date, dateFormat)} - Filtro: {s.filter}
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 min-h-[100px]">
@@ -5001,11 +5050,11 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ExposureChart sessions={filtered} />
+                <ExposureChart sessions={filtered} dateFormat={dateFormat} />
                 <MoonIlluminationChart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
-                <AcceptedRejectedChart sessions={filtered} />
+                <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />
               </div>
             </div>
           )}
@@ -5556,6 +5605,19 @@ export default function AstroTracker() {
                 placeholder="Tu nombre"
                 className={INPUT_CLS}
               />
+            </div>
+
+            {/* Formato de fechas */}
+            <div className="grid gap-3">
+              <Label>Formato de fechas</Label>
+              <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} className={INPUT_CLS}>
+                <option value="DD/MM/YYYY">DD/MM/YYYY (Día/Mes/Año)</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY (Mes/Día/Año)</option>
+                <option value="YYYY/MM/DD">YYYY/MM/DD (Año/Mes/Día)</option>
+              </select>
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                Elige cómo se mostrarán las fechas en toda la aplicación
+              </div>
             </div>
 
             {/* Tema por defecto */}
