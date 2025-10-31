@@ -5587,13 +5587,35 @@ export default function AstroTracker() {
                       }, 0);
                     }, 0);
                     
+                    // Obtener imagen del objeto o del último proyecto
+                    const lastProjectFinalImage = (() => {
+                      const lastProject = obj.projects[obj.projects.length - 1];
+                      return (lastProject as any)?.finalImage || "";
+                    })();
+                    const objectImage = obj.image || lastProjectFinalImage;
+                    
                     return (
-                      <Card key={obj.id} className="hover:shadow-lg transition-shadow">
+                      <Card key={obj.id} className="hover:shadow-lg transition-shadow overflow-hidden">
                         <div className="space-y-3">
-                          <div>
-                            <div className="text-lg font-bold">{obj.id}</div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">{obj.commonName || "Sin nombre"}</div>
-                          </div>
+                          {objectImage && (
+                            <div className="relative h-48 w-full overflow-hidden rounded-lg -m-3 mb-3">
+                              <img
+                                src={objectImage}
+                                alt={obj.commonName || obj.id}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+                                <div className="text-white font-bold text-lg">{obj.id}</div>
+                                <div className="text-white/90 text-sm">{obj.commonName || "Sin nombre"}</div>
+                              </div>
+                            </div>
+                          )}
+                          {!objectImage && (
+                            <div>
+                              <div className="text-lg font-bold">{obj.id}</div>
+                              <div className="text-sm text-slate-600 dark:text-slate-400">{obj.commonName || "Sin nombre"}</div>
+                            </div>
+                          )}
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-slate-600 dark:text-slate-400">Tipo:</span>
