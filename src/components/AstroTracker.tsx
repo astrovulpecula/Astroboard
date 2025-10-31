@@ -1868,6 +1868,7 @@ export default function AstroTracker() {
   const [dateFormat, setDateFormat] = useState<string>("DD/MM/YYYY");
   const [editingObjectId, setEditingObjectId] = useState<string | null>(null);
   const [editObjectData, setEditObjectData] = useState<any>(null);
+  const [selectedConstellation, setSelectedConstellation] = useState<string>("");
   const [editObjectOriginalId, setEditObjectOriginalId] = useState<string | null>(null);
   const [showEditObjectModal, setShowEditObjectModal] = useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
@@ -2792,7 +2793,7 @@ export default function AstroTracker() {
               <div>
                 <div className="font-semibold">StarBoard</div>
                 <div className="text-xs text-slate-500">
-                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : "ONP vs SNP"}
+                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : view === "constellationDetail" ? `Constelación: ${selectedConstellation}` : "ONP vs SNP"}
                 </div>
               </div>
             </div>
@@ -2801,7 +2802,10 @@ export default function AstroTracker() {
                 <Btn
                   outline
                   onClick={() => {
-                    if (view === "project") {
+                    if (view === "constellationDetail") {
+                      setView("objects");
+                      setSelectedConstellation("");
+                    } else if (view === "project") {
                       setView("projects");
                       setSelectedProjectId(null);
                     } else if (view === "ratings" || view === "onp-snp") {
@@ -3572,7 +3576,13 @@ export default function AstroTracker() {
 
                       {/* Most Photographed Constellation */}
                       {visibleHighlights.mostPhotographedConstellation && mostPhotographedConstellation && (
-                        <Card className="p-5">
+                        <Card 
+                          className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all"
+                          onClick={() => {
+                            setSelectedConstellation(mostPhotographedConstellation[0]);
+                            setView("constellationDetail");
+                          }}
+                        >
                           <div className="flex items-center gap-3">
                             <div className="p-3 rounded-xl bg-indigo-500/10">
                               <Star className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -5545,6 +5555,78 @@ export default function AstroTracker() {
                   </>
                 );
               })()}
+            </div>
+          )}
+
+          {view === "constellationDetail" && (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-6 rounded-lg border border-indigo-200/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Star className="h-8 w-8 text-indigo-600 dark:text-indigo-400" />
+                  <h2 className="text-3xl font-bold">{selectedConstellation}</h2>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Todos los objetos fotografiados de esta constelación
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {objects
+                  .filter(obj => obj.constellation === selectedConstellation)
+                  .map((obj) => {
+                    const allProjects = obj.projects || [];
+                    const totalImages = allProjects.reduce((sum, proj) => {
+                      return sum + (Object.keys(proj.images || {}).length || 0);
+                    }, 0);
+                    const totalSessions = allProjects.reduce((sum, proj) => {
+                      return sum + (proj.sessions?.length || 0);
+                    }, 0);
+                    const totalExposureTime = allProjects.reduce((sum, proj) => {
+                      return sum + (proj.sessions || []).reduce((sessionSum: number, session: any) => {
+                        return sessionSum + ((session.lights || 0) * (session.exposureSec || 0));
+                      }, 0);
+                    }, 0);
+                    
+                    return (
+                      <Card key={obj.id} className="hover:shadow-lg transition-shadow">
+                        <div className="space-y-3">
+                          <div>
+                            <div className="text-lg font-bold">{obj.id}</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{obj.commonName || "Sin nombre"}</div>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Tipo:</span>
+                              <span className="font-medium">{obj.type || "N/A"}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Proyectos:</span>
+                              <span className="font-medium">{allProjects.length}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Sesiones:</span>
+                              <span className="font-medium">{totalSessions}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Imágenes:</span>
+                              <span className="font-medium">{totalImages}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-600 dark:text-slate-400">Exposición:</span>
+                              <span className="font-medium">{(totalExposureTime / 3600).toFixed(1)}h</span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+              </div>
+
+              {objects.filter(obj => obj.constellation === selectedConstellation).length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  No hay objetos fotografiados de esta constelación
+                </div>
+              )}
             </div>
           )}
         </main>
