@@ -1880,7 +1880,11 @@ export default function AstroTracker() {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [editingTabName, setEditingTabName] = useState("");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [mainLocation, setMainLocation] = useState<{ name: string; coords: string }>({ name: "", coords: "" });
   const [locations, setLocations] = useState<{ name: string; coords: string }[]>([{ name: "", coords: "" }]);
+  const [guideTelescope, setGuideTelescope] = useState<{ name: string; focalLength: string }>({ name: "", focalLength: "" });
+  const [guideCamera, setGuideCamera] = useState<string>("");
+  const [mount, setMount] = useState<string>("");
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
@@ -1941,7 +1945,11 @@ export default function AstroTracker() {
         if (settings.telescopes) setTelescopes(settings.telescopes);
         if (settings.userName) setUserName(settings.userName);
         if (settings.dateFormat) setDateFormat(settings.dateFormat);
+        if (settings.mainLocation) setMainLocation(settings.mainLocation);
         if (settings.locations) setLocations(settings.locations);
+        if (settings.guideTelescope) setGuideTelescope(settings.guideTelescope);
+        if (settings.guideCamera) setGuideCamera(settings.guideCamera);
+        if (settings.mount) setMount(settings.mount);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       } catch (e) {
         console.error("Error loading settings:", e);
@@ -1982,13 +1990,17 @@ export default function AstroTracker() {
       jsonPath,
       cameras: cameras.filter((c) => c.trim() !== ""),
       telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+      mainLocation,
       locations: locations.filter((l) => l.name.trim() !== ""),
+      guideTelescope,
+      guideCamera,
+      mount,
       userName,
       dateFormat,
     };
     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
     setShowSettings(false);
-  }, [defaultTheme, jsonPath, cameras, telescopes, locations, userName, dateFormat]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -5984,9 +5996,81 @@ export default function AstroTracker() {
                 </Btn>
               </div>
 
-              {/* Localizaciones */}
+              {/* Telescopio guía */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Localizaciones</span>
+                <span className="text-sm font-medium">Telescopio guía</span>
+                <div className="grid gap-2">
+                  <input
+                    type="text"
+                    value={guideTelescope.name}
+                    onChange={(e) => {
+                      setGuideTelescope({ ...guideTelescope, name: e.target.value });
+                    }}
+                    placeholder="Ej: Sky-Watcher 50mm"
+                    className={INPUT_CLS}
+                  />
+                  <input
+                    type="number"
+                    value={guideTelescope.focalLength}
+                    onChange={(e) => {
+                      setGuideTelescope({ ...guideTelescope, focalLength: e.target.value });
+                    }}
+                    placeholder="Distancia focal (mm)"
+                    className={INPUT_CLS + " w-48"}
+                  />
+                </div>
+              </div>
+
+              {/* Cámara guía */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Cámara guía</span>
+                <input
+                  type="text"
+                  value={guideCamera}
+                  onChange={(e) => setGuideCamera(e.target.value)}
+                  placeholder="Ej: ZWO ASI120MM Mini"
+                  className={INPUT_CLS}
+                />
+              </div>
+
+              {/* Montura */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Montura</span>
+                <input
+                  type="text"
+                  value={mount}
+                  onChange={(e) => setMount(e.target.value)}
+                  placeholder="Ej: Sky-Watcher EQ6-R Pro"
+                  className={INPUT_CLS}
+                />
+              </div>
+
+              {/* Localización principal */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Localización principal</span>
+                <input
+                  type="text"
+                  value={mainLocation.name}
+                  onChange={(e) => {
+                    setMainLocation({ ...mainLocation, name: e.target.value });
+                  }}
+                  placeholder="Ej: Observatorio de Sierra Nevada"
+                  className={INPUT_CLS}
+                />
+                <input
+                  type="text"
+                  value={mainLocation.coords}
+                  onChange={(e) => {
+                    setMainLocation({ ...mainLocation, coords: e.target.value });
+                  }}
+                  placeholder="Coordenadas Google (Ej: 37.0644, -3.1706)"
+                  className={INPUT_CLS}
+                />
+              </div>
+
+              {/* Otras localizaciones */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">Otras localizaciones</span>
                 {locations.map((location, index) => (
                   <div key={index} className="grid gap-2">
                     <div className="flex gap-2">
@@ -5998,7 +6082,7 @@ export default function AstroTracker() {
                           newLocations[index] = { ...newLocations[index], name: e.target.value };
                           setLocations(newLocations);
                         }}
-                        placeholder="Ej: Observatorio de Sierra Nevada"
+                        placeholder="Ej: Observatorio Los Molinos"
                         className={INPUT_CLS + " flex-1"}
                       />
                       {locations.length > 1 && (
