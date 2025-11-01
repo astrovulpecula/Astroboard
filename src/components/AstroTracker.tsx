@@ -3122,7 +3122,10 @@ export default function AstroTracker() {
               {/* Next Ephemeris Card */}
               {nextEphemeris && (
                 <div className="mb-6">
-                  <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30">
+                  <div 
+                    onClick={() => navigate("/ephemerides")}
+                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                  >
                     <div className="flex items-start gap-4">
                       <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
                         <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
