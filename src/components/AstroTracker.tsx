@@ -49,6 +49,7 @@ import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
+import { getNextEphemeris, formatSpanishDate, type Ephemeris } from "@/lib/ephemeris-data";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -1961,6 +1962,7 @@ export default function AstroTracker() {
   const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
+  const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   const [visibleHighlights, setVisibleHighlights] = useState({
     totalObjects: true,
     totalProjects: true,
@@ -2031,6 +2033,9 @@ export default function AstroTracker() {
     } else {
       setShowInitialFilePrompt(true);
     }
+
+    // Load next ephemeris
+    getNextEphemeris().then(setNextEphemeris);
   }, []);
 
   // Auto-save objects to localStorage whenever they change
@@ -3113,6 +3118,38 @@ export default function AstroTracker() {
                   </div>
                 );
               })()}
+
+              {/* Next Ephemeris Card */}
+              {nextEphemeris && (
+                <div className="mb-6">
+                  <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
+                        <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1">
+                          Próxima efeméride
+                        </h3>
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2">
+                          {formatSpanishDate(nextEphemeris.date)}
+                        </p>
+                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                          {nextEphemeris.eventES}
+                        </p>
+                        {nextEphemeris.notes && (
+                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                            {nextEphemeris.notes}
+                          </p>
+                        )}
+                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                          {nextEphemeris.category}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
