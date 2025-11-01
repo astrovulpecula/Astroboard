@@ -769,22 +769,34 @@ function FProject({
   cameras = [],
   telescopes = [],
   locations = [],
+  mainLocation,
+  guideTelescope,
+  guideCamera,
+  mount,
 }: {
   onSubmit: (proj: any) => void;
   cameras?: string[];
   telescopes?: { name: string; focalLength: string }[];
   locations?: { name: string; coords: string }[];
+  mainLocation?: { name: string; coords: string };
+  guideTelescope?: { name: string; focalLength: string };
+  guideCamera?: string;
+  mount?: string;
 }) {
+  // Determinar localización inicial
+  const initialLocation = mainLocation?.name || locations[0]?.name || "";
+  const initialCoords = mainLocation?.coords || locations[0]?.coords || "";
+  
   const [name, setName] = useState("Proyecto Trevinca");
   const [description, setDescription] = useState("Campaña principal");
-  const [location, setLocation] = useState(locations[0]?.name || "");
-  const [googleCoords, setGoogleCoords] = useState(locations[0]?.coords || "");
+  const [location, setLocation] = useState(initialLocation);
+  const [googleCoords, setGoogleCoords] = useState(initialCoords);
   const [projectType, setProjectType] = useState("ONP");
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
   const [selectedTelescope, setSelectedTelescope] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState(locations[0]?.name || "");
+  const [selectedLocation, setSelectedLocation] = useState(initialLocation);
   const [customCamera, setCustomCamera] = useState("");
   const [customTelescope, setCustomTelescope] = useState("");
   const [customLocation, setCustomLocation] = useState("");
@@ -795,6 +807,9 @@ function FProject({
   const [numPanels, setNumPanels] = useState(1);
   const [goalHours, setGoalHours] = useState<number | "">("");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [selectedGuideCamera, setSelectedGuideCamera] = useState(guideCamera || "");
+  const [selectedGuideTelescope, setSelectedGuideTelescope] = useState(guideTelescope?.name || "");
+  const [selectedMount, setSelectedMount] = useState(mount || "");
 
   const handleAddFilter = () => {
     if (newFilter.trim() && !filters.includes(newFilter.trim())) {
@@ -822,6 +837,9 @@ function FProject({
       equipment: {
         camera: finalCamera,
         telescope: finalTelescope,
+        guideCamera: selectedGuideCamera,
+        guideTelescope: selectedGuideTelescope,
+        mount: selectedMount,
       },
       numPanels,
       goalHours: goalHours === "" ? undefined : goalHours,
@@ -858,18 +876,29 @@ function FProject({
                 setSelectedLocation(e.target.value);
                 setShowCustomLocation(e.target.value === "Otro");
                 if (e.target.value !== "Otro") {
-                  const selectedLoc = locations.find((l) => l.name === e.target.value);
-                  if (selectedLoc) {
-                    setLocation(selectedLoc.name);
-                    setGoogleCoords(selectedLoc.coords);
+                  // Buscar primero en mainLocation
+                  if (mainLocation && e.target.value === mainLocation.name) {
+                    setLocation(mainLocation.name);
+                    setGoogleCoords(mainLocation.coords);
+                  } else {
+                    const selectedLoc = locations.find((l) => l.name === e.target.value);
+                    if (selectedLoc) {
+                      setLocation(selectedLoc.name);
+                      setGoogleCoords(selectedLoc.coords);
+                    }
                   }
                 }
               }}
               className={INPUT_CLS}
             >
               <option value="">Seleccionar localización...</option>
+              {mainLocation && mainLocation.name.trim() && (
+                <option key={mainLocation.name} value={mainLocation.name}>
+                  {mainLocation.name} (Principal)
+                </option>
+              )}
               {locations
-                .filter((l) => l.name.trim())
+                .filter((l) => l.name.trim() && l.name !== mainLocation?.name)
                 .map((loc) => (
                   <option key={loc.name} value={loc.name}>
                     {loc.name}
@@ -1040,6 +1069,36 @@ function FProject({
                 placeholder="Nombre del nuevo telescopio..."
               />
             )}
+          </label>
+
+          <label className="grid gap-1">
+            <Label>Telescopio guía</Label>
+            <input
+              value={selectedGuideTelescope}
+              onChange={(e) => setSelectedGuideTelescope(e.target.value)}
+              className={INPUT_CLS}
+              placeholder="Opcional"
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <Label>Cámara guía</Label>
+            <input
+              value={selectedGuideCamera}
+              onChange={(e) => setSelectedGuideCamera(e.target.value)}
+              className={INPUT_CLS}
+              placeholder="Opcional"
+            />
+          </label>
+
+          <label className="grid gap-1">
+            <Label>Montura</Label>
+            <input
+              value={selectedMount}
+              onChange={(e) => setSelectedMount(e.target.value)}
+              className={INPUT_CLS}
+              placeholder="Opcional"
+            />
           </label>
         </div>
       </div>
@@ -5685,7 +5744,16 @@ export default function AstroTracker() {
           <FObject onSubmit={addObj} />
         </Modal>
         <Modal open={mProj} onClose={() => setMProj(false)} title="Nuevo proyecto">
-          <FProject onSubmit={addProj} cameras={cameras} telescopes={telescopes} locations={locations} />
+          <FProject 
+            onSubmit={addProj} 
+            cameras={cameras} 
+            telescopes={telescopes} 
+            locations={locations} 
+            mainLocation={mainLocation}
+            guideTelescope={guideTelescope}
+            guideCamera={guideCamera}
+            mount={mount}
+          />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
           <FSession
