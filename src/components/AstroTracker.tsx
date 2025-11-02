@@ -3572,6 +3572,8 @@ export default function AstroTracker() {
                         {visibleHighlights.snrRecord && (() => {
                         let maxSNR = 0;
                         let bestObjectName = "";
+                        let bestObjectId = "";
+                        let bestProjectId = "";
                         
                         objects.forEach((obj) => {
                           obj.projects.forEach((proj: any) => {
@@ -3580,13 +3582,24 @@ export default function AstroTracker() {
                               if (sessionMeanSNR !== null && sessionMeanSNR > maxSNR) {
                                 maxSNR = sessionMeanSNR;
                                 bestObjectName = obj.commonName || obj.id;
+                                bestObjectId = obj.id;
+                                bestProjectId = proj.id;
                               }
                             });
                           });
                         });
 
                         return (
-                          <Card className="p-5">
+                          <Card 
+                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
+                            onClick={() => {
+                              if (bestObjectId && bestProjectId) {
+                                setSelectedObjectId(bestObjectId);
+                                setSelectedProjectId(bestProjectId);
+                                setView("project");
+                              }
+                            }}
+                          >
                             <div className="flex items-center gap-3">
                               <div className="p-3 rounded-xl bg-green-500/10">
                                 <Flame className="w-6 h-6 text-green-600 dark:text-green-400" />
