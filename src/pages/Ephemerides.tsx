@@ -2,13 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, ChevronLeft } from "lucide-react";
 import { loadEphemeris, formatSpanishDate, type Ephemeris } from "@/lib/ephemeris-data";
+import logoLight from "@/assets/logo-light.png";
+import logoDark from "@/assets/logo-dark.png";
 
 const Ephemerides = () => {
   const navigate = useNavigate();
   const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
   const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState<string>("dark");
 
   useEffect(() => {
+    // Detectar tema del sistema
+    const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    setTheme(darkModeMediaQuery.matches ? "dark" : "light");
+
     const loadData = async () => {
       try {
         const data = await loadEphemeris();
@@ -74,32 +81,50 @@ const Ephemerides = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <button
-            onClick={() => navigate("/")}
-            className="p-2 rounded-lg hover:bg-white/10 transition-colors"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
-              <Calendar className="w-8 h-8" />
-              Próximas Efemérides
-            </h1>
-            <p className="text-slate-300 mt-2">
-              Calendario de eventos astronómicos 2025-2026
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950 text-slate-900 dark:text-slate-100">
+      {/* Header */}
+      <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/")}
+              className="hover:opacity-80 transition-opacity"
+            >
+              <img src={theme === "dark" ? logoDark : logoLight} alt="StarBoard" className="h-14 w-14" />
+            </button>
+            <div>
+              <div className="font-semibold">StarBoard</div>
+              <div className="text-xs text-slate-500">Efemérides</div>
+            </div>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/")}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" /> Volver
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* Title Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
+            <Calendar className="w-8 h-8" />
+            Próximas Efemérides
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">
+            Calendario de eventos astronómicos 2025-2026
+          </p>
         </div>
 
         {/* Loading State */}
         {loading && (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-            <p className="mt-4 text-slate-300">Cargando efemérides...</p>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="mt-4 text-slate-500 dark:text-slate-400">Cargando efemérides...</p>
           </div>
         )}
 
@@ -109,14 +134,14 @@ const Ephemerides = () => {
             {ephemerides.map((eph, index) => (
               <div
                 key={index}
-                className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300"
+                className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all duration-300"
               >
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   {/* Date */}
                   <div className="flex-shrink-0 text-center md:text-left">
-                    <div className="inline-block bg-white/10 rounded-xl px-4 py-2 border border-white/20">
+                    <div className="inline-block bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-700">
                       <Calendar className="w-5 h-5 mb-1 mx-auto md:mx-0" />
-                      <p className="text-sm font-medium text-slate-300">
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
                         {formatSpanishDate(eph.date)}
                       </p>
                     </div>
@@ -129,12 +154,12 @@ const Ephemerides = () => {
                         {eph.category}
                       </span>
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">{eph.eventES}</h3>
+                    <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-slate-100">{eph.eventES}</h3>
                     {eph.eventEN && (
-                      <p className="text-slate-400 text-sm mb-2 italic">{eph.eventEN}</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm mb-2 italic">{eph.eventEN}</p>
                     )}
                     {eph.notes && (
-                      <p className="text-slate-300 text-sm leading-relaxed">{eph.notes}</p>
+                      <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{eph.notes}</p>
                     )}
                   </div>
                 </div>
@@ -143,13 +168,13 @@ const Ephemerides = () => {
 
             {ephemerides.length === 0 && !loading && (
               <div className="text-center py-12">
-                <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-                <p className="text-slate-400">No hay efemérides programadas</p>
+                <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-600" />
+                <p className="text-slate-500 dark:text-slate-400">No hay efemérides programadas</p>
               </div>
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
