@@ -49,7 +49,7 @@ import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
-import { getNextEphemeris, formatSpanishDate, type Ephemeris } from "@/lib/ephemeris-data";
+import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -1963,6 +1963,7 @@ export default function AstroTracker() {
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
+  const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
   const [visibleHighlights, setVisibleHighlights] = useState({
     totalObjects: true,
     totalProjects: true,
@@ -2034,8 +2035,51 @@ export default function AstroTracker() {
       setShowInitialFilePrompt(true);
     }
 
-    // Load next ephemeris
-    getNextEphemeris().then(setNextEphemeris);
+    // Load ephemeris data
+    const loadEphemerisData = async () => {
+      try {
+        const data = await loadEphemeris();
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        
+        // Parse spanish date format
+        const parseSpanishDate = (dateStr: string): Date | null => {
+          const monthMap: { [key: string]: number } = {
+            'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5,
+            'jul': 6, 'ago': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dic': 11
+          };
+          const parts = dateStr.split('-');
+          if (parts.length !== 3) return null;
+          const day = parseInt(parts[0]);
+          const monthKey = parts[1].replace('.', '').toLowerCase();
+          const year = parseInt(parts[2]) + 2000;
+          const month = monthMap[monthKey];
+          if (month === undefined) return null;
+          return new Date(year, month, day);
+        };
+        
+        // Filter future ephemerides and sort
+        const futureEphemerides = data
+          .filter((eph) => {
+            const eventDate = parseSpanishDate(eph.date);
+            return eventDate && eventDate.getTime() >= now.getTime();
+          })
+          .sort((a, b) => {
+            const dateA = parseSpanishDate(a.date);
+            const dateB = parseSpanishDate(b.date);
+            if (!dateA || !dateB) return 0;
+            return dateA.getTime() - dateB.getTime();
+          });
+        
+        setEphemerides(futureEphemerides);
+        if (futureEphemerides.length > 0) {
+          setNextEphemeris(futureEphemerides[0]);
+        }
+      } catch (error) {
+        console.error("Error loading ephemerides:", error);
+      }
+    };
+    loadEphemerisData();
   }, []);
 
   // Auto-save objects to localStorage whenever they change
@@ -2869,7 +2913,7 @@ export default function AstroTracker() {
               <div>
                 <div className="font-semibold">StarBoard</div>
                 <div className="text-xs text-slate-500">
-                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : view === "constellationDetail" ? `Constelación: ${selectedConstellation}` : "ONP vs SNP"}
+                  {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : view === "constellationDetail" ? `Constelación: ${selectedConstellation}` : view === "ephemerides" ? "Efemérides" : "ONP vs SNP"}
                 </div>
               </div>
             </div>
@@ -2884,7 +2928,7 @@ export default function AstroTracker() {
                     } else if (view === "project") {
                       setView("projects");
                       setSelectedProjectId(null);
-                    } else if (view === "ratings" || view === "onp-snp") {
+                    } else if (view === "ratings" || view === "onp-snp" || view === "ephemerides") {
                       setView("objects");
                     } else {
                       setView("objects");
@@ -3123,7 +3167,7 @@ export default function AstroTracker() {
               {nextEphemeris && (
                 <div className="mb-6">
                   <div 
-                    onClick={() => navigate("/ephemerides")}
+                    onClick={() => setView("ephemerides")}
                     className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200"
                   >
                     <div className="flex items-start gap-4">
@@ -5666,6 +5710,80 @@ export default function AstroTracker() {
                   </>
                 );
               })()}
+            </div>
+          )}
+
+          {view === "ephemerides" && (
+            <div className="grid gap-4" key="view-ephemerides">
+              {/* Header */}
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
+                  <Calendar className="w-8 h-8" />
+                  Próximas Efemérides
+                </h1>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Calendario de eventos astronómicos 2025-2026
+                </p>
+              </div>
+
+              {ephemerides.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-400" />
+                  <p className="text-slate-600 dark:text-slate-400">
+                    No hay efemérides programadas
+                  </p>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  {ephemerides.map((eph, index) => {
+                    const getCategoryColor = (category: string) => {
+                      const colors: { [key: string]: string } = {
+                        'Lluvia de meteoros': 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30',
+                        'Fases lunares': 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+                        'Eclipse solar': 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30',
+                        'Eclipse lunar': 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
+                        'Planeta en oposición': 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30',
+                        'Conjunción planetaria': 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/30',
+                        'Estaciones': 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
+                        'Órbita Tierra': 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
+                      };
+                      return colors[category] || 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/30';
+                    };
+
+                    return (
+                      <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
+                        <div className="flex flex-col md:flex-row md:items-start gap-4">
+                          {/* Date */}
+                          <div className="flex-shrink-0 text-center md:text-left">
+                            <div className="inline-block bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-700">
+                              <Calendar className="w-5 h-5 mb-1 mx-auto md:mx-0" />
+                              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                                {formatSpanishDate(eph.date)}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getCategoryColor(eph.category)}`}>
+                                {eph.category}
+                              </span>
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2 text-slate-900 dark:text-slate-100">{eph.eventES}</h3>
+                            {eph.eventEN && (
+                              <p className="text-slate-500 dark:text-slate-400 text-sm mb-2 italic">{eph.eventEN}</p>
+                            )}
+                            {eph.notes && (
+                              <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">{eph.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
