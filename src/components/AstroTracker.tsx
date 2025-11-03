@@ -1964,6 +1964,7 @@ export default function AstroTracker() {
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
+  const [weatherData, setWeatherData] = useState<any>(null);
   const [visibleHighlights, setVisibleHighlights] = useState({
     totalObjects: true,
     totalProjects: true,
@@ -2080,7 +2081,29 @@ export default function AstroTracker() {
       }
     };
     loadEphemerisData();
-  }, []);
+
+    // Load weather data from Open-Meteo API
+    const loadWeatherData = async () => {
+      try {
+        if (!mainLocation?.coords) return;
+        
+        const coords = mainLocation.coords.split(',').map(c => c.trim());
+        if (coords.length !== 2) return;
+        
+        const [lat, lon] = coords;
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=3`
+        );
+        
+        if (!response.ok) throw new Error('Weather API error');
+        const data = await response.json();
+        setWeatherData(data);
+      } catch (error) {
+        console.error("Error loading weather data:", error);
+      }
+    };
+    loadWeatherData();
+  }, [mainLocation?.coords]);
 
   // Auto-save objects to localStorage whenever they change
   useEffect(() => {
@@ -3138,7 +3161,19 @@ export default function AstroTracker() {
                 }
 
                 const moonPhase = calculateMoonPhase(now);
-                const moonTimes = calculateMoonTimes(now);
+                
+                // Parse coordinates from mainLocation
+                let latitude = 40.4;
+                let longitude = -3.7;
+                if (mainLocation?.coords) {
+                  const coords = mainLocation.coords.split(',').map(c => parseFloat(c.trim()));
+                  if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+                    latitude = coords[0];
+                    longitude = coords[1];
+                  }
+                }
+                
+                const moonTimes = calculateMoonTimes(now, latitude, longitude);
                 const displayName = userName || "Astrónomo";
 
                 const formatTime = (date: Date) => {
@@ -3197,6 +3232,98 @@ export default function AstroTracker() {
                   </div>
                 </div>
               )}
+
+              {/* Weather Forecast Card */}
+              {weatherData && (() => {
+                const getWeatherIcon = (code: number) => {
+                  if (code === 0) return "☀️";
+                  if (code <= 3) return "⛅";
+                  if (code <= 48) return "☁️";
+                  if (code <= 67) return "🌧️";
+                  if (code <= 77) return "🌨️";
+                  if (code <= 82) return "🌦️";
+                  if (code >= 95) return "⛈️";
+                  return "🌤️";
+                };
+
+                const getWeatherDescription = (code: number) => {
+                  if (code === 0) return "Cielo despejado";
+                  if (code <= 3) return "Parcialmente nublado";
+                  if (code <= 48) return "Nublado";
+                  if (code <= 67) return "Lluvia";
+                  if (code <= 77) return "Nieve";
+                  if (code <= 82) return "Chubascos";
+                  if (code >= 95) return "Tormenta";
+                  return "Variable";
+                };
+
+                return (
+                  <div className="mb-6">
+                    <div className="bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-sky-500/10 dark:from-blue-500/20 dark:via-cyan-500/20 dark:to-sky-500/20 rounded-2xl p-6 border border-blue-200/50 dark:border-blue-500/30">
+                      <div className="flex items-start gap-4">
+                        <div className="p-3 rounded-xl bg-blue-500/20 dark:bg-blue-500/30">
+                          <Sun className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3">
+                            Previsión Meteorológica
+                          </h3>
+                          
+                          {/* Current Weather */}
+                          <div className="mb-4 p-4 rounded-xl bg-white/50 dark:bg-slate-900/30">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">Ahora</p>
+                                <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+                                  {Math.round(weatherData.current_weather.temperature)}°C
+                                </p>
+                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                  {getWeatherDescription(weatherData.current_weather.weathercode)}
+                                </p>
+                              </div>
+                              <div className="text-5xl">
+                                {getWeatherIcon(weatherData.current_weather.weathercode)}
+                              </div>
+                            </div>
+                            <div className="mt-3 text-xs text-slate-600 dark:text-slate-400">
+                              Viento: {Math.round(weatherData.current_weather.windspeed)} km/h
+                            </div>
+                          </div>
+
+                          {/* 3-day Forecast */}
+                          <div className="grid grid-cols-3 gap-3">
+                            {weatherData.daily.time.slice(0, 3).map((date: string, i: number) => {
+                              const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
+                              return (
+                                <div key={i} className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-900/30">
+                                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {dayName}
+                                  </p>
+                                  <div className="text-2xl mb-2">
+                                    {getWeatherIcon(weatherData.daily.weathercode[i])}
+                                  </div>
+                                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                    {Math.round(weatherData.daily.temperature_2m_max[i])}° / {Math.round(weatherData.daily.temperature_2m_min[i])}°
+                                  </p>
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                                    💧 {weatherData.daily.precipitation_probability_max[i]}%
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          {mainLocation?.name && (
+                            <p className="text-xs text-slate-500 dark:text-slate-500 mt-3">
+                              📍 {mainLocation.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
