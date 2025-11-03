@@ -2967,15 +2967,20 @@ export default function AstroTracker() {
                 outline
                 onClick={() => {
                   // Incluir objects y settings en la exportación
-                  const exportData = {
-                    objects,
-                    settings: {
-                      userName,
-                      cameras: cameras.filter((c) => c.trim() !== ""),
-                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-                      locations: locations.filter((l) => l.name.trim() !== ""),
-                    },
-                  };
+                const exportData = {
+                  objects,
+                  settings: {
+                    userName,
+                    cameras: cameras.filter((c) => c.trim() !== ""),
+                    telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+                    locations: locations.filter((l) => l.name.trim() !== ""),
+                    mainLocation,
+                    guideTelescope,
+                    guideCamera,
+                    mount,
+                    dateFormat,
+                  },
+                };
                   const data = JSON.stringify(exportData, null, 2),
                     blob = new Blob([data], { type: "application/json" }),
                     url = URL.createObjectURL(blob),
@@ -3100,6 +3105,11 @@ export default function AstroTracker() {
                           settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }],
                         );
                       }
+                      if (settingsData.mainLocation) setMainLocation(settingsData.mainLocation);
+                      if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
+                      if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
+                      if (settingsData.mount) setMount(settingsData.mount);
+                      if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
 
                       // Guardar settings en localStorage
                       const settings = {
@@ -3108,6 +3118,11 @@ export default function AstroTracker() {
                         cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
                         telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
                         locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
+                        mainLocation: settingsData.mainLocation || mainLocation,
+                        guideTelescope: settingsData.guideTelescope || guideTelescope,
+                        guideCamera: settingsData.guideCamera || guideCamera,
+                        mount: settingsData.mount || mount,
+                        dateFormat: settingsData.dateFormat || dateFormat,
                         userName: settingsData.userName || userName,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
@@ -6215,17 +6230,64 @@ export default function AstroTracker() {
                         e.target.value = "";
                         return;
                       }
-                      if (Array.isArray(json)) {
-                        setObjects(json);
-                        try {
-                          localStorage.setItem("astroTrackerData", JSON.stringify(json));
-                        } catch (err) {
-                          console.warn("No se pudo guardar en localStorage:", err);
-                        }
-                        setShowInitialFilePrompt(false);
+                      
+                      // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
+                      let objectsData;
+                      let settingsData = null;
+                      
+                      if (json.objects && Array.isArray(json.objects)) {
+                        objectsData = json.objects;
+                        settingsData = json.settings;
+                      } else if (Array.isArray(json)) {
+                        objectsData = json;
                       } else {
                         alert("Formato no válido");
+                        e.target.value = "";
+                        return;
                       }
+                      
+                      setObjects(objectsData);
+                      try {
+                        localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
+                      } catch (err) {
+                        console.warn("No se pudo guardar en localStorage:", err);
+                      }
+                      
+                      // Restaurar settings si existen
+                      if (settingsData) {
+                        if (settingsData.userName) setUserName(settingsData.userName);
+                        if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
+                          setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
+                        }
+                        if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
+                          setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
+                        }
+                        if (settingsData.locations && Array.isArray(settingsData.locations)) {
+                          setLocations(settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }]);
+                        }
+                        if (settingsData.mainLocation) setMainLocation(settingsData.mainLocation);
+                        if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
+                        if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
+                        if (settingsData.mount) setMount(settingsData.mount);
+                        if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                        
+                        const settings = {
+                          defaultTheme,
+                          jsonPath: f.name,
+                          cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
+                          telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                          locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
+                          mainLocation: settingsData.mainLocation || mainLocation,
+                          guideTelescope: settingsData.guideTelescope || guideTelescope,
+                          guideCamera: settingsData.guideCamera || guideCamera,
+                          mount: settingsData.mount || mount,
+                          dateFormat: settingsData.dateFormat || dateFormat,
+                          userName: settingsData.userName || userName,
+                        };
+                        localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                      }
+                      
+                      setShowInitialFilePrompt(false);
                       e.target.value = "";
                     }}
                   />
@@ -7127,18 +7189,65 @@ export default function AstroTracker() {
                     e.target.value = "";
                     return;
                   }
-                  if (Array.isArray(json)) {
-                    setObjects(json);
-                    try {
-                      localStorage.setItem("astroTrackerData", JSON.stringify(json));
-                    } catch (err) {
-                      console.warn("No se pudo guardar en localStorage:", err);
-                    }
-                    setShowInitialFilePrompt(false);
-                    setJsonPath(f.name);
+                  
+                  // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
+                  let objectsData;
+                  let settingsData = null;
+                  
+                  if (json.objects && Array.isArray(json.objects)) {
+                    objectsData = json.objects;
+                    settingsData = json.settings;
+                  } else if (Array.isArray(json)) {
+                    objectsData = json;
                   } else {
                     alert("Formato no válido");
+                    e.target.value = "";
+                    return;
                   }
+                  
+                  setObjects(objectsData);
+                  try {
+                    localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
+                  } catch (err) {
+                    console.warn("No se pudo guardar en localStorage:", err);
+                  }
+                  
+                  // Restaurar settings si existen
+                  if (settingsData) {
+                    if (settingsData.userName) setUserName(settingsData.userName);
+                    if (settingsData.cameras && Array.isArray(settingsData.cameras)) {
+                      setCameras(settingsData.cameras.length > 0 ? settingsData.cameras : [""]);
+                    }
+                    if (settingsData.telescopes && Array.isArray(settingsData.telescopes)) {
+                      setTelescopes(settingsData.telescopes.length > 0 ? settingsData.telescopes : [{ name: "", focalLength: "" }]);
+                    }
+                    if (settingsData.locations && Array.isArray(settingsData.locations)) {
+                      setLocations(settingsData.locations.length > 0 ? settingsData.locations : [{ name: "", coords: "" }]);
+                    }
+                    if (settingsData.mainLocation) setMainLocation(settingsData.mainLocation);
+                    if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
+                    if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
+                    if (settingsData.mount) setMount(settingsData.mount);
+                    if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                    
+                    const settings = {
+                      defaultTheme,
+                      jsonPath: f.name,
+                      cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
+                      telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                      locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
+                      mainLocation: settingsData.mainLocation || mainLocation,
+                      guideTelescope: settingsData.guideTelescope || guideTelescope,
+                      guideCamera: settingsData.guideCamera || guideCamera,
+                      mount: settingsData.mount || mount,
+                      dateFormat: settingsData.dateFormat || dateFormat,
+                      userName: settingsData.userName || userName,
+                    };
+                    localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                  }
+                  
+                  setShowInitialFilePrompt(false);
+                  setJsonPath(f.name);
                   e.target.value = "";
                 }}
               />
