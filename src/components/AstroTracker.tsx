@@ -52,6 +52,8 @@ import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -4846,7 +4848,7 @@ export default function AstroTracker() {
                 <div className="flex items-center gap-2">
                   <IconBtn
                     title="Descargar reporte del proyecto"
-                    onClick={() => {
+                    onClick={async () => {
                       // Generar reporte HTML
                       const totalSeconds = totalExposureSec(proj.sessions);
                       const currentHours = (totalSeconds / 3600).toFixed(1);
@@ -4876,434 +4878,209 @@ export default function AstroTracker() {
                         }
                       });
                       
+                      // Preparar datos para gráficas
+                      const chartDataByDate = proj.sessions.map((s: any, i: number) => ({
+                        date: formatDateDisplay(s.date, dateFormat),
+                        lights: cumulativeLights(proj.sessions, i),
+                        hours: cumulativeHours(proj.sessions, i),
+                      }));
+
+                      const filterData = Object.entries(filterHours).map(([filter, seconds]) => ({
+                        filter,
+                        hours: (seconds / 3600).toFixed(1),
+                      }));
+                      
                       const statusLabels = {
                         active: "Activo",
                         paused: "Pausado",
                         completed: "Completado",
                       };
 
+                      const finalImage = (proj as any).finalImage || obj.image || '';
+
                       const html = `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reporte - ${obj.id} - ${proj.name}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      color: #e2e8f0;
-      padding: 2rem;
-      line-height: 1.6;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: rgba(30, 41, 59, 0.8);
-      border-radius: 1rem;
-      padding: 2rem;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(10px);
-    }
-    
-    .header {
-      text-align: center;
-      padding: 2rem 0;
-      border-bottom: 2px solid rgba(148, 163, 184, 0.2);
-      margin-bottom: 2rem;
-    }
-    
-    .header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 0.5rem;
-    }
-    
-    .header p {
-      color: #94a3b8;
-      font-size: 1.1rem;
-    }
-    
-    .section {
-      margin: 2rem 0;
-    }
-    
-    .section-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: #60a5fa;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(96, 165, 250, 0.3);
-    }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    
-    .card {
-      background: rgba(51, 65, 85, 0.6);
-      border: 1px solid rgba(148, 163, 184, 0.2);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(96, 165, 250, 0.2);
-    }
-    
-    .card-label {
-      font-size: 0.875rem;
-      color: #94a3b8;
-      margin-bottom: 0.5rem;
-    }
-    
-    .card-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #e2e8f0;
-    }
-    
-    .card-subtitle {
-      font-size: 0.875rem;
-      color: #64748b;
-      margin-top: 0.25rem;
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-    
-    .status-active {
-      background: rgba(34, 197, 94, 0.2);
-      color: #4ade80;
-      border: 1px solid rgba(34, 197, 94, 0.4);
-    }
-    
-    .status-paused {
-      background: rgba(234, 179, 8, 0.2);
-      color: #facc15;
-      border: 1px solid rgba(234, 179, 8, 0.4);
-    }
-    
-    .status-completed {
-      background: rgba(59, 130, 246, 0.2);
-      color: #60a5fa;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-    }
-    
-    .table-container {
-      overflow-x: auto;
-      margin-top: 1rem;
-    }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: rgba(51, 65, 85, 0.4);
-      border-radius: 0.75rem;
-      overflow: hidden;
-    }
-    
-    thead {
-      background: rgba(30, 41, 59, 0.8);
-    }
-    
-    th {
-      padding: 1rem;
-      text-align: left;
-      font-weight: 600;
-      color: #60a5fa;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    
-    td {
-      padding: 1rem;
-      border-top: 1px solid rgba(148, 163, 184, 0.1);
-      color: #cbd5e1;
-    }
-    
-    tbody tr:hover {
-      background: rgba(71, 85, 105, 0.4);
-    }
-    
-    .footer {
-      margin-top: 3rem;
-      padding-top: 2rem;
-      border-top: 1px solid rgba(148, 163, 184, 0.2);
-      text-align: center;
-      color: #64748b;
-      font-size: 0.875rem;
-    }
-    
-    @media print {
-      body {
-        background: white;
-        color: black;
-      }
-      .container {
-        background: white;
-        box-shadow: none;
-      }
-      .header h1 {
-        color: #1e40af;
-        -webkit-text-fill-color: #1e40af;
-      }
-      .section-title {
-        color: #1e40af;
-      }
-      .card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-      }
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; padding: 2rem; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; background: rgba(30, 41, 59, 0.8); border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0; border-bottom: 2px solid rgba(148, 163, 184, 0.2); margin-bottom: 2rem; }
+    .header-left h1 { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+    .header-left p { color: #94a3b8; font-size: 1.1rem; }
+    .header-right img { width: 200px; height: 200px; object-fit: cover; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); }
+    .section { margin: 2rem 0; }
+    .section-title { font-size: 1.5rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(96, 165, 250, 0.3); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .card { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; }
+    .card-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
+    .card-value { font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
+    .card-subtitle { font-size: 0.875rem; color: #64748b; margin-top: 0.25rem; }
+    .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+    .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+    .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .chart-container { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; }
+    canvas { max-width: 100%; height: 300px !important; }
+    table { width: 100%; border-collapse: collapse; background: rgba(51, 65, 85, 0.4); border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; }
+    thead { background: rgba(30, 41, 59, 0.8); }
+    th { padding: 1rem; text-align: left; font-weight: 600; color: #60a5fa; font-size: 0.875rem; }
+    td { padding: 1rem; border-top: 1px solid rgba(148, 163, 184, 0.1); color: #cbd5e1; }
+    .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(148, 163, 184, 0.2); text-align: center; color: #64748b; font-size: 0.875rem; }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="report">
     <div class="header">
-      <h1>Reporte del Proyecto</h1>
-      <p>${obj.id} ${obj.commonName ? `- ${obj.commonName}` : ''}</p>
-      <p style="margin-top: 0.5rem; font-size: 1rem;">${proj.name}</p>
-    </div>
-
-    <!-- Información del Objeto -->
-    <div class="section">
-      <h2 class="section-title">📡 Información del Objeto</h2>
-      <div class="grid">
-        <div class="card">
-          <div class="card-label">Código</div>
-          <div class="card-value">${obj.id}</div>
-        </div>
-        ${obj.commonName ? `
-        <div class="card">
-          <div class="card-label">Nombre Común</div>
-          <div class="card-value">${obj.commonName}</div>
-        </div>
-        ` : ''}
-        ${obj.constellation ? `
-        <div class="card">
-          <div class="card-label">Constelación</div>
-          <div class="card-value">${obj.constellation}</div>
-        </div>
-        ` : ''}
-        ${obj.type ? `
-        <div class="card">
-          <div class="card-label">Tipo</div>
-          <div class="card-value">${obj.type}</div>
-        </div>
-        ` : ''}
+      <div class="header-left">
+        <h1>Reporte del Proyecto</h1>
+        <p>${obj.id} ${obj.commonName ? `- ${obj.commonName}` : ''}</p>
+        <p style="margin-top: 0.5rem; font-size: 1rem;">${proj.name}</p>
       </div>
+      ${finalImage ? `<div class="header-right"><img src="${finalImage}" alt="Imagen final" /></div>` : ''}
     </div>
-
-    <!-- Estadísticas del Proyecto -->
+    
     <div class="section">
       <h2 class="section-title">📊 Estadísticas del Proyecto</h2>
       <div class="grid">
-        <div class="card">
-          <div class="card-label">Estado</div>
-          <div class="card-value">
-            <span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-label">Noches de Captura</div>
-          <div class="card-value">${nights}</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Tiempo Activo</div>
-          <div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Lights Totales</div>
-          <div class="card-value">${totalLights}</div>
-        </div>
-        <div class="card">
-          <div class="card-label">Exposición Total</div>
-          <div class="card-value">${hh(totalSeconds)}</div>
-        </div>
-        ${goalHours > 0 ? `
-        <div class="card">
-          <div class="card-label">Objetivo</div>
-          <div class="card-value">${currentHours}h / ${goalHours}h</div>
-          <div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div>
-        </div>
-        ` : ''}
+        <div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>
+        <div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>
+        <div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>
+        <div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>
+        <div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>
+        ${goalHours > 0 ? `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>` : ''}
       </div>
     </div>
 
-    <!-- Exposición por Filtro -->
+    <div class="section">
+      <h2 class="section-title">📈 Progreso Acumulado</h2>
+      <div class="chart-container">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>
+
     ${Object.keys(filterHours).length > 0 ? `
     <div class="section">
       <h2 class="section-title">🎨 Exposición por Filtro</h2>
-      <div class="grid">
-        ${Object.entries(filterHours)
-          .sort(([, a], [, b]) => b - a)
-          .map(([filter, seconds]) => `
-        <div class="card">
-          <div class="card-label">${filter}</div>
-          <div class="card-value">${hh(seconds)}</div>
-        </div>
-        `).join('')}
+      <div class="chart-container">
+        <canvas id="filterChart"></canvas>
       </div>
-    </div>
-    ` : ''}
-
-    <!-- Equipo -->
-    <div class="section">
-      <h2 class="section-title">🔭 Equipo Utilizado</h2>
-      <div class="grid">
-        ${(proj as any).telescope ? `
-        <div class="card">
-          <div class="card-label">Telescopio</div>
-          <div class="card-value" style="font-size: 1.1rem;">${(proj as any).telescope}</div>
-        </div>
-        ` : ''}
-        ${(proj as any).camera ? `
-        <div class="card">
-          <div class="card-label">Cámara</div>
-          <div class="card-value" style="font-size: 1.1rem;">${(proj as any).camera}</div>
-        </div>
-        ` : ''}
-        ${mount ? `
-        <div class="card">
-          <div class="card-label">Montura</div>
-          <div class="card-value" style="font-size: 1.1rem;">${mount}</div>
-        </div>
-        ` : ''}
-        ${guideTelescope ? `
-        <div class="card">
-          <div class="card-label">Telescopio Guía</div>
-          <div class="card-value" style="font-size: 1.1rem;">${guideTelescope}</div>
-        </div>
-        ` : ''}
-        ${guideCamera ? `
-        <div class="card">
-          <div class="card-label">Cámara Guía</div>
-          <div class="card-value" style="font-size: 1.1rem;">${guideCamera}</div>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-
-    <!-- Localización -->
-    ${mainLocation ? `
-    <div class="section">
-      <h2 class="section-title">📍 Localización Principal</h2>
-      <div class="grid">
-        ${mainLocation.name ? `
-        <div class="card">
-          <div class="card-label">Lugar</div>
-          <div class="card-value" style="font-size: 1.1rem;">${mainLocation.name}</div>
-        </div>
-        ` : ''}
-        ${mainLocation.coords ? `
-        <div class="card">
-          <div class="card-label">Coordenadas</div>
-          <div class="card-value" style="font-size: 1.1rem;">${mainLocation.coords}</div>
-        </div>
-        ` : ''}
-        ${(mainLocation as any).bortle ? `
-        <div class="card">
-          <div class="card-label">Escala Bortle</div>
-          <div class="card-value">${(mainLocation as any).bortle}</div>
-        </div>
-        ` : ''}
-      </div>
-    </div>
-    ` : ''}
-
-    <!-- Sesiones -->
-    <div class="section">
-      <h2 class="section-title">📅 Historial de Sesiones</h2>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Filtro</th>
-              <th>Lights</th>
-              <th>Exposición</th>
-              <th>Total</th>
-              <th>Calidad</th>
-              <th>Seeing</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${proj.sessions
-              .map((s: any) => {
-                const sessionSeconds = (s.lights || 0) * (s.exposureSec || 0);
-                return `
-            <tr>
-              <td>${formatDateDisplay(s.date, dateFormat)}</td>
-              <td>${s.filter || '-'}</td>
-              <td>${s.lights || 0}</td>
-              <td>${s.exposureSec || 0}s</td>
-              <td>${hh(sessionSeconds)}</td>
-              <td>${s.quality || '-'}</td>
-              <td>${s.seeing || '-'}</td>
-            </tr>
-                `;
-              })
-              .join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </div>` : ''}
 
     <div class="footer">
-      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })}</p>
+      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
       <p style="margin-top: 0.5rem;">StarBoard - Astronomy Tracker</p>
     </div>
   </div>
-</body>
-</html>
-                      `;
 
-                      // Crear blob y descargar
-                      const blob = new Blob([html], { type: 'text/html' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `reporte-${obj.id}-${proj.name.replace(/[^a-z0-9]/gi, '-')}.html`;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                      
-                      toast({
-                        title: "Reporte generado",
-                        description: "El reporte se ha descargado correctamente",
-                      });
+  <script>
+    const progressCtx = document.getElementById('progressChart');
+    new Chart(progressCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
+        datasets: [{
+          label: 'Horas acumuladas',
+          data: ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))},
+          borderColor: '#60a5fa',
+          backgroundColor: 'rgba(96, 165, 250, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e2e8f0' } } },
+        scales: {
+          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+        }
+      }
+    });
+
+    ${filterData.length > 0 ? `
+    const filterCtx = document.getElementById('filterChart');
+    new Chart(filterCtx, {
+      type: 'bar',
+      data: {
+        labels: ${JSON.stringify(filterData.map((d: any) => d.filter))},
+        datasets: [{
+          label: 'Horas',
+          data: ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))},
+          backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'],
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+        }
+      }
+    });` : ''}
+  </script>
+</body>
+</html>`;
+
+                      // Crear iframe oculto para renderizar
+                      const iframe = document.createElement('iframe');
+                      iframe.style.position = 'absolute';
+                      iframe.style.left = '-9999px';
+                      iframe.style.width = '1200px';
+                      document.body.appendChild(iframe);
+
+                      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (iframeDoc) {
+                        iframeDoc.open();
+                        iframeDoc.write(html);
+                        iframeDoc.close();
+
+                        // Esperar a que se carguen las gráficas
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        // Convertir a PDF
+                        const reportElement = iframeDoc.getElementById('report');
+                        if (reportElement) {
+                          const canvas = await html2canvas(reportElement, {
+                            scale: 2,
+                            backgroundColor: '#0f172a',
+                            logging: false,
+                          });
+
+                          const imgData = canvas.toDataURL('image/png');
+                          const pdf = new jsPDF('p', 'mm', 'a4');
+                          const imgWidth = 210;
+                          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                          let heightLeft = imgHeight;
+                          let position = 0;
+
+                          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                          heightLeft -= 297;
+
+                          while (heightLeft > 0) {
+                            position = heightLeft - imgHeight;
+                            pdf.addPage();
+                            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= 297;
+                          }
+
+                          pdf.save(`reporte-${obj.id}-${proj.name.replace(/[^a-z0-9]/gi, '-')}.pdf`);
+                          
+                          toast({
+                            title: "Reporte generado",
+                            description: "El reporte PDF se ha descargado correctamente",
+                          });
+                        }
+
+                        document.body.removeChild(iframe);
+                      }
                     }}
                   >
                     <FileText className="w-4 h-4" />
