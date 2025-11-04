@@ -4912,7 +4912,7 @@ export default function AstroTracker() {
     .header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0; border-bottom: 2px solid rgba(148, 163, 184, 0.2); margin-bottom: 2rem; }
     .header-left h1 { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
     .header-left p { color: #94a3b8; font-size: 1.1rem; }
-    .header-right img { width: 200px; height: 200px; object-fit: cover; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); }
+    .header-right img { width: 200px; height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); background: rgba(15, 23, 42, 0.5); }
     .section { margin: 2rem 0; }
     .section-title { font-size: 1.5rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(96, 165, 250, 0.3); }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
@@ -5034,6 +5034,7 @@ export default function AstroTracker() {
                       iframe.style.position = 'absolute';
                       iframe.style.left = '-9999px';
                       iframe.style.width = '1200px';
+                      iframe.style.height = '2000px';
                       document.body.appendChild(iframe);
 
                       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -5042,8 +5043,16 @@ export default function AstroTracker() {
                         iframeDoc.write(html);
                         iframeDoc.close();
 
-                        // Esperar a que se carguen las gráficas
-                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        // Esperar a que Chart.js esté disponible y se carguen las gráficas
+                        await new Promise(resolve => {
+                          if (iframe.contentWindow) {
+                            iframe.contentWindow.addEventListener('load', () => {
+                              setTimeout(resolve, 3000);
+                            });
+                          } else {
+                            setTimeout(resolve, 3000);
+                          }
+                        });
 
                         // Convertir a PDF
                         const reportElement = iframeDoc.getElementById('report');
@@ -5052,6 +5061,11 @@ export default function AstroTracker() {
                             scale: 2,
                             backgroundColor: '#0f172a',
                             logging: false,
+                            useCORS: true,
+                            allowTaint: true,
+                            width: reportElement.scrollWidth,
+                            height: reportElement.scrollHeight,
+                            windowWidth: 1200,
                           });
 
                           const imgData = canvas.toDataURL('image/png');
