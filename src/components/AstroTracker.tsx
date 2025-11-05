@@ -4898,6 +4898,45 @@ export default function AstroTracker() {
 
                       const finalImage = (proj as any).finalImage || obj.image || '';
 
+                      // Calcular SNR medio por sesión
+                      const sessionDataWithSNR = proj.sessions.map((s: any, i: number) => {
+                        const snrMean = mean(s);
+                        return {
+                          date: formatDateDisplay(s.date, dateFormat),
+                          lights: s.lights || 0,
+                          filter: s.filter || '-',
+                          sessionHours: ((s.lights || 0) * (s.exposureSec || 0)) / 3600,
+                          cumulativeHours: cumulativeHours(proj.sessions, i),
+                          snrMean: snrMean !== null ? snrMean.toFixed(2) : '-',
+                          snrR: s.snrR != null ? s.snrR.toFixed(2) : '-',
+                          snrG: s.snrG != null ? s.snrG.toFixed(2) : '-',
+                          snrB: s.snrB != null ? s.snrB.toFixed(2) : '-',
+                        };
+                      });
+
+                      // Datos para gráficas de SNR
+                      const snrMeanData = sessionDataWithSNR.map(s => ({
+                        date: s.date,
+                        snr: s.snrMean !== '-' ? parseFloat(s.snrMean) : null,
+                      })).filter(d => d.snr !== null);
+
+                      const snrRGBData = sessionDataWithSNR.map(s => ({
+                        date: s.date,
+                        snrR: s.snrR !== '-' ? parseFloat(s.snrR) : null,
+                        snrG: s.snrG !== '-' ? parseFloat(s.snrG) : null,
+                        snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
+                      })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
+
+                      // Calcular más estadísticas
+                      const avgSNR = snrMeanData.length > 0 
+                        ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
+                        : '-';
+                      
+                      const totalSessions = proj.sessions.length;
+                      
+                      const telescope = (proj as any).telescope || '-';
+                      const camera = (proj as any).camera || '-';
+
                       const html = `
 <!DOCTYPE html>
 <html lang="es">
@@ -4909,27 +4948,29 @@ export default function AstroTracker() {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; padding: 2rem; line-height: 1.6; }
     .container { max-width: 1200px; margin: 0 auto; background: rgba(30, 41, 59, 0.8); border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0; border-bottom: 2px solid rgba(148, 163, 184, 0.2); margin-bottom: 2rem; }
-    .header-left h1 { font-size: 2.5rem; font-weight: 700; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+    .header { display: flex; justify-content: space-between; align-items: start; padding: 2rem 0; border-bottom: 2px solid rgba(148, 163, 184, 0.2); margin-bottom: 2rem; }
+    .header-left { flex: 1; }
+    .header-left h1 { font-size: 2.5rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.5rem; }
     .header-left p { color: #94a3b8; font-size: 1.1rem; }
-    .header-right img { width: 200px; height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); background: rgba(15, 23, 42, 0.5); }
+    .header-right { flex-shrink: 0; margin-left: 2rem; }
+    .header-right img { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); background: rgba(15, 23, 42, 0.5); }
     .section { margin: 2rem 0; }
     .section-title { font-size: 1.5rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(96, 165, 250, 0.3); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
-    .card { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; }
-    .card-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }
-    .card-value { font-size: 1.5rem; font-weight: 700; color: #e2e8f0; }
-    .card-subtitle { font-size: 0.875rem; color: #64748b; margin-top: 0.25rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .card { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.25rem; }
+    .card-label { font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-value { font-size: 1.4rem; font-weight: 700; color: #e2e8f0; }
+    .card-subtitle { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
     .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
     .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
     .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
     .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .chart-container { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; }
-    canvas { max-width: 100%; height: 300px !important; }
-    table { width: 100%; border-collapse: collapse; background: rgba(51, 65, 85, 0.4); border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; }
+    .chart-container { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; }
+    canvas { max-width: 100%; }
+    table { width: 100%; border-collapse: collapse; background: rgba(51, 65, 85, 0.4); border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
     thead { background: rgba(30, 41, 59, 0.8); }
-    th { padding: 1rem; text-align: left; font-weight: 600; color: #60a5fa; font-size: 0.875rem; }
-    td { padding: 1rem; border-top: 1px solid rgba(148, 163, 184, 0.1); color: #cbd5e1; }
+    th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: #60a5fa; font-size: 0.8rem; }
+    td { padding: 0.75rem 0.5rem; border-top: 1px solid rgba(148, 163, 184, 0.1); color: #cbd5e1; }
     .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(148, 163, 184, 0.2); text-align: center; color: #64748b; font-size: 0.875rem; }
   </style>
 </head>
@@ -4949,10 +4990,16 @@ export default function AstroTracker() {
       <div class="grid">
         <div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>
         <div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>
+        <div class="card"><div class="card-label">Sesiones</div><div class="card-value">${totalSessions}</div></div>
         <div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>
         <div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>
         <div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>
         ${goalHours > 0 ? `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>` : ''}
+        ${avgSNR !== '-' ? `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>` : ''}
+        <div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${telescope}</div></div>
+        <div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${camera}</div></div>
+        ${(mainLocation as any).name ? `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${(mainLocation as any).name}</div>${(mainLocation as any).coords ? `<div class="card-subtitle">${(mainLocation as any).coords}</div>` : ''}</div>` : ''}
+        ${(mainLocation as any).bortle ? `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${(mainLocation as any).bortle}</div></div>` : ''}
       </div>
     </div>
 
@@ -4970,6 +5017,57 @@ export default function AstroTracker() {
         <canvas id="filterChart"></canvas>
       </div>
     </div>` : ''}
+
+    <div class="section">
+      <h2 class="section-title">💡 Iluminación por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="lightsChart"></canvas>
+      </div>
+    </div>
+
+    ${snrMeanData.length > 0 ? `
+    <div class="section">
+      <h2 class="section-title">📈 SNR Medio por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="snrMeanChart"></canvas>
+      </div>
+    </div>` : ''}
+
+    ${snrRGBData.length > 0 ? `
+    <div class="section">
+      <h2 class="section-title">🌈 SNR RGB por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="snrRGBChart"></canvas>
+      </div>
+    </div>` : ''}
+
+    <div class="section">
+      <h2 class="section-title">📋 Tabla de Sesiones</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Filtro</th>
+            <th>Lights</th>
+            <th>Horas Sesión</th>
+            <th>Horas Acum.</th>
+            <th>SNR Medio</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sessionDataWithSNR.map(s => `
+            <tr>
+              <td>${s.date}</td>
+              <td>${s.filter}</td>
+              <td>${s.lights}</td>
+              <td>${s.sessionHours.toFixed(2)}h</td>
+              <td>${s.cumulativeHours.toFixed(2)}h</td>
+              <td>${s.snrMean}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
 
     <div class="footer">
       <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
@@ -4995,10 +5093,10 @@ export default function AstroTracker() {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e2e8f0' } } },
+        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
         scales: {
-          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
         }
       }
     });
@@ -5020,8 +5118,97 @@ export default function AstroTracker() {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+        }
+      }
+    });` : ''}
+
+    const lightsCtx = document.getElementById('lightsChart');
+    new Chart(lightsCtx, {
+      type: 'bar',
+      data: {
+        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
+        datasets: [{
+          label: 'Lights por sesión',
+          data: ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))},
+          backgroundColor: '#a78bfa',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+        }
+      }
+    });
+
+    ${snrMeanData.length > 0 ? `
+    const snrMeanCtx = document.getElementById('snrMeanChart');
+    new Chart(snrMeanCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(snrMeanData.map((d: any) => d.date))},
+        datasets: [{
+          label: 'SNR Medio',
+          data: ${JSON.stringify(snrMeanData.map((d: any) => d.snr))},
+          borderColor: '#34d399',
+          backgroundColor: 'rgba(52, 211, 153, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
+        }
+      }
+    });` : ''}
+
+    ${snrRGBData.length > 0 ? `
+    const snrRGBCtx = document.getElementById('snrRGBChart');
+    new Chart(snrRGBCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(snrRGBData.map((d: any) => d.date))},
+        datasets: [
+          {
+            label: 'SNR R',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrR))},
+            borderColor: '#f87171',
+            backgroundColor: 'rgba(248, 113, 113, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'SNR G',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrG))},
+            borderColor: '#4ade80',
+            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'SNR B',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrB))},
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
         }
       }
     });` : ''}
@@ -5047,10 +5234,10 @@ export default function AstroTracker() {
                         await new Promise(resolve => {
                           if (iframe.contentWindow) {
                             iframe.contentWindow.addEventListener('load', () => {
-                              setTimeout(resolve, 3000);
+                              setTimeout(resolve, 4000);
                             });
                           } else {
-                            setTimeout(resolve, 3000);
+                            setTimeout(resolve, 4000);
                           }
                         });
 
@@ -5058,7 +5245,7 @@ export default function AstroTracker() {
                         const reportElement = iframeDoc.getElementById('report');
                         if (reportElement) {
                           const canvas = await html2canvas(reportElement, {
-                            scale: 2,
+                            scale: 1.5,
                             backgroundColor: '#0f172a',
                             logging: false,
                             useCORS: true,
@@ -5068,20 +5255,20 @@ export default function AstroTracker() {
                             windowWidth: 1200,
                           });
 
-                          const imgData = canvas.toDataURL('image/png');
+                          const imgData = canvas.toDataURL('image/jpeg', 0.85);
                           const pdf = new jsPDF('p', 'mm', 'a4');
                           const imgWidth = 210;
                           const imgHeight = (canvas.height * imgWidth) / canvas.width;
                           let heightLeft = imgHeight;
                           let position = 0;
 
-                          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
                           heightLeft -= 297;
 
                           while (heightLeft > 0) {
                             position = heightLeft - imgHeight;
                             pdf.addPage();
-                            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
                             heightLeft -= 297;
                           }
 
