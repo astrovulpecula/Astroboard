@@ -24,6 +24,7 @@ import {
   ChevronDown,
   Clock,
   FileText,
+  Loader2,
 } from "lucide-react";
 import {
   LineChart,
@@ -46,6 +47,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
@@ -1987,6 +1989,36 @@ export default function AstroTracker() {
     streaks: true,
     cameraUsage: true,
     telescopeUsage: true,
+  });
+  
+  // Estados para configuración de reporte
+  const [showReportConfig, setShowReportConfig] = useState(false);
+  const [generatingReport, setGeneratingReport] = useState(false);
+  const [reportConfig, setReportConfig] = useState({
+    includeImage: true,
+    includeStats: {
+      status: true,
+      nights: true,
+      sessions: true,
+      activeTime: true,
+      totalLights: true,
+      totalExposure: true,
+      goal: true,
+      avgSNR: true,
+      telescope: true,
+      camera: true,
+      location: true,
+      bortle: true,
+    },
+    includeCharts: {
+      progressChart: true,
+      filterChart: true,
+      lightsChart: true,
+      snrMeanChart: true,
+      snrRGBChart: true,
+    },
+    includeTable: true,
+    theme: 'dark' as 'dark' | 'light',
   });
 
   const cycleTheme = () => {
@@ -4848,28 +4880,11 @@ export default function AstroTracker() {
                 <div className="flex items-center gap-2">
                   <IconBtn
                     title="Descargar reporte del proyecto"
-                    onClick={async () => {
-                      // Generar reporte HTML
-                      const totalSeconds = totalExposureSec(proj.sessions);
-                      const currentHours = (totalSeconds / 3600).toFixed(1);
-                      const goalHours = (proj as any).goalHours || 0;
-                      const nights = new Set(proj.sessions.map((s: any) => s.date)).size;
-                      const totalLights = proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0);
-                      
-                      // Calcular tiempo activo
-                      const startDate = new Date((proj as any).startDate || proj.createdAt);
-                      let endDate: Date;
-                      if ((proj as any).endDate) {
-                        endDate = new Date((proj as any).endDate);
-                      } else if (proj.status === "completed" && (proj as any).completedDate) {
-                        endDate = new Date((proj as any).completedDate);
-                      } else {
-                        endDate = new Date();
-                      }
-                      const diffMs = endDate.getTime() - startDate.getTime();
-                      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                      
-                      // Calcular horas por filtro
+                    onClick={() => {
+                      setShowReportConfig(true);
+                    }}
+                  >
+                    <FileText className="w-4 h-4" />
                       const filterHours: Record<string, number> = {};
                       proj.sessions.forEach((s: any) => {
                         if (s.filter) {
