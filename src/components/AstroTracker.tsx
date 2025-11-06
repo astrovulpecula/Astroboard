@@ -2201,7 +2201,23 @@ const generatePDFReport = async (
     const gridColor = '${theme.gridColor}';
     const accentColor = '${theme.textAccent}';
     
+    // Función para calcular min y max con margen
+    const getYAxisRange = (data) => {
+      const values = data.filter(v => v != null && !isNaN(v));
+      if (values.length === 0) return { min: 0, max: 10 };
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+      const range = max - min;
+      const margin = range * 0.1;
+      return {
+        min: Math.max(0, min - margin),
+        max: max + margin
+      };
+    };
+    
     ${config.includeCharts.progress ? `
+    const progressData = ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))};
+    const progressRange = getYAxisRange(progressData);
     const progressCtx = document.getElementById('progressChart');
     new Chart(progressCtx, {
       type: 'line',
@@ -2209,7 +2225,7 @@ const generatePDFReport = async (
         labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
         datasets: [{
           label: 'Horas acumuladas',
-          data: ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))},
+          data: progressData,
           borderColor: accentColor,
           backgroundColor: '${isDark ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)'}',
           tension: 0.4,
@@ -2221,13 +2237,20 @@ const generatePDFReport = async (
         maintainAspectRatio: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
-          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { 
+            min: progressRange.min,
+            max: progressRange.max,
+            ticks: { color: chartColor, font: { size: 10 } }, 
+            grid: { color: gridColor } 
+          },
           x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
         }
       }
     });` : ''}
 
     ${config.includeCharts.filterExposure && filterData.length > 0 ? `
+    const filterChartData = ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))};
+    const filterRange = getYAxisRange(filterChartData);
     const filterCtx = document.getElementById('filterChart');
     new Chart(filterCtx, {
       type: 'bar',
@@ -2235,7 +2258,7 @@ const generatePDFReport = async (
         labels: ${JSON.stringify(filterData.map((d: any) => d.filter))},
         datasets: [{
           label: 'Horas',
-          data: ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))},
+          data: filterChartData,
           backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'],
         }]
       },
@@ -2244,13 +2267,20 @@ const generatePDFReport = async (
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { 
+            min: filterRange.min,
+            max: filterRange.max,
+            ticks: { color: chartColor, font: { size: 10 } }, 
+            grid: { color: gridColor } 
+          },
           x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }
         }
       }
     });` : ''}
 
     ${config.includeCharts.lightsPerSession ? `
+    const lightsData = ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))};
+    const lightsRange = getYAxisRange(lightsData);
     const lightsCtx = document.getElementById('lightsChart');
     new Chart(lightsCtx, {
       type: 'bar',
@@ -2258,7 +2288,7 @@ const generatePDFReport = async (
         labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
         datasets: [{
           label: 'Lights por sesión',
-          data: ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))},
+          data: lightsData,
           backgroundColor: '#a78bfa',
         }]
       },
@@ -2267,13 +2297,20 @@ const generatePDFReport = async (
         maintainAspectRatio: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
-          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { 
+            min: lightsRange.min,
+            max: lightsRange.max,
+            ticks: { color: chartColor, font: { size: 10 } }, 
+            grid: { color: gridColor } 
+          },
           x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
         }
       }
     });` : ''}
 
     ${config.includeCharts.snrMean && snrMeanData.length > 0 ? `
+    const snrMeanChartData = ${JSON.stringify(snrMeanData.map((d: any) => d.snr))};
+    const snrMeanRange = getYAxisRange(snrMeanChartData);
     const snrMeanCtx = document.getElementById('snrMeanChart');
     new Chart(snrMeanCtx, {
       type: 'line',
@@ -2281,7 +2318,7 @@ const generatePDFReport = async (
         labels: ${JSON.stringify(snrMeanData.map((d: any) => d.date))},
         datasets: [{
           label: 'SNR Medio',
-          data: ${JSON.stringify(snrMeanData.map((d: any) => d.snr))},
+          data: snrMeanChartData,
           borderColor: '#34d399',
           backgroundColor: 'rgba(52, 211, 153, 0.1)',
           tension: 0.4,
@@ -2293,13 +2330,24 @@ const generatePDFReport = async (
         maintainAspectRatio: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
-          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { 
+            min: snrMeanRange.min,
+            max: snrMeanRange.max,
+            ticks: { color: chartColor, font: { size: 10 } }, 
+            grid: { color: gridColor } 
+          },
           x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
         }
       }
     });` : ''}
 
     ${config.includeCharts.snrRGB && snrRGBData.length > 0 ? `
+    const snrRGBAllValues = [
+      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrR))}.filter(v => v != null),
+      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrG))}.filter(v => v != null),
+      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrB))}.filter(v => v != null)
+    ];
+    const snrRGBRange = getYAxisRange(snrRGBAllValues);
     const snrRGBCtx = document.getElementById('snrRGBChart');
     new Chart(snrRGBCtx, {
       type: 'line',
@@ -2334,7 +2382,12 @@ const generatePDFReport = async (
         maintainAspectRatio: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
-          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          y: { 
+            min: snrRGBRange.min,
+            max: snrRGBRange.max,
+            ticks: { color: chartColor, font: { size: 10 } }, 
+            grid: { color: gridColor } 
+          },
           x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
         }
       }
