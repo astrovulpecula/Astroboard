@@ -1927,7 +1927,18 @@ const generatePDFReport = async (
     proj.sessions.forEach((s: any) => {
       if (s.location) locationCounts[s.location] = (locationCounts[s.location] || 0) + 1;
     });
-    const mainLocation = Object.entries(locationCounts).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || null;
+    const mainLocationName = Object.entries(locationCounts).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || null;
+    
+    // Buscar la sesión con la localización principal para obtener sus detalles completos
+    const mainLocationSession = mainLocationName 
+      ? proj.sessions.find((s: any) => s.location === mainLocationName)
+      : null;
+    
+    const mainLocation = mainLocationSession ? {
+      name: mainLocationSession.location || '',
+      coords: mainLocationSession.googleCoords || '',
+      bortle: mainLocationSession.bortle || ''
+    } : null;
 
     return { nights, totalLights, totalSeconds, currentHours, goalHours, diffDays, mainLocation };
   })();
@@ -2085,8 +2096,8 @@ const generatePDFReport = async (
     if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
     if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${telescope}</div></div>`;
     if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${camera}</div></div>`;
-    if (config.includeStats.location && (mainLocation as any).name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${(mainLocation as any).name}</div>${(mainLocation as any).coords ? `<div class="card-subtitle">${(mainLocation as any).coords}</div>` : ''}</div>`;
-    if (config.includeStats.bortle && (mainLocation as any).bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${(mainLocation as any).bortle}</div></div>`;
+    if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${mainLocation.name}</div>${mainLocation.coords ? `<div class="card-subtitle">${mainLocation.coords}</div>` : ''}</div>`;
+    if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${mainLocation.bortle}</div></div>`;
     
     html += `</div></div>`;
   }
