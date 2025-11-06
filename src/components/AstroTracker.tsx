@@ -1899,6 +1899,507 @@ const ImageCard = ({
   );
 };
 
+// Función para generar el reporte PDF con la configuración seleccionada
+const generatePDFReport = async (
+  obj: any,
+  proj: any,
+  config: any,
+  dateFormat: string,
+  toast: any
+) => {
+  const { nights, totalLights, totalSeconds, currentHours, goalHours, diffDays, mainLocation } = (() => {
+    const dates: string[] = proj.sessions.map((s: any) => s.date).filter((d: string) => d);
+    const uniqueDates = Array.from(new Set(dates));
+    const nights = uniqueDates.length;
+    const totalLights = proj.sessions.reduce((sum: number, s: any) => sum + num(s.lights), 0);
+    const totalSeconds = proj.sessions.reduce(
+      (sum: number, s: any) => sum + num(s.lights) * num(s.exposureSec),
+      0
+    );
+    const currentHours = (totalSeconds / 3600).toFixed(2);
+    const goalHours = num(proj.goal, 0);
+    const sortedDates = dates.map(d => new Date(toISODate(d))).filter(d => !isNaN(d.getTime())).sort((a, b) => a.getTime() - b.getTime());
+    const diffDays = sortedDates.length >= 2
+      ? Math.floor((sortedDates[sortedDates.length - 1].getTime() - sortedDates[0].getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+    
+    const locationCounts: Record<string, number> = {};
+    proj.sessions.forEach((s: any) => {
+      if (s.location) locationCounts[s.location] = (locationCounts[s.location] || 0) + 1;
+    });
+    const mainLocation = Object.entries(locationCounts).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || null;
+
+    return { nights, totalLights, totalSeconds, currentHours, goalHours, diffDays, mainLocation };
+  })();
+
+  const mean = (s: any) => {
+    const vals = [s.snrR, s.snrG, s.snrB].filter((v: any) => v != null);
+    return vals.length > 0 ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : null;
+  };
+
+  const cumulativeLights = (sessions: any[], idx: number) =>
+    sessions.slice(0, idx + 1).reduce((sum: number, s: any) => sum + num(s.lights), 0);
+
+  const cumulativeHours = (sessions: any[], idx: number) =>
+    sessions.slice(0, idx + 1).reduce((sum: number, s: any) => sum + num(s.lights) * num(s.exposureSec), 0) / 3600;
+
+  const filterHours: Record<string, number> = {};
+  proj.sessions.forEach((s: any) => {
+    if (s.filter) {
+      const seconds = (s.lights || 0) * (s.exposureSec || 0);
+      filterHours[s.filter] = (filterHours[s.filter] || 0) + seconds;
+    }
+  });
+  
+  const chartDataByDate = proj.sessions.map((s: any, i: number) => ({
+    date: formatDateDisplay(s.date, dateFormat),
+    lights: cumulativeLights(proj.sessions, i),
+    hours: cumulativeHours(proj.sessions, i),
+  }));
+
+  const filterData = Object.entries(filterHours).map(([filter, seconds]) => ({
+    filter,
+    hours: (seconds / 3600).toFixed(1),
+  }));
+  
+  const statusLabels = {
+    active: "Activo",
+    paused: "Pausado",
+    completed: "Completado",
+  };
+
+  const finalImage = (proj as any).finalImage || obj.image || '';
+
+  const sessionDataWithSNR = proj.sessions.map((s: any, i: number) => {
+    const snrMean = mean(s);
+    return {
+      date: formatDateDisplay(s.date, dateFormat),
+      lights: s.lights || 0,
+      filter: s.filter || '-',
+      sessionHours: ((s.lights || 0) * (s.exposureSec || 0)) / 3600,
+      cumulativeHours: cumulativeHours(proj.sessions, i),
+      snrMean: snrMean !== null ? snrMean.toFixed(2) : '-',
+      snrR: s.snrR != null ? s.snrR.toFixed(2) : '-',
+      snrG: s.snrG != null ? s.snrG.toFixed(2) : '-',
+      snrB: s.snrB != null ? s.snrB.toFixed(2) : '-',
+    };
+  });
+
+  const snrMeanData = sessionDataWithSNR.map(s => ({
+    date: s.date,
+    snr: s.snrMean !== '-' ? parseFloat(s.snrMean) : null,
+  })).filter(d => d.snr !== null);
+
+  const snrRGBData = sessionDataWithSNR.map(s => ({
+    date: s.date,
+    snrR: s.snrR !== '-' ? parseFloat(s.snrR) : null,
+    snrG: s.snrG !== '-' ? parseFloat(s.snrG) : null,
+    snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
+  })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
+
+  const avgSNR = snrMeanData.length > 0 
+    ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
+    : '-';
+  
+  const totalSessions = proj.sessions.length;
+  const telescope = (proj as any).telescope || '-';
+  const camera = (proj as any).camera || '-';
+
+  // Determinar tema
+  const isDark = config.theme === 'dark';
+  const theme = {
+    background: isDark ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+    containerBg: isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+    textPrimary: isDark ? '#e2e8f0' : '#1e293b',
+    textSecondary: isDark ? '#94a3b8' : '#64748b',
+    textAccent: isDark ? '#60a5fa' : '#3b82f6',
+    cardBg: isDark ? 'rgba(51, 65, 85, 0.6)' : 'rgba(241, 245, 249, 0.8)',
+    border: isDark ? 'rgba(148, 163, 184, 0.2)' : 'rgba(148, 163, 184, 0.3)',
+    borderAccent: isDark ? 'rgba(96, 165, 250, 0.3)' : 'rgba(59, 130, 246, 0.4)',
+    gridColor: isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(148, 163, 184, 0.2)',
+  };
+
+  // Construir HTML del reporte
+  let html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte - ${obj.id} - ${proj.name}</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: ${theme.background}; color: ${theme.textPrimary}; padding: 2rem; line-height: 1.6; }
+    .container { max-width: 1200px; margin: 0 auto; background: ${theme.containerBg}; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, ${isDark ? '0.5' : '0.1'}); }
+    .header { display: flex; justify-content: space-between; align-items: start; padding: 2rem 0; border-bottom: 2px solid ${theme.border}; margin-bottom: 2rem; }
+    .header-left { flex: 1; }
+    .header-left h1 { font-size: 2.5rem; font-weight: 700; color: ${theme.textAccent}; margin-bottom: 0.5rem; }
+    .header-left p { color: ${theme.textSecondary}; font-size: 1.1rem; }
+    .header-right { flex-shrink: 0; margin-left: 2rem; }
+    .header-right img { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.borderAccent}; background: ${isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.5)'}; }
+    .section { margin: 2rem 0; }
+    .section-title { font-size: 1.5rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid ${theme.borderAccent}; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+    .card { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.25rem; }
+    .card-label { font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-value { font-size: 1.4rem; font-weight: 700; color: ${theme.textPrimary}; }
+    .card-subtitle { font-size: 0.8rem; color: ${theme.textSecondary}; margin-top: 0.25rem; }
+    .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+    .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
+    .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
+    .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
+    .chart-container { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; }
+    canvas { max-width: 100%; }
+    table { width: 100%; border-collapse: collapse; background: ${theme.cardBg}; border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
+    thead { background: ${isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(226, 232, 240, 0.8)'}; }
+    th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: ${theme.textAccent}; font-size: 0.8rem; }
+    td { padding: 0.75rem 0.5rem; border-top: 1px solid ${theme.border}; color: ${theme.textPrimary}; }
+    .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid ${theme.border}; text-align: center; color: ${theme.textSecondary}; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div class="container" id="report">
+    <div class="header">
+      <div class="header-left">
+        <h1>Reporte del Proyecto</h1>
+        <p>${obj.id} ${obj.commonName ? `- ${obj.commonName}` : ''}</p>
+        <p style="margin-top: 0.5rem; font-size: 1rem;">${proj.name}</p>
+      </div>
+      ${config.includeImage && finalImage ? `<div class="header-right"><img src="${finalImage}" alt="Imagen final" /></div>` : ''}
+    </div>
+    `;
+
+  // Estadísticas
+  if (Object.values(config.includeStats).some((v: any) => v)) {
+    html += `<div class="section">
+      <h2 class="section-title">📊 Estadísticas del Proyecto</h2>
+      <div class="grid">`;
+    
+    if (config.includeStats.status) html += `<div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>`;
+    if (config.includeStats.nights) html += `<div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>`;
+    if (config.includeStats.sessions) html += `<div class="card"><div class="card-label">Sesiones</div><div class="card-value">${totalSessions}</div></div>`;
+    if (config.includeStats.activeTime) html += `<div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>`;
+    if (config.includeStats.totalLights) html += `<div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>`;
+    if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
+    if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
+    if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
+    if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${telescope}</div></div>`;
+    if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${camera}</div></div>`;
+    if (config.includeStats.location && (mainLocation as any).name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${(mainLocation as any).name}</div>${(mainLocation as any).coords ? `<div class="card-subtitle">${(mainLocation as any).coords}</div>` : ''}</div>`;
+    if (config.includeStats.bortle && (mainLocation as any).bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${(mainLocation as any).bortle}</div></div>`;
+    
+    html += `</div></div>`;
+  }
+
+  // Gráfica de progreso acumulado
+  if (config.includeCharts.progress) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">📈 Progreso Acumulado</h2>
+      <div class="chart-container">
+        <canvas id="progressChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Gráfica de exposición por filtro
+  if (config.includeCharts.filterExposure && Object.keys(filterHours).length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">🎨 Exposición por Filtro</h2>
+      <div class="chart-container">
+        <canvas id="filterChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Gráfica de lights por sesión
+  if (config.includeCharts.lightsPerSession) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">💡 Iluminación por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="lightsChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Gráfica de SNR medio
+  if (config.includeCharts.snrMean && snrMeanData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">📈 SNR Medio por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="snrMeanChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Gráfica de SNR RGB
+  if (config.includeCharts.snrRGB && snrRGBData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">🌈 SNR RGB por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="snrRGBChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Tabla de sesiones
+  if (config.includeTable) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">📋 Tabla de Sesiones</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Filtro</th>
+            <th>Lights</th>
+            <th>Horas Sesión</th>
+            <th>Horas Acum.</th>
+            <th>SNR Medio</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sessionDataWithSNR.map(s => `
+            <tr>
+              <td>${s.date}</td>
+              <td>${s.filter}</td>
+              <td>${s.lights}</td>
+              <td>${s.sessionHours.toFixed(2)}h</td>
+              <td>${s.cumulativeHours.toFixed(2)}h</td>
+              <td>${s.snrMean}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  html += `
+    <div class="footer">
+      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+      <p style="margin-top: 0.5rem;">StarBoard - Astronomy Tracker</p>
+    </div>
+  </div>
+
+  <script>
+    const chartColor = '${theme.textPrimary}';
+    const gridColor = '${theme.gridColor}';
+    const accentColor = '${theme.textAccent}';
+    
+    ${config.includeCharts.progress ? `
+    const progressCtx = document.getElementById('progressChart');
+    new Chart(progressCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
+        datasets: [{
+          label: 'Horas acumuladas',
+          data: ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))},
+          borderColor: accentColor,
+          backgroundColor: '${isDark ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)'}',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+        }
+      }
+    });` : ''}
+
+    ${config.includeCharts.filterExposure && filterData.length > 0 ? `
+    const filterCtx = document.getElementById('filterChart');
+    new Chart(filterCtx, {
+      type: 'bar',
+      data: {
+        labels: ${JSON.stringify(filterData.map((d: any) => d.filter))},
+        datasets: [{
+          label: 'Horas',
+          data: ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))},
+          backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'],
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }
+        }
+      }
+    });` : ''}
+
+    ${config.includeCharts.lightsPerSession ? `
+    const lightsCtx = document.getElementById('lightsChart');
+    new Chart(lightsCtx, {
+      type: 'bar',
+      data: {
+        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
+        datasets: [{
+          label: 'Lights por sesión',
+          data: ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))},
+          backgroundColor: '#a78bfa',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+        }
+      }
+    });` : ''}
+
+    ${config.includeCharts.snrMean && snrMeanData.length > 0 ? `
+    const snrMeanCtx = document.getElementById('snrMeanChart');
+    new Chart(snrMeanCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(snrMeanData.map((d: any) => d.date))},
+        datasets: [{
+          label: 'SNR Medio',
+          data: ${JSON.stringify(snrMeanData.map((d: any) => d.snr))},
+          borderColor: '#34d399',
+          backgroundColor: 'rgba(52, 211, 153, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+        }
+      }
+    });` : ''}
+
+    ${config.includeCharts.snrRGB && snrRGBData.length > 0 ? `
+    const snrRGBCtx = document.getElementById('snrRGBChart');
+    new Chart(snrRGBCtx, {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(snrRGBData.map((d: any) => d.date))},
+        datasets: [
+          {
+            label: 'SNR R',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrR))},
+            borderColor: '#f87171',
+            backgroundColor: 'rgba(248, 113, 113, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'SNR G',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrG))},
+            borderColor: '#4ade80',
+            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+            tension: 0.4
+          },
+          {
+            label: 'SNR B',
+            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrB))},
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+        scales: {
+          y: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+        }
+      }
+    });` : ''}
+  </script>
+</body>
+</html>`;
+
+  // Crear iframe oculto para renderizar
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.left = '-9999px';
+  iframe.style.width = '1200px';
+  iframe.style.height = '2000px';
+  document.body.appendChild(iframe);
+
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  if (iframeDoc) {
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    // Esperar a que Chart.js esté disponible y se carguen las gráficas
+    await new Promise(resolve => {
+      if (iframe.contentWindow) {
+        iframe.contentWindow.addEventListener('load', () => {
+          setTimeout(resolve, 4000);
+        });
+      } else {
+        setTimeout(resolve, 4000);
+      }
+    });
+
+    // Convertir a PDF
+    const reportElement = iframeDoc.getElementById('report');
+    if (reportElement) {
+      const canvas = await html2canvas(reportElement, {
+        scale: 1.5,
+        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        width: reportElement.scrollWidth,
+        height: reportElement.scrollHeight,
+        windowWidth: 1200,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.85);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+      heightLeft -= 297;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= 297;
+      }
+
+      pdf.save(`reporte-${obj.id}-${proj.name.replace(/[^a-z0-9]/gi, '-')}.pdf`);
+      
+      toast({
+        title: "Reporte generado",
+        description: "El reporte PDF se ha descargado correctamente",
+      });
+    }
+
+    document.body.removeChild(iframe);
+  }
+};
+
 export default function AstroTracker() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -4885,421 +5386,6 @@ export default function AstroTracker() {
                     }}
                   >
                     <FileText className="w-4 h-4" />
-                      const filterHours: Record<string, number> = {};
-                      proj.sessions.forEach((s: any) => {
-                        if (s.filter) {
-                          const seconds = (s.lights || 0) * (s.exposureSec || 0);
-                          filterHours[s.filter] = (filterHours[s.filter] || 0) + seconds;
-                        }
-                      });
-                      
-                      // Preparar datos para gráficas
-                      const chartDataByDate = proj.sessions.map((s: any, i: number) => ({
-                        date: formatDateDisplay(s.date, dateFormat),
-                        lights: cumulativeLights(proj.sessions, i),
-                        hours: cumulativeHours(proj.sessions, i),
-                      }));
-
-                      const filterData = Object.entries(filterHours).map(([filter, seconds]) => ({
-                        filter,
-                        hours: (seconds / 3600).toFixed(1),
-                      }));
-                      
-                      const statusLabels = {
-                        active: "Activo",
-                        paused: "Pausado",
-                        completed: "Completado",
-                      };
-
-                      const finalImage = (proj as any).finalImage || obj.image || '';
-
-                      // Calcular SNR medio por sesión
-                      const sessionDataWithSNR = proj.sessions.map((s: any, i: number) => {
-                        const snrMean = mean(s);
-                        return {
-                          date: formatDateDisplay(s.date, dateFormat),
-                          lights: s.lights || 0,
-                          filter: s.filter || '-',
-                          sessionHours: ((s.lights || 0) * (s.exposureSec || 0)) / 3600,
-                          cumulativeHours: cumulativeHours(proj.sessions, i),
-                          snrMean: snrMean !== null ? snrMean.toFixed(2) : '-',
-                          snrR: s.snrR != null ? s.snrR.toFixed(2) : '-',
-                          snrG: s.snrG != null ? s.snrG.toFixed(2) : '-',
-                          snrB: s.snrB != null ? s.snrB.toFixed(2) : '-',
-                        };
-                      });
-
-                      // Datos para gráficas de SNR
-                      const snrMeanData = sessionDataWithSNR.map(s => ({
-                        date: s.date,
-                        snr: s.snrMean !== '-' ? parseFloat(s.snrMean) : null,
-                      })).filter(d => d.snr !== null);
-
-                      const snrRGBData = sessionDataWithSNR.map(s => ({
-                        date: s.date,
-                        snrR: s.snrR !== '-' ? parseFloat(s.snrR) : null,
-                        snrG: s.snrG !== '-' ? parseFloat(s.snrG) : null,
-                        snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
-                      })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
-
-                      // Calcular más estadísticas
-                      const avgSNR = snrMeanData.length > 0 
-                        ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
-                        : '-';
-                      
-                      const totalSessions = proj.sessions.length;
-                      
-                      const telescope = (proj as any).telescope || '-';
-                      const camera = (proj as any).camera || '-';
-
-                      const html = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Reporte - ${obj.id} - ${proj.name}</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #e2e8f0; padding: 2rem; line-height: 1.6; }
-    .container { max-width: 1200px; margin: 0 auto; background: rgba(30, 41, 59, 0.8); border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }
-    .header { display: flex; justify-content: space-between; align-items: start; padding: 2rem 0; border-bottom: 2px solid rgba(148, 163, 184, 0.2); margin-bottom: 2rem; }
-    .header-left { flex: 1; }
-    .header-left h1 { font-size: 2.5rem; font-weight: 700; color: #60a5fa; margin-bottom: 0.5rem; }
-    .header-left p { color: #94a3b8; font-size: 1.1rem; }
-    .header-right { flex-shrink: 0; margin-left: 2rem; }
-    .header-right img { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid rgba(96, 165, 250, 0.3); background: rgba(15, 23, 42, 0.5); }
-    .section { margin: 2rem 0; }
-    .section-title { font-size: 1.5rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(96, 165, 250, 0.3); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
-    .card { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.25rem; }
-    .card-label { font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    .card-value { font-size: 1.4rem; font-weight: 700; color: #e2e8f0; }
-    .card-subtitle { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
-    .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
-    .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
-    .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
-    .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .chart-container { background: rgba(51, 65, 85, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; }
-    canvas { max-width: 100%; }
-    table { width: 100%; border-collapse: collapse; background: rgba(51, 65, 85, 0.4); border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
-    thead { background: rgba(30, 41, 59, 0.8); }
-    th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: #60a5fa; font-size: 0.8rem; }
-    td { padding: 0.75rem 0.5rem; border-top: 1px solid rgba(148, 163, 184, 0.1); color: #cbd5e1; }
-    .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(148, 163, 184, 0.2); text-align: center; color: #64748b; font-size: 0.875rem; }
-  </style>
-</head>
-<body>
-  <div class="container" id="report">
-    <div class="header">
-      <div class="header-left">
-        <h1>Reporte del Proyecto</h1>
-        <p>${obj.id} ${obj.commonName ? `- ${obj.commonName}` : ''}</p>
-        <p style="margin-top: 0.5rem; font-size: 1rem;">${proj.name}</p>
-      </div>
-      ${finalImage ? `<div class="header-right"><img src="${finalImage}" alt="Imagen final" /></div>` : ''}
-    </div>
-    
-    <div class="section">
-      <h2 class="section-title">📊 Estadísticas del Proyecto</h2>
-      <div class="grid">
-        <div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>
-        <div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>
-        <div class="card"><div class="card-label">Sesiones</div><div class="card-value">${totalSessions}</div></div>
-        <div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>
-        <div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>
-        <div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>
-        ${goalHours > 0 ? `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>` : ''}
-        ${avgSNR !== '-' ? `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>` : ''}
-        <div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${telescope}</div></div>
-        <div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${camera}</div></div>
-        ${(mainLocation as any).name ? `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${(mainLocation as any).name}</div>${(mainLocation as any).coords ? `<div class="card-subtitle">${(mainLocation as any).coords}</div>` : ''}</div>` : ''}
-        ${(mainLocation as any).bortle ? `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${(mainLocation as any).bortle}</div></div>` : ''}
-      </div>
-    </div>
-
-    <div class="section">
-      <h2 class="section-title">📈 Progreso Acumulado</h2>
-      <div class="chart-container">
-        <canvas id="progressChart"></canvas>
-      </div>
-    </div>
-
-    ${Object.keys(filterHours).length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">🎨 Exposición por Filtro</h2>
-      <div class="chart-container">
-        <canvas id="filterChart"></canvas>
-      </div>
-    </div>` : ''}
-
-    <div class="section">
-      <h2 class="section-title">💡 Iluminación por Sesión</h2>
-      <div class="chart-container">
-        <canvas id="lightsChart"></canvas>
-      </div>
-    </div>
-
-    ${snrMeanData.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">📈 SNR Medio por Sesión</h2>
-      <div class="chart-container">
-        <canvas id="snrMeanChart"></canvas>
-      </div>
-    </div>` : ''}
-
-    ${snrRGBData.length > 0 ? `
-    <div class="section">
-      <h2 class="section-title">🌈 SNR RGB por Sesión</h2>
-      <div class="chart-container">
-        <canvas id="snrRGBChart"></canvas>
-      </div>
-    </div>` : ''}
-
-    <div class="section">
-      <h2 class="section-title">📋 Tabla de Sesiones</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th>
-            <th>Filtro</th>
-            <th>Lights</th>
-            <th>Horas Sesión</th>
-            <th>Horas Acum.</th>
-            <th>SNR Medio</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${sessionDataWithSNR.map(s => `
-            <tr>
-              <td>${s.date}</td>
-              <td>${s.filter}</td>
-              <td>${s.lights}</td>
-              <td>${s.sessionHours.toFixed(2)}h</td>
-              <td>${s.cumulativeHours.toFixed(2)}h</td>
-              <td>${s.snrMean}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="footer">
-      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-      <p style="margin-top: 0.5rem;">StarBoard - Astronomy Tracker</p>
-    </div>
-  </div>
-
-  <script>
-    const progressCtx = document.getElementById('progressChart');
-    new Chart(progressCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
-        datasets: [{
-          label: 'Horas acumuladas',
-          data: ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))},
-          borderColor: '#60a5fa',
-          backgroundColor: 'rgba(96, 165, 250, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
-        scales: {
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-        }
-      }
-    });
-
-    ${filterData.length > 0 ? `
-    const filterCtx = document.getElementById('filterChart');
-    new Chart(filterCtx, {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(filterData.map((d: any) => d.filter))},
-        datasets: [{
-          label: 'Horas',
-          data: ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))},
-          backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-        }
-      }
-    });` : ''}
-
-    const lightsCtx = document.getElementById('lightsChart');
-    new Chart(lightsCtx, {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
-        datasets: [{
-          label: 'Lights por sesión',
-          data: ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))},
-          backgroundColor: '#a78bfa',
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
-        scales: {
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-        }
-      }
-    });
-
-    ${snrMeanData.length > 0 ? `
-    const snrMeanCtx = document.getElementById('snrMeanChart');
-    new Chart(snrMeanCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(snrMeanData.map((d: any) => d.date))},
-        datasets: [{
-          label: 'SNR Medio',
-          data: ${JSON.stringify(snrMeanData.map((d: any) => d.snr))},
-          borderColor: '#34d399',
-          backgroundColor: 'rgba(52, 211, 153, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
-        scales: {
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-        }
-      }
-    });` : ''}
-
-    ${snrRGBData.length > 0 ? `
-    const snrRGBCtx = document.getElementById('snrRGBChart');
-    new Chart(snrRGBCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(snrRGBData.map((d: any) => d.date))},
-        datasets: [
-          {
-            label: 'SNR R',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrR))},
-            borderColor: '#f87171',
-            backgroundColor: 'rgba(248, 113, 113, 0.1)',
-            tension: 0.4
-          },
-          {
-            label: 'SNR G',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrG))},
-            borderColor: '#4ade80',
-            backgroundColor: 'rgba(74, 222, 128, 0.1)',
-            tension: 0.4
-          },
-          {
-            label: 'SNR B',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrB))},
-            borderColor: '#60a5fa',
-            backgroundColor: 'rgba(96, 165, 250, 0.1)',
-            tension: 0.4
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } },
-        scales: {
-          y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
-          x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: 'rgba(148, 163, 184, 0.1)' } }
-        }
-      }
-    });` : ''}
-  </script>
-</body>
-</html>`;
-
-                      // Crear iframe oculto para renderizar
-                      const iframe = document.createElement('iframe');
-                      iframe.style.position = 'absolute';
-                      iframe.style.left = '-9999px';
-                      iframe.style.width = '1200px';
-                      iframe.style.height = '2000px';
-                      document.body.appendChild(iframe);
-
-                      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                      if (iframeDoc) {
-                        iframeDoc.open();
-                        iframeDoc.write(html);
-                        iframeDoc.close();
-
-                        // Esperar a que Chart.js esté disponible y se carguen las gráficas
-                        await new Promise(resolve => {
-                          if (iframe.contentWindow) {
-                            iframe.contentWindow.addEventListener('load', () => {
-                              setTimeout(resolve, 4000);
-                            });
-                          } else {
-                            setTimeout(resolve, 4000);
-                          }
-                        });
-
-                        // Convertir a PDF
-                        const reportElement = iframeDoc.getElementById('report');
-                        if (reportElement) {
-                          const canvas = await html2canvas(reportElement, {
-                            scale: 1.5,
-                            backgroundColor: '#0f172a',
-                            logging: false,
-                            useCORS: true,
-                            allowTaint: true,
-                            width: reportElement.scrollWidth,
-                            height: reportElement.scrollHeight,
-                            windowWidth: 1200,
-                          });
-
-                          const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                          const pdf = new jsPDF('p', 'mm', 'a4');
-                          const imgWidth = 210;
-                          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                          let heightLeft = imgHeight;
-                          let position = 0;
-
-                          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-                          heightLeft -= 297;
-
-                          while (heightLeft > 0) {
-                            position = heightLeft - imgHeight;
-                            pdf.addPage();
-                            pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-                            heightLeft -= 297;
-                          }
-
-                          pdf.save(`reporte-${obj.id}-${proj.name.replace(/[^a-z0-9]/gi, '-')}.pdf`);
-                          
-                          toast({
-                            title: "Reporte generado",
-                            description: "El reporte PDF se ha descargado correctamente",
-                          });
-                        }
-
-                        document.body.removeChild(iframe);
-                      }
-                    }}
-                  >
-                    <FileText className="w-4 h-4" />
                   </IconBtn>
                   <IconBtn
                     title="Editar configuración del proyecto"
@@ -7794,6 +7880,168 @@ export default function AstroTracker() {
             />
           </div>
         )}
+
+        {/* Diálogo de configuración del reporte */}
+        <Dialog open={showReportConfig} onOpenChange={setShowReportConfig}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Configurar Reporte del Proyecto</DialogTitle>
+              <DialogDescription>
+                Selecciona qué información deseas incluir en el reporte PDF
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-6 py-4">
+              {/* Tema del reporte */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm">Tema del reporte</h3>
+                <RadioGroup 
+                  value={reportConfig.theme} 
+                  onValueChange={(value: 'dark' | 'light') => setReportConfig({...reportConfig, theme: value})}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="dark" id="theme-dark" />
+                    <label htmlFor="theme-dark" className="text-sm cursor-pointer">Modo oscuro</label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="light" id="theme-light" />
+                    <label htmlFor="theme-light" className="text-sm cursor-pointer">Modo claro</label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Imagen final */}
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="include-image" 
+                  checked={reportConfig.includeImage}
+                  onCheckedChange={(checked) => setReportConfig({...reportConfig, includeImage: !!checked})}
+                />
+                <label htmlFor="include-image" className="text-sm font-medium cursor-pointer">
+                  Incluir imagen final del proyecto
+                </label>
+              </div>
+
+              {/* Estadísticas */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Estadísticas del proyecto</h3>
+                <div className="grid grid-cols-2 gap-2 pl-4">
+                  {Object.entries({
+                    status: 'Estado',
+                    nights: 'Noches',
+                    sessions: 'Sesiones',
+                    activeTime: 'Tiempo activo',
+                    totalLights: 'Lights totales',
+                    totalExposure: 'Exposición total',
+                    goal: 'Objetivo',
+                    avgSNR: 'SNR medio',
+                    telescope: 'Telescopio',
+                    camera: 'Cámara',
+                    location: 'Localización',
+                    bortle: 'Bortle'
+                  }).map(([key, label]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`stat-${key}`}
+                        checked={reportConfig.includeStats[key as keyof typeof reportConfig.includeStats]}
+                        onCheckedChange={(checked) => setReportConfig({
+                          ...reportConfig, 
+                          includeStats: {...reportConfig.includeStats, [key]: !!checked}
+                        })}
+                      />
+                      <label htmlFor={`stat-${key}`} className="text-sm cursor-pointer">
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tabla de sesiones */}
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="include-table" 
+                  checked={reportConfig.includeTable}
+                  onCheckedChange={(checked) => setReportConfig({...reportConfig, includeTable: !!checked})}
+                />
+                <label htmlFor="include-table" className="text-sm font-medium cursor-pointer">
+                  Incluir tabla de sesiones
+                </label>
+              </div>
+
+              {/* Gráficas */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Gráficas</h3>
+                <div className="grid grid-cols-1 gap-2 pl-4">
+                  {Object.entries({
+                    progress: 'Progreso acumulado',
+                    filterExposure: 'Exposición por filtro',
+                    lightsPerSession: 'Iluminación por sesión',
+                    snrMean: 'SNR medio por sesión',
+                    snrRGB: 'SNR RGB por sesión'
+                  }).map(([key, label]) => (
+                    <div key={key} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`chart-${key}`}
+                        checked={reportConfig.includeCharts[key as keyof typeof reportConfig.includeCharts]}
+                        onCheckedChange={(checked) => setReportConfig({
+                          ...reportConfig, 
+                          includeCharts: {...reportConfig.includeCharts, [key]: !!checked}
+                        })}
+                      />
+                      <label htmlFor={`chart-${key}`} className="text-sm cursor-pointer">
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t">
+              <button
+                onClick={() => setShowReportConfig(false)}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm border hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={async () => {
+                  if (!obj || !proj) return;
+                  setGeneratingReport(true);
+                  try {
+                    await generatePDFReport(obj, proj, reportConfig, dateFormat, toast);
+                  } catch (error) {
+                    console.error('Error generating report:', error);
+                    toast({
+                      title: "Error",
+                      description: "Hubo un error al generar el reporte",
+                      variant: "destructive"
+                    });
+                  } finally {
+                    setGeneratingReport(false);
+                    setShowReportConfig(false);
+                  }
+                }}
+                disabled={generatingReport}
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generatingReport ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4" />
+                    Exportar PDF
+                  </>
+                )}
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
