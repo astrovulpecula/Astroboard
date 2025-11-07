@@ -2102,28 +2102,28 @@ const generatePDFReport = async (
     if (filterImagesArray.length > 0) {
       html += `
       <div class="section">
-        <h2 class="section-title">🎨 Imágenes de Filtros</h2>
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">`;
+        <h2 class="section-title">Imágenes de Filtros</h2>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-top: 1rem;">`;
       
       filterImagesArray.forEach((item) => {
         html += `
           <div class="card">
-            <h3 style="font-size: 1.1rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; text-align: center;">${item.filter}</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">`;
+            <h3 style="font-size: 1.2rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1.5rem; text-align: center;">${item.filter}</h3>
+            <div style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">`;
         
         if (item.initial) {
           html += `
-              <div>
-                <p style="font-size: 0.75rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-align: center;">Inicial</p>
-                <img src="${item.initial}" alt="Imagen inicial ${item.filter}" style="width: 100%; border-radius: 0.5rem; border: 1px solid ${theme.border};" />
+              <div style="width: 100%; text-align: center;">
+                <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Inicial</p>
+                <img src="${item.initial}" alt="Imagen inicial ${item.filter}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
               </div>`;
         }
         
         if (item.final) {
           html += `
-              <div>
-                <p style="font-size: 0.75rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-align: center;">Final</p>
-                <img src="${item.final}" alt="Imagen final ${item.filter}" style="width: 100%; border-radius: 0.5rem; border: 1px solid ${theme.border};" />
+              <div style="width: 100%; text-align: center;">
+                <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Final</p>
+                <img src="${item.final}" alt="Imagen final ${item.filter}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
               </div>`;
         }
         
@@ -2141,7 +2141,7 @@ const generatePDFReport = async (
   // Estadísticas
   if (Object.values(config.includeStats).some((v: any) => v)) {
     html += `<div class="section">
-      <h2 class="section-title">📊 Estadísticas del Proyecto</h2>
+      <h2 class="section-title">Estadísticas del Proyecto</h2>
       <div class="grid">`;
     
     if (config.includeStats.status) html += `<div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>`;
@@ -2164,7 +2164,7 @@ const generatePDFReport = async (
   if (config.includeCharts.progressChart) {
     html += `
     <div class="section">
-      <h2 class="section-title">📈 Progreso Acumulado</h2>
+      <h2 class="section-title">Progreso Acumulado</h2>
       <div class="chart-container">
         <canvas id="progressChart"></canvas>
       </div>
@@ -2175,7 +2175,7 @@ const generatePDFReport = async (
   if (config.includeCharts.filterChart && Object.keys(filterHours).length > 0) {
     html += `
     <div class="section">
-      <h2 class="section-title">🎨 Exposición por Filtro</h2>
+      <h2 class="section-title">Exposición por Filtro</h2>
       <div class="chart-container">
         <canvas id="filterChart"></canvas>
       </div>
@@ -2186,7 +2186,7 @@ const generatePDFReport = async (
   if (config.includeCharts.lightsChart) {
     html += `
     <div class="section">
-      <h2 class="section-title">💡 Iluminación por Sesión</h2>
+      <h2 class="section-title">Iluminación por Sesión</h2>
       <div class="chart-container">
         <canvas id="lightsChart"></canvas>
       </div>
@@ -2197,7 +2197,7 @@ const generatePDFReport = async (
   if (config.includeCharts.snrMeanChart && snrMeanData.length > 0) {
     html += `
     <div class="section">
-      <h2 class="section-title">📈 SNR Medio por Sesión</h2>
+      <h2 class="section-title">SNR Medio por Sesión</h2>
       <div class="chart-container">
         <canvas id="snrMeanChart"></canvas>
       </div>
@@ -2208,7 +2208,7 @@ const generatePDFReport = async (
   if (config.includeCharts.snrRGBChart && snrRGBData.length > 0) {
     html += `
     <div class="section">
-      <h2 class="section-title">🌈 SNR RGB por Sesión</h2>
+      <h2 class="section-title">SNR RGB por Sesión</h2>
       <div class="chart-container">
         <canvas id="snrRGBChart"></canvas>
       </div>
@@ -2219,7 +2219,7 @@ const generatePDFReport = async (
   if (config.includeTable) {
     html += `
     <div class="section">
-      <h2 class="section-title">📋 Tabla de Sesiones</h2>
+      <h2 class="section-title">Tabla de Sesiones</h2>
       <table>
         <thead>
           <tr>
@@ -2276,7 +2276,7 @@ const generatePDFReport = async (
     ${config.includeCharts.progressChart ? `
     const progressData = ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))};
     const progressRange = getYAxisRange(progressData);
-    const progressCtx = document.getElementById('progressChart');
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
     new Chart(progressCtx, {
       type: 'line',
       data: {
@@ -2309,7 +2309,7 @@ const generatePDFReport = async (
     ${config.includeCharts.filterChart && filterData.length > 0 ? `
     const filterChartData = ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))};
     const filterRange = getYAxisRange(filterChartData);
-    const filterCtx = document.getElementById('filterChart');
+    const filterCtx = document.getElementById('filterChart').getContext('2d');
     new Chart(filterCtx, {
       type: 'bar',
       data: {
@@ -2339,7 +2339,7 @@ const generatePDFReport = async (
     ${config.includeCharts.lightsChart ? `
     const lightsData = ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))};
     const lightsRange = getYAxisRange(lightsData);
-    const lightsCtx = document.getElementById('lightsChart');
+    const lightsCtx = document.getElementById('lightsChart').getContext('2d');
     new Chart(lightsCtx, {
       type: 'bar',
       data: {
@@ -2369,7 +2369,7 @@ const generatePDFReport = async (
     ${config.includeCharts.snrMeanChart && snrMeanData.length > 0 ? `
     const snrMeanChartData = ${JSON.stringify(snrMeanData.map((d: any) => d.snr))};
     const snrMeanRange = getYAxisRange(snrMeanChartData);
-    const snrMeanCtx = document.getElementById('snrMeanChart');
+    const snrMeanCtx = document.getElementById('snrMeanChart').getContext('2d');
     new Chart(snrMeanCtx, {
       type: 'line',
       data: {
@@ -2406,7 +2406,7 @@ const generatePDFReport = async (
       ...${JSON.stringify(snrRGBData.map((d: any) => d.snrB))}.filter(v => v != null)
     ];
     const snrRGBRange = getYAxisRange(snrRGBAllValues);
-    const snrRGBCtx = document.getElementById('snrRGBChart');
+    const snrRGBCtx = document.getElementById('snrRGBChart').getContext('2d');
     new Chart(snrRGBCtx, {
       type: 'line',
       data: {
