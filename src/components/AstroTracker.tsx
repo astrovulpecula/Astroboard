@@ -2080,6 +2080,64 @@ const generatePDFReport = async (
     </div>
     `;
 
+  // Imágenes de filtros (inicial y final)
+  if (config.includeFilterImages) {
+    const filterImages: Record<string, {filter: string; initial?: string; final?: string}> = {};
+    
+    // Recopilar imágenes iniciales y finales por filtro
+    Object.entries(proj.images || {}).forEach(([key, src]) => {
+      if (key.startsWith('initial') && key !== 'initialProject' && src) {
+        const filterName = key.replace('initial', '');
+        if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
+        filterImages[filterName].initial = src as string;
+      } else if (key.startsWith('final') && key !== 'finalProject' && src) {
+        const filterName = key.replace('final', '');
+        if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
+        filterImages[filterName].final = src as string;
+      }
+    });
+    
+    const filterImagesArray = Object.values(filterImages);
+    
+    if (filterImagesArray.length > 0) {
+      html += `
+      <div class="section">
+        <h2 class="section-title">🎨 Imágenes de Filtros</h2>
+        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">`;
+      
+      filterImagesArray.forEach((item) => {
+        html += `
+          <div class="card">
+            <h3 style="font-size: 1.1rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; text-align: center;">${item.filter}</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">`;
+        
+        if (item.initial) {
+          html += `
+              <div>
+                <p style="font-size: 0.75rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-align: center;">Inicial</p>
+                <img src="${item.initial}" alt="Imagen inicial ${item.filter}" style="width: 100%; border-radius: 0.5rem; border: 1px solid ${theme.border};" />
+              </div>`;
+        }
+        
+        if (item.final) {
+          html += `
+              <div>
+                <p style="font-size: 0.75rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-align: center;">Final</p>
+                <img src="${item.final}" alt="Imagen final ${item.filter}" style="width: 100%; border-radius: 0.5rem; border: 1px solid ${theme.border};" />
+              </div>`;
+        }
+        
+        html += `
+            </div>
+          </div>`;
+      });
+      
+      html += `
+        </div>
+      </div>`;
+    }
+  }
+
   // Estadísticas
   if (Object.values(config.includeStats).some((v: any) => v)) {
     html += `<div class="section">
@@ -2103,7 +2161,7 @@ const generatePDFReport = async (
   }
 
   // Gráfica de progreso acumulado
-  if (config.includeCharts.progress) {
+  if (config.includeCharts.progressChart) {
     html += `
     <div class="section">
       <h2 class="section-title">📈 Progreso Acumulado</h2>
@@ -2114,7 +2172,7 @@ const generatePDFReport = async (
   }
 
   // Gráfica de exposición por filtro
-  if (config.includeCharts.filterExposure && Object.keys(filterHours).length > 0) {
+  if (config.includeCharts.filterChart && Object.keys(filterHours).length > 0) {
     html += `
     <div class="section">
       <h2 class="section-title">🎨 Exposición por Filtro</h2>
@@ -2125,7 +2183,7 @@ const generatePDFReport = async (
   }
 
   // Gráfica de lights por sesión
-  if (config.includeCharts.lightsPerSession) {
+  if (config.includeCharts.lightsChart) {
     html += `
     <div class="section">
       <h2 class="section-title">💡 Iluminación por Sesión</h2>
@@ -2136,7 +2194,7 @@ const generatePDFReport = async (
   }
 
   // Gráfica de SNR medio
-  if (config.includeCharts.snrMean && snrMeanData.length > 0) {
+  if (config.includeCharts.snrMeanChart && snrMeanData.length > 0) {
     html += `
     <div class="section">
       <h2 class="section-title">📈 SNR Medio por Sesión</h2>
@@ -2147,7 +2205,7 @@ const generatePDFReport = async (
   }
 
   // Gráfica de SNR RGB
-  if (config.includeCharts.snrRGB && snrRGBData.length > 0) {
+  if (config.includeCharts.snrRGBChart && snrRGBData.length > 0) {
     html += `
     <div class="section">
       <h2 class="section-title">🌈 SNR RGB por Sesión</h2>
@@ -2215,7 +2273,7 @@ const generatePDFReport = async (
       };
     };
     
-    ${config.includeCharts.progress ? `
+    ${config.includeCharts.progressChart ? `
     const progressData = ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))};
     const progressRange = getYAxisRange(progressData);
     const progressCtx = document.getElementById('progressChart');
@@ -2248,7 +2306,7 @@ const generatePDFReport = async (
       }
     });` : ''}
 
-    ${config.includeCharts.filterExposure && filterData.length > 0 ? `
+    ${config.includeCharts.filterChart && filterData.length > 0 ? `
     const filterChartData = ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))};
     const filterRange = getYAxisRange(filterChartData);
     const filterCtx = document.getElementById('filterChart');
@@ -2278,7 +2336,7 @@ const generatePDFReport = async (
       }
     });` : ''}
 
-    ${config.includeCharts.lightsPerSession ? `
+    ${config.includeCharts.lightsChart ? `
     const lightsData = ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))};
     const lightsRange = getYAxisRange(lightsData);
     const lightsCtx = document.getElementById('lightsChart');
@@ -2308,7 +2366,7 @@ const generatePDFReport = async (
       }
     });` : ''}
 
-    ${config.includeCharts.snrMean && snrMeanData.length > 0 ? `
+    ${config.includeCharts.snrMeanChart && snrMeanData.length > 0 ? `
     const snrMeanChartData = ${JSON.stringify(snrMeanData.map((d: any) => d.snr))};
     const snrMeanRange = getYAxisRange(snrMeanChartData);
     const snrMeanCtx = document.getElementById('snrMeanChart');
@@ -2341,7 +2399,7 @@ const generatePDFReport = async (
       }
     });` : ''}
 
-    ${config.includeCharts.snrRGB && snrRGBData.length > 0 ? `
+    ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
     const snrRGBAllValues = [
       ...${JSON.stringify(snrRGBData.map((d: any) => d.snrR))}.filter(v => v != null),
       ...${JSON.stringify(snrRGBData.map((d: any) => d.snrG))}.filter(v => v != null),
@@ -2561,6 +2619,7 @@ export default function AstroTracker() {
   const [generatingReport, setGeneratingReport] = useState(false);
   const [reportConfig, setReportConfig] = useState({
     includeImage: true,
+    includeFilterImages: true,
     includeStats: {
       status: true,
       nights: true,
@@ -7975,16 +8034,31 @@ export default function AstroTracker() {
                 </RadioGroup>
               </div>
 
-              {/* Imagen final */}
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="include-image" 
-                  checked={reportConfig.includeImage}
-                  onCheckedChange={(checked) => setReportConfig({...reportConfig, includeImage: !!checked})}
-                />
-                <label htmlFor="include-image" className="text-sm font-medium cursor-pointer">
-                  Incluir imagen final del proyecto
-                </label>
+              {/* Imágenes */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-sm">Imágenes</h3>
+                <div className="space-y-2 pl-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="include-image" 
+                      checked={reportConfig.includeImage}
+                      onCheckedChange={(checked) => setReportConfig({...reportConfig, includeImage: !!checked})}
+                    />
+                    <label htmlFor="include-image" className="text-sm cursor-pointer">
+                      Incluir imagen final del proyecto
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="include-filter-images" 
+                      checked={reportConfig.includeFilterImages}
+                      onCheckedChange={(checked) => setReportConfig({...reportConfig, includeFilterImages: !!checked})}
+                    />
+                    <label htmlFor="include-filter-images" className="text-sm cursor-pointer">
+                      Incluir imágenes iniciales y finales de filtros
+                    </label>
+                  </div>
+                </div>
               </div>
 
               {/* Estadísticas */}
@@ -8039,11 +8113,11 @@ export default function AstroTracker() {
                 <h3 className="font-semibold text-sm">Gráficas</h3>
                 <div className="grid grid-cols-1 gap-2 pl-4">
                   {Object.entries({
-                    progress: 'Progreso acumulado',
-                    filterExposure: 'Exposición por filtro',
-                    lightsPerSession: 'Iluminación por sesión',
-                    snrMean: 'SNR medio por sesión',
-                    snrRGB: 'SNR RGB por sesión'
+                    progressChart: 'Progreso acumulado',
+                    filterChart: 'Exposición por filtro',
+                    lightsChart: 'Iluminación por sesión',
+                    snrMeanChart: 'SNR medio por sesión',
+                    snrRGBChart: 'SNR RGB por sesión'
                   }).map(([key, label]) => (
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox 
