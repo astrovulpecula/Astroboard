@@ -5839,15 +5839,6 @@ export default function AstroTracker() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
                 <SectionTitle title="Paneles" />
                 <div className="flex items-center gap-2">
-                  {Object.keys((proj as any).panels || {}).length > 1 && (
-                    <button
-                      onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
-                      className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
-                      title={panelSectionExpanded ? "Contraer sección" : "Expandir sección"}
-                    >
-                      {panelSectionExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  )}
                   <button
                     onClick={() => {
                       setEditNumPanels(Object.keys((proj as any).panels || {}).length);
@@ -5862,6 +5853,18 @@ export default function AstroTracker() {
               </div>
               <Card className="p-3 md:p-4 mb-4">
                 <div className="flex items-center gap-2 md:gap-3 overflow-x-auto pb-2">
+                  {Object.keys((proj as any).panels || {}).length > 1 && (
+                    <button
+                      onClick={() => setPanelSectionExpanded(!panelSectionExpanded)}
+                      className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
+                        panelSectionExpanded
+                          ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                          : "border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      Encuadre
+                    </button>
+                  )}
                   {Object.keys((proj as any).panels || {}).map((panelNum: string) => (
                     <button
                       key={panelNum}
