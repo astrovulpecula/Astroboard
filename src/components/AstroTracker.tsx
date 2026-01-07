@@ -2742,8 +2742,10 @@ export default function AstroTracker() {
       }
     };
     loadEphemerisData();
+  }, []);
 
-    // Load weather data from Open-Meteo API
+  // Load weather data when mainLocation changes (separate effect to avoid re-running settings load)
+  useEffect(() => {
     const loadWeatherData = async () => {
       try {
         if (!mainLocation?.coords) return;
