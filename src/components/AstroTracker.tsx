@@ -3528,6 +3528,233 @@ export default function AstroTracker() {
         ? "HAOIII"
         : act?.name?.replace(/[^a-zA-Z0-9]/g, "") || "default";
 
+  // Memoized global metrics calculation - moved out of IIFE to prevent render issues on mobile
+  const globalMetrics = useMemo(() => {
+    const totalObjects = objects.length;
+    const totalProjects = objects.reduce((acc, obj) => acc + obj.projects.length, 0);
+    const activeProjects = objects.reduce(
+      (acc, obj) => acc + obj.projects.filter((p: any) => p.status === "active").length,
+      0
+    );
+    const activeProjectsPercentage =
+      totalProjects > 0 ? ((activeProjects / totalProjects) * 100).toFixed(1) : "0";
+
+    let totalHours = 0;
+    let totalLights = 0;
+    const uniqueDates = new Set<string>();
+    let totalSessions = 0;
+    const objectExposures: Record<string, number> = {};
+
+    objects.forEach((obj) => {
+      let objExposure = 0;
+      obj.projects.forEach((proj) => {
+        proj.sessions.forEach((session: any) => {
+          const sessionExposure = ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
+          totalHours += sessionExposure;
+          objExposure += sessionExposure;
+          totalLights += session.lights || 0;
+          uniqueDates.add(session.date);
+          totalSessions++;
+        });
+      });
+      if (objExposure > 0) {
+        objectExposures[obj.id] = objExposure;
+      }
+    });
+
+    const totalNights = uniqueDates.size;
+    const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
+
+    // Streak calculations
+    const allDates = Array.from(uniqueDates).sort();
+    let currentStreak = 0;
+    let maxStreak = 0;
+
+    if (allDates.length > 0) {
+      currentStreak = 1;
+      for (let i = allDates.length - 2; i >= 0; i--) {
+        const prevDate = new Date(allDates[i]);
+        const currDate = new Date(allDates[i + 1]);
+        prevDate.setHours(0, 0, 0, 0);
+        currDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const lastDate = new Date(allDates[allDates.length - 1]);
+      lastDate.setHours(0, 0, 0, 0);
+      const daysSinceLastSession = Math.floor(
+        (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const isStreakActive = daysSinceLastSession <= 1;
+      if (!isStreakActive) {
+        currentStreak = 0;
+      }
+
+      let tempStreak = 1;
+      maxStreak = 1;
+      for (let i = 1; i < allDates.length; i++) {
+        const prevDate = new Date(allDates[i - 1]);
+        const currDate = new Date(allDates[i]);
+        prevDate.setHours(0, 0, 0, 0);
+        currDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          tempStreak++;
+          maxStreak = Math.max(maxStreak, tempStreak);
+        } else {
+          tempStreak = 1;
+        }
+      }
+      if (isStreakActive) {
+        maxStreak = Math.max(maxStreak, currentStreak);
+      }
+    }
+
+    // Camera usage
+    const cameraCounts: Record<string, number> = {};
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj) => {
+        proj.sessions.forEach((session: any) => {
+          if (session.camera) {
+            cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
+          }
+        });
+      });
+    });
+    const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+
+    // Telescope usage
+    const telescopeCounts: Record<string, { seconds: number; lights: number }> = {};
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj) => {
+        proj.sessions.forEach((session: any) => {
+          if (session.telescope) {
+            const seconds = (session.lights || 0) * (session.exposureSec || 0);
+            const lights = session.lights || 0;
+            if (!telescopeCounts[session.telescope]) {
+              telescopeCounts[session.telescope] = { seconds: 0, lights: 0 };
+            }
+            telescopeCounts[session.telescope].seconds += seconds;
+            telescopeCounts[session.telescope].lights += lights;
+          }
+        });
+      });
+    });
+    const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
+
+    // Most photographed constellation
+    const constellationCounts: Record<string, number> = {};
+    objects.forEach((obj) => {
+      if (obj.constellation) {
+        constellationCounts[obj.constellation] = (constellationCounts[obj.constellation] || 0) + 1;
+      }
+    });
+    const mostPhotographedConstellation = Object.entries(constellationCounts).sort(([, a], [, b]) => b - a)[0];
+
+    // ONP vs SNP
+    let onpCount = 0;
+    let snpCount = 0;
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        if (proj.projectType === "ONP") {
+          onpCount++;
+        } else if (proj.projectType === "SNP") {
+          snpCount++;
+        } else {
+          onpCount++;
+        }
+      });
+    });
+
+    // Photo ratings
+    let rating3Count = 0;
+    let rating2Count = 0;
+    let rating1Count = 0;
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        const ratings = proj.ratings || {};
+        Object.values(ratings).forEach((rating: any) => {
+          if (rating === 3) rating3Count++;
+          else if (rating === 2) rating2Count++;
+          else if (rating === 1) rating1Count++;
+        });
+      });
+    });
+    const totalRated = rating3Count + rating2Count + rating1Count;
+
+    // SNR record
+    let maxSNR = 0;
+    let maxSNRObject = "";
+    let maxSNRProject = "";
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        proj.sessions.forEach((session: any) => {
+          const sessionMean = mean(session);
+          if (sessionMean !== null && sessionMean > maxSNR) {
+            maxSNR = sessionMean;
+            maxSNRObject = obj.id;
+            maxSNRProject = proj.name;
+          }
+        });
+      });
+    });
+
+    // Hours by year
+    const currentYear = new Date().getFullYear();
+    const years: number[] = [];
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj) => {
+        proj.sessions.forEach((session: any) => {
+          if (session.date) {
+            const year = new Date(session.date).getFullYear();
+            if (!years.includes(year)) years.push(year);
+          }
+        });
+      });
+    });
+    years.sort();
+    const minYear = years.length > 0 ? years[0] : currentYear;
+
+    return {
+      totalObjects,
+      totalProjects,
+      activeProjects,
+      activeProjectsPercentage,
+      totalHours,
+      totalLights,
+      totalNights,
+      totalSessions,
+      maxExposureObj,
+      currentStreak,
+      maxStreak,
+      cameraCounts,
+      totalCameraLights,
+      telescopeCounts,
+      totalTelescopeLights,
+      mostPhotographedConstellation,
+      constellationCounts,
+      onpCount,
+      snpCount,
+      rating3Count,
+      rating2Count,
+      rating1Count,
+      totalRated,
+      maxSNR,
+      maxSNRObject,
+      maxSNRProject,
+      currentYear,
+      minYear,
+      years,
+    };
+  }, [objects]);
+
   return (
     <div className={theme === "dark" ? "dark" : ""} data-theme={theme}>
       <style>{`
@@ -4016,854 +4243,435 @@ export default function AstroTracker() {
                 />
               )}
 
-              {/* Global Metrics */}
-              {(() => {
-                // Calculate global metrics
-                const totalObjects = objects.length;
-                const totalProjects = objects.reduce((acc, obj) => acc + obj.projects.length, 0);
-                const activeProjects = objects.reduce(
-                  (acc, obj) => acc + obj.projects.filter((p: any) => p.status === "active").length,
-                  0,
-                );
-                const activeProjectsPercentage =
-                  totalProjects > 0 ? ((activeProjects / totalProjects) * 100).toFixed(1) : "0";
+              {/* Global Metrics - Using memoized values */}
+              <>
+                {/* Título de Highlights con botón de expandir/contraer */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    onClick={() => setHighlightsSectionExpanded(!highlightsSectionExpanded)}
+                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                  >
+                    <h3 className="text-xl md:text-2xl font-bold">Highlights</h3>
+                    {highlightsSectionExpanded ? (
+                      <ChevronUp className="w-5 h-5" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
 
-                // Calculate total hours and lights
-                let totalHours = 0;
-                let totalLights = 0;
-                const uniqueDates = new Set<string>();
-                let totalSessions = 0;
-
-                // Object with most exposure
-                const objectExposures: Record<string, number> = {};
-
-                objects.forEach((obj) => {
-                  let objExposure = 0;
-                  obj.projects.forEach((proj) => {
-                    proj.sessions.forEach((session: any) => {
-                      const sessionExposure = ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
-                      totalHours += sessionExposure;
-                      objExposure += sessionExposure;
-                      totalLights += session.lights || 0;
-                      uniqueDates.add(session.date);
-                      totalSessions++;
-                    });
-                  });
-                  if (objExposure > 0) {
-                    objectExposures[obj.id] = objExposure;
-                  }
-                });
-
-                const totalNights = uniqueDates.size;
-
-                // Find object with most exposure
-                const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
-
-                // Calculate consecutive nights streak
-                const allDates = Array.from(uniqueDates).sort();
-                let currentStreak = 0;
-                let maxStreak = 0;
-
-                if (allDates.length > 0) {
-                  // Calculate current streak from the end (counting backwards)
-                  currentStreak = 1;
-                  for (let i = allDates.length - 2; i >= 0; i--) {
-                    const prevDate = new Date(allDates[i]);
-                    const currDate = new Date(allDates[i + 1]);
-                    prevDate.setHours(0, 0, 0, 0);
-                    currDate.setHours(0, 0, 0, 0);
-
-                    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-
-                    if (diffDays === 1) {
-                      currentStreak++;
-                    } else {
-                      break;
-                    }
-                  }
-
-                  // Check if streak is still active (last session was today or yesterday)
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-
-                  const lastDate = new Date(allDates[allDates.length - 1]);
-                  lastDate.setHours(0, 0, 0, 0);
-
-                  const daysSinceLastSession = Math.floor(
-                    (today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
-                  );
-
-                  // If last session was more than 1 day ago, the streak is broken
-                  const isStreakActive = daysSinceLastSession <= 1;
-
-                  // If streak is not active, reset current streak to 0
-                  if (!isStreakActive) {
-                    currentStreak = 0;
-                  }
-
-                  // Calculate max streak (scan through all dates)
-                  let tempStreak = 1;
-                  maxStreak = 1;
-
-                  for (let i = 1; i < allDates.length; i++) {
-                    const prevDate = new Date(allDates[i - 1]);
-                    const currDate = new Date(allDates[i]);
-                    prevDate.setHours(0, 0, 0, 0);
-                    currDate.setHours(0, 0, 0, 0);
-
-                    const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
-
-                    if (diffDays === 1) {
-                      tempStreak++;
-                      maxStreak = Math.max(maxStreak, tempStreak);
-                    } else {
-                      tempStreak = 1;
-                    }
-                  }
-
-                  // If current streak is active and larger than any historical streak, use it
-                  if (isStreakActive) {
-                    maxStreak = Math.max(maxStreak, currentStreak);
-                  }
-                }
-
-                // Calculate camera usage
-                const cameraCounts: Record<string, number> = {};
-                objects.forEach((obj) => {
-                  obj.projects.forEach((proj) => {
-                    proj.sessions.forEach((session: any) => {
-                      if (session.camera) {
-                        cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
-                      }
-                    });
-                  });
-                });
-                const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
-
-                // Calculate telescope usage (both hours and lights)
-                const telescopeCounts: Record<string, { seconds: number; lights: number }> = {};
-                objects.forEach((obj) => {
-                  obj.projects.forEach((proj) => {
-                    proj.sessions.forEach((session: any) => {
-                      if (session.telescope) {
-                        const seconds = (session.lights || 0) * (session.exposureSec || 0);
-                        const lights = session.lights || 0;
-                        if (!telescopeCounts[session.telescope]) {
-                          telescopeCounts[session.telescope] = { seconds: 0, lights: 0 };
-                        }
-                        telescopeCounts[session.telescope].seconds += seconds;
-                        telescopeCounts[session.telescope].lights += lights;
-                      }
-                    });
-                  });
-                });
-                const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
-
-                // Calculate most photographed constellation
-                const constellationCounts: Record<string, number> = {};
-                objects.forEach((obj) => {
-                  if (obj.constellation) {
-                    constellationCounts[obj.constellation] = (constellationCounts[obj.constellation] || 0) + 1;
-                  }
-                });
-                const mostPhotographedConstellation = Object.entries(constellationCounts).sort(([, a], [, b]) => b - a)[0];
-
-                return (
-                  <>
-                    {/* Título de Highlights con botón de expandir/contraer */}
-                    <div className="flex items-center justify-between mb-4">
-                      <button
-                        onClick={() => setHighlightsSectionExpanded(!highlightsSectionExpanded)}
-                        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                      >
-                        <h3 className="text-xl md:text-2xl font-bold">Highlights</h3>
-                        {highlightsSectionExpanded ? (
-                          <ChevronUp className="w-5 h-5" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-
-                    {highlightsSectionExpanded && (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        {/* Total de Objetos */}
-                        {visibleHighlights.totalObjects && (
-                          <Card className="p-5">
+                {highlightsSectionExpanded && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    {/* Total de Objetos */}
+                    {visibleHighlights.totalObjects && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-blue-500/10">
                             <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Total de Objetos</div>
-                            <div className="text-2xl font-bold">{totalObjects}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalObjects}</div>
                           </div>
-                          </div>
-                        </Card>
-                        )}
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Total de Proyectos */}
-                        {visibleHighlights.totalProjects && (
-                          <Card className="p-5">
+                    {/* Total de Proyectos */}
+                    {visibleHighlights.totalProjects && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-indigo-500/10">
                             <FolderOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Total de Proyectos</div>
-                            <div className="text-2xl font-bold">{totalProjects}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalProjects}</div>
                           </div>
-                          </div>
-                        </Card>
-                        )}
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Horas Totales */}
-                        {visibleHighlights.totalHours && (
-                          <Card className="p-5">
+                    {/* Horas Totales */}
+                    {visibleHighlights.totalHours && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-purple-500/10">
                             <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Horas Totales</div>
-                            <div className="text-2xl font-bold">{hh(totalHours * 3600)}</div>
+                            <div className="text-2xl font-bold">{hh(globalMetrics.totalHours * 3600)}</div>
                           </div>
-                          </div>
-                        </Card>
-                        )}
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Lights Totales */}
-                        {visibleHighlights.totalLights && (
-                          <Card className="p-5">
+                    {/* Lights Totales */}
+                    {visibleHighlights.totalLights && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-amber-500/10">
                             <Star className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Lights Totales</div>
-                            <div className="text-2xl font-bold">{totalLights}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalLights}</div>
                           </div>
-                          </div>
-                        </Card>
-                        )}
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Noches */}
-                        {visibleHighlights.totalNights && (
-                          <Card className="p-5">
+                    {/* Noches */}
+                    {visibleHighlights.totalNights && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-green-500/10">
                             <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Noches</div>
-                            <div className="text-2xl font-bold">{totalNights}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalNights}</div>
                           </div>
-                          </div>
-                        </Card>
-                        )}
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Sesiones */}
-                        {visibleHighlights.totalSessions && (
-                          <Card className="p-5">
+                    {/* Sesiones */}
+                    {visibleHighlights.totalSessions && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-cyan-500/10">
                             <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Sesiones</div>
-                            <div className="text-2xl font-bold">{totalSessions}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalSessions}</div>
                           </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* ONP vs SNP Projects */}
+                    {visibleHighlights.onpSnp && (
+                      <Card 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                        onClick={() => setView("onp-snp")}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-teal-500/10">
+                            <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                           </div>
-                        </Card>
-                        )}
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">ONP vs SNP</div>
+                            <div className="text-2xl font-bold">
+                              {globalMetrics.onpCount} / {globalMetrics.snpCount}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              One-Night / Several-Nights
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* ONP vs SNP Projects */}
-                        {visibleHighlights.onpSnp && (() => {
-                        let onpCount = 0;
-                        let snpCount = 0;
-                        
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj: any) => {
-                            if (proj.projectType === "ONP") {
-                              onpCount++;
-                            } else if (proj.projectType === "SNP") {
-                              snpCount++;
-                            } else {
-                              // Default to ONP if projectType is not set
-                              onpCount++;
-                            }
-                          });
-                        });
-
-                        return (
-                          <Card 
-                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow"
-                            onClick={() => setView("onp-snp")}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-teal-500/10">
-                                <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                              </div>
-                              <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">ONP vs SNP</div>
-                                <div className="text-2xl font-bold">
-                                  {onpCount} / {snpCount}
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400">
-                                  One-Night / Several-Nights
-                                </div>
-                              </div>
-                              </div>
-                            </Card>
-                          );
-                        })()}
-
-                        {/* Proyectos Activos */}
-                        {visibleHighlights.activeProjects && (
-                          <Card className="p-5">
+                    {/* Proyectos Activos */}
+                    {visibleHighlights.activeProjects && (
+                      <Card className="p-5">
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-orange-500/10">
                             <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">Proyectos Activos</div>
-                            <div className="text-2xl font-bold">{activeProjects}</div>
+                            <div className="text-2xl font-bold">{globalMetrics.activeProjects}</div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {activeProjectsPercentage}% del total
+                              {globalMetrics.activeProjectsPercentage}% del total
                             </div>
                           </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Valoraciones de Fotos */}
+                    {visibleHighlights.ratedPhotos && (
+                      <Card 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
+                        onClick={() => setView("ratings")}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-purple-500/10">
+                            <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
-                        </Card>
-                        )}
-
-                        {/* Valoraciones de Fotos */}
-                        {visibleHighlights.ratedPhotos && (() => {
-                        let rating3Count = 0;
-                        let rating2Count = 0;
-                        let rating1Count = 0;
-                        
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj: any) => {
-                            const ratings = proj.ratings || {};
-                            Object.values(ratings).forEach((rating: any) => {
-                              if (rating === 3) rating3Count++;
-                              else if (rating === 2) rating2Count++;
-                              else if (rating === 1) rating1Count++;
-                            });
-                          });
-                        });
-
-                        const totalRated = rating3Count + rating2Count + rating1Count;
-
-                          return (
-                            <Card 
-                              className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
-                              onClick={() => setView("ratings")}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-xl bg-purple-500/10">
-                                  <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                  <div className="text-sm text-slate-600 dark:text-slate-400">Fotos Valoradas</div>
-                                  <div className="text-2xl font-bold">{totalRated}</div>
-                                </div>
-                              </div>
-                            </Card>
-                          );
-                        })()}
-
-                        {/* SNR Record */}
-                        {visibleHighlights.snrRecord && (() => {
-                        let maxSNR = 0;
-                        let bestObjectName = "";
-                        let bestObjectId = "";
-                        let bestProjectId = "";
-                        
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj: any) => {
-                            proj.sessions.forEach((session: any) => {
-                              const sessionMeanSNR = mean(session);
-                              if (sessionMeanSNR !== null && sessionMeanSNR > maxSNR) {
-                                maxSNR = sessionMeanSNR;
-                                bestObjectName = obj.commonName || obj.id;
-                                bestObjectId = obj.id;
-                                bestProjectId = proj.id;
-                              }
-                            });
-                          });
-                        });
-
-                        return (
-                          <Card 
-                            className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
-                            onClick={() => {
-                              if (bestObjectId && bestProjectId) {
-                                setSelectedObjectId(bestObjectId);
-                                setSelectedProjectId(bestProjectId);
-                                setView("project");
-                              }
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-green-500/10">
-                                <Flame className="w-6 h-6 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                  SNR (record)
-                                </div>
-                                <div className="text-2xl font-bold">{maxSNR.toFixed(2)}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400">
-                                  {bestObjectName || "Sin datos"}
-                                </div>
-                              </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">Fotos Valoradas</div>
+                            <div className="text-2xl font-bold">{globalMetrics.totalRated}</div>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <span className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                {globalMetrics.rating3Count}
+                              </span>
+                              <span className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                {globalMetrics.rating2Count}
+                              </span>
+                              <span className="flex items-center gap-0.5">
+                                <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                {globalMetrics.rating1Count}
+                              </span>
                             </div>
-                          </Card>
-                          );
-                        })()}
+                          </div>
+                        </div>
+                      </Card>
+                    )}
 
-                        {/* Hours by Year */}
-                        {visibleHighlights.hoursByYear && (() => {
-                        // Get all years with sessions
-                        const yearsWithSessions = new Set<number>();
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj) => {
-                            proj.sessions.forEach((session: any) => {
-                              const year = new Date(session.date).getFullYear();
-                              yearsWithSessions.add(year);
-                            });
-                          });
-                        });
-
-                        const sortedYears = Array.from(yearsWithSessions).sort((a, b) => a - b);
-                        const minYear = sortedYears[0] || new Date().getFullYear();
-                        const currentYear = new Date().getFullYear();
-
-                        // Calculate hours for selected year
-                        let yearHours = 0;
-                        objects.forEach((obj) => {
-                          obj.projects.forEach((proj) => {
-                            proj.sessions.forEach((session: any) => {
-                              const sessionYear = new Date(session.date).getFullYear();
-                              if (sessionYear === selectedYear) {
-                                yearHours += ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
-                              }
-                            });
-                          });
-                        });
-
-                        // Calculate hours for previous year for comparison
-                        let previousYearHours = 0;
-                        if (selectedYear > minYear) {
-                          objects.forEach((obj) => {
-                            obj.projects.forEach((proj) => {
-                              proj.sessions.forEach((session: any) => {
-                                const sessionYear = new Date(session.date).getFullYear();
-                                if (sessionYear === selectedYear - 1) {
-                                  previousYearHours += ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
-                                }
-                              });
-                            });
-                          });
-                        }
-
-                        const percentageChange =
-                          previousYearHours > 0
-                            ? (((yearHours - previousYearHours) / previousYearHours) * 100).toFixed(1)
-                            : selectedYear > minYear
-                              ? "100"
-                              : "0";
-
-                        return (
-                          <Card className="p-5">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 flex-1">
-                                <div className="p-3 rounded-xl bg-cyan-500/10">
-                                  <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
-                                </div>
-                                <div>
-                                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                                    Horas en {selectedYear}
-                                  </div>
-                                  <div className="text-2xl font-bold">{hh(yearHours * 3600)}</div>
-                                  {previousYearHours > 0 && (
-                                    <div
-                                      className={`text-xs ${parseFloat(percentageChange) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
-                                    >
-                                      {parseFloat(percentageChange) >= 0 ? "+" : ""}
-                                      {percentageChange}% vs {selectedYear - 1}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => setSelectedYear((prev) => Math.max(minYear, prev - 1))}
-                                  disabled={selectedYear <= minYear}
-                                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                  onClick={() => setSelectedYear((prev) => Math.min(currentYear, prev + 1))}
-                                  disabled={selectedYear >= currentYear}
-                                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                                >
-                                  <ChevronRight className="w-5 h-5" />
-                                </button>
-                              </div>
+                    {/* SNR Record */}
+                    {visibleHighlights.snrRecord && globalMetrics.maxSNR > 0 && (
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-emerald-500/10">
+                            <Star className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">SNR Récord</div>
+                            <div className="text-2xl font-bold">{globalMetrics.maxSNR.toFixed(2)}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.maxSNRObject} · {globalMetrics.maxSNRProject}
                             </div>
-                          </Card>
-                        );
-                      })()}
+                          </div>
+                        </div>
+                      </Card>
+                    )}
 
-                      {/* Object with Most Exposure */}
-                      {visibleHighlights.mostPhotographedObject && maxExposureObj && (() => {
-                        const maxExpObj = objects.find((o) => o.id === maxExposureObj[0]);
-                        const commonName = maxExpObj?.commonName || maxExposureObj[0];
-                        return (
-                          <Card className="p-5">
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-yellow-500/10">
-                                <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                                  Objeto con Mayor Exposición
-                                </div>
-                                <div className="flex items-baseline gap-2">
-                                  <div className="text-2xl font-bold">{maxExposureObj[0]}</div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                                    {hh(maxExposureObj[1] * 3600)} horas
-                                  </div>
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  {commonName}
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        );
-                      })()}
-
-                      {/* Most Photographed Constellation */}
-                      {visibleHighlights.mostPhotographedConstellation && mostPhotographedConstellation && (
-                        <Card 
-                          className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all"
-                          onClick={() => {
-                            setSelectedConstellation(mostPhotographedConstellation[0]);
-                            setView("constellationDetail");
-                          }}
-                        >
+                    {/* Hours by Year */}
+                    {visibleHighlights.hoursByYear && (
+                      <Card className="p-5">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-indigo-500/10">
-                              <Star className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                            <div className="p-3 rounded-xl bg-rose-500/10">
+                              <Calendar className="w-6 h-6 text-rose-600 dark:text-rose-400" />
                             </div>
                             <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">
-                                Constelación Más Fotografiada
+                              <div className="text-sm text-slate-600 dark:text-slate-400">Horas en {selectedYear}</div>
+                              <div className="text-2xl font-bold">
+                                {hh(
+                                  objects.reduce((acc, obj) => {
+                                    return (
+                                      acc +
+                                      obj.projects.reduce((pAcc, proj) => {
+                                        return (
+                                          pAcc +
+                                          proj.sessions.reduce((sAcc, session: any) => {
+                                            if (session.date && new Date(session.date).getFullYear() === selectedYear) {
+                                              return sAcc + (session.lights || 0) * (session.exposureSec || 0);
+                                            }
+                                            return sAcc;
+                                          }, 0)
+                                        );
+                                      }, 0)
+                                    );
+                                  }, 0)
+                                )}
                               </div>
-                              <div className="text-2xl font-bold">{mostPhotographedConstellation[0]}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setSelectedYear((prev) => Math.max(globalMetrics.minYear, prev - 1))}
+                              disabled={selectedYear <= globalMetrics.minYear}
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => setSelectedYear((prev) => Math.min(globalMetrics.currentYear, prev + 1))}
+                              disabled={selectedYear >= globalMetrics.currentYear}
+                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              <ChevronRight className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Object with Most Exposure */}
+                    {visibleHighlights.mostPhotographedObject && globalMetrics.maxExposureObj && (
+                      <Card className="p-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-yellow-500/10">
+                            <Star className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                              Objeto con Mayor Exposición
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                              <div className="text-2xl font-bold">{globalMetrics.maxExposureObj[0]}</div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {mostPhotographedConstellation[1]} objeto{mostPhotographedConstellation[1] !== 1 ? "s" : ""}
+                                {hh(globalMetrics.maxExposureObj[1] * 3600)} horas
+                              </div>
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {objects.find((o) => o.id === globalMetrics.maxExposureObj?.[0])?.commonName || globalMetrics.maxExposureObj[0]}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Most Photographed Constellation */}
+                    {visibleHighlights.mostPhotographedConstellation && globalMetrics.mostPhotographedConstellation && (
+                      <Card 
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all"
+                        onClick={() => {
+                          setSelectedConstellation(globalMetrics.mostPhotographedConstellation![0]);
+                          setView("constellationDetail");
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-indigo-500/10">
+                            <Star className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">
+                              Constelación Más Fotografiada
+                            </div>
+                            <div className="text-2xl font-bold">{globalMetrics.mostPhotographedConstellation[0]}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              {globalMetrics.mostPhotographedConstellation[1]} objeto{globalMetrics.mostPhotographedConstellation[1] !== 1 ? "s" : ""}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Streaks Highlight */}
+                    {visibleHighlights.streaks && (
+                      <>
+                        {/* Racha de noches consecutivas */}
+                        <Card className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-pink-500/10">
+                              <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="text-sm text-slate-600 dark:text-slate-400">
+                                Racha de Noches Consecutivas
+                              </div>
+                              <div className="text-2xl font-bold">
+                                {globalMetrics.currentStreak > 0 ? globalMetrics.currentStreak : 0} noche{globalMetrics.currentStreak !== 1 ? "s" : ""}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                {globalMetrics.currentStreak > 0 ? (
+                                  <>
+                                    Racha actual • Récord: {globalMetrics.maxStreak} noche{globalMetrics.maxStreak !== 1 ? "s" : ""}
+                                  </>
+                                ) : (
+                                  <>
+                                    Sin racha activa • Récord: {globalMetrics.maxStreak} noche{globalMetrics.maxStreak !== 1 ? "s" : ""}
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
                         </Card>
-                      )}
 
-                      {/* Streaks Highlight */}
-                      {visibleHighlights.streaks && (() => {
-                        const now = new Date();
-                        const year = calendarYear;
-                        const month = calendarMonth;
-
-                        // Obtener todas las sesiones de todos los proyectos
-                        const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
-
-                        // Filtrar sesiones del mes seleccionado
-                        const currentMonthSessions = allSessions.filter((s) => {
-                          const sessionDate = new Date(s.date);
-                          return sessionDate.getFullYear() === year && sessionDate.getMonth() === month;
-                        });
-
-                        // Obtener días únicos con sesiones en el mes seleccionado
-                        const daysWithSessions = new Set(currentMonthSessions.map((s) => new Date(s.date).getDate()));
-
-                        // Obtener primer y último día del mes
-                        const firstDay = new Date(year, month, 1);
-                        const lastDay = new Date(year, month + 1, 0);
-                        const daysInMonth = lastDay.getDate();
-                        const startingDayOfWeek = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc
-
-                        const monthNames = [
-                          "Enero",
-                          "Febrero",
-                          "Marzo",
-                          "Abril",
-                          "Mayo",
-                          "Junio",
-                          "Julio",
-                          "Agosto",
-                          "Septiembre",
-                          "Octubre",
-                          "Noviembre",
-                          "Diciembre",
-                        ];
-
-                        // Función para manejar clic en día con sesiones
-                        const handleDayClick = (day: number) => {
-                          // Obtener proyectos con sesiones en este día
-                          const projectsWithSessions: any[] = [];
-
-                          objects.forEach((obj) => {
-                            obj.projects.forEach((proj) => {
-                              const sessionsOnDay = proj.sessions.filter((s: any) => {
-                                const sessionDate = new Date(s.date);
-                                return (
-                                  sessionDate.getFullYear() === year &&
-                                  sessionDate.getMonth() === month &&
-                                  sessionDate.getDate() === day
-                                );
-                              });
-
-                              if (sessionsOnDay.length > 0) {
-                                projectsWithSessions.push({
-                                  objectId: obj.id,
-                                  objectName: obj.commonName ? `${obj.id} - ${obj.commonName}` : obj.id,
-                                  projectId: proj.id,
-                                  projectName: proj.name,
-                                  sessionsCount: sessionsOnDay.length,
-                                });
-                              }
-                          });
-                        });
-
-                        if (projectsWithSessions.length > 0) {
-                          setSelectedDayInfo({ day, month, year, projects: projectsWithSessions });
-                        }
-                      };
-
-                      // Función para navegar a meses anteriores/siguientes
-                      const navigateMonth = (direction: number) => {
-                        const newMonth = month + direction;
-                        if (newMonth < 0) {
-                          setCalendarMonth(11);
-                          setCalendarYear(year - 1);
-                        } else if (newMonth > 11) {
-                          setCalendarMonth(0);
-                          setCalendarYear(year + 1);
-                        } else {
-                          setCalendarMonth(newMonth);
-                        }
-                      };
-
-                      return (
-                        <>
-                          {/* Racha de noches consecutivas */}
-                          <Card className="p-5">
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-pink-500/10">
-                                <Flame className="w-6 h-6 text-pink-600 dark:text-pink-400" />
+                        {/* Calendar Card - simplified version without IIFE */}
+                        <Card className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
+                              <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                              <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                              <div className="text-2xl font-bold">
+                                {(() => {
+                                  const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
+                                  const currentMonthSessions = allSessions.filter((s) => {
+                                    const sessionDate = new Date(s.date);
+                                    return sessionDate.getFullYear() === calendarYear && sessionDate.getMonth() === calendarMonth;
+                                  });
+                                  return new Set(currentMonthSessions.map((s) => new Date(s.date).getDate())).size;
+                                })()}
                               </div>
-                              <div className="flex-1">
-                                <div className="text-sm text-slate-600 dark:text-slate-400">
-                                  Racha de Noches Consecutivas
-                                </div>
-                                <div className="text-2xl font-bold">
-                                  {currentStreak > 0 ? currentStreak : 0} noche{currentStreak !== 1 ? "s" : ""}
-                                </div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  {currentStreak > 0 ? (
-                                    <>
-                                      Racha actual • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
-                                    </>
-                                  ) : (
-                                    <>
-                                      Sin racha activa • Récord: {maxStreak} noche{maxStreak !== 1 ? "s" : ""}
-                                    </>
-                                  )}
-                                </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
                               </div>
                             </div>
-                          </Card>
+                          </div>
+                        </Card>
+                      </>
+                    )}
+                  </div>
+                )}
 
-                          {/* Días con sesiones */}
-                          <Card className="p-5">
-                            <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
-                                <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                              </div>
-                              <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
-                                <div className="text-2xl font-bold">{daysWithSessions.size}</div>
-                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">en {monthNames[month]}</div>
-                              </div>
-                            </div>
-                          </Card>
-
-                          {/* Calendario desplegable */}
-                          <Card className="p-5">
-                            <details className="group">
-                              <summary className="cursor-pointer list-none">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-3">
-                                    <div className="p-3 rounded-xl bg-blue-500/10">
-                                      <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                                    </div>
-                                    <div>
-                                      <div className="text-sm text-slate-600 dark:text-slate-400">Calendario</div>
-                                      <div className="text-2xl font-bold">
-                                        {monthNames[month]} {year}
-                                      </div>
-                                    </div>
+                {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
+                {highlightsSectionExpanded && (visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Camera Usage Statistics */}
+                    {visibleHighlights.cameraUsage && Object.keys(globalMetrics.cameraCounts).length > 0 && (
+                      <Card className="p-5">
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                          Uso de cámaras (% de lights)
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(globalMetrics.cameraCounts)
+                            .sort(([, a], [, b]) => b - a)
+                            .map(([camera, count]) => {
+                              const percentage =
+                                globalMetrics.totalCameraLights > 0 ? ((count / globalMetrics.totalCameraLights) * 100).toFixed(1) : 0;
+                              return (
+                                <div
+                                  key={camera}
+                                  className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
+                                >
+                                  <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
+                                  <div className="text-xs text-blue-700 dark:text-blue-300">
+                                    {count} lights ({percentage}%)
                                   </div>
-                                  <ChevronLeft className="w-5 h-5 transition-transform group-open:rotate-[-90deg] text-slate-400" />
                                 </div>
-                              </summary>
-                              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                {/* Navegación de meses */}
-                                <div className="flex items-center justify-between mb-4">
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigateMonth(-1);
-                                    }}
-                                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                  >
-                                    <ChevronLeft className="w-5 h-5" />
-                                  </button>
-                                  <div className="text-sm font-semibold">
-                                    {monthNames[month]} {year}
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      navigateMonth(1);
-                                    }}
-                                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                                  >
-                                    <ChevronRight className="w-5 h-5" />
-                                  </button>
-                                </div>
-
-                                <div className="grid grid-cols-7 gap-2">
-                                  {/* Cabecera días de la semana */}
-                                  {["D", "L", "M", "X", "J", "V", "S"].map((day, i) => (
-                                    <div
-                                      key={i}
-                                      className="text-center text-xs font-semibold text-slate-500 dark:text-slate-400 py-1"
-                                    >
-                                      {day}
-                                    </div>
-                                  ))}
-
-                                  {/* Espacios vacíos antes del primer día */}
-                                  {Array.from({ length: startingDayOfWeek }).map((_, i) => (
-                                    <div key={`empty-${i}`} />
-                                  ))}
-
-                                  {/* Días del mes */}
-                                  {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-                                    const hasSession = daysWithSessions.has(day);
-                                    const isToday =
-                                      day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
-
-                                    return (
-                                      <div
-                                        key={day}
-                                        onClick={() => hasSession && handleDayClick(day)}
-                                        className={`
-                                          aspect-square flex items-center justify-center rounded-lg text-sm
-                                          ${
-                                            hasSession
-                                              ? "bg-green-500/20 text-green-700 dark:text-green-300 font-semibold border-2 border-green-500/40 cursor-pointer hover:bg-green-500/30 transition"
-                                              : "text-slate-600 dark:text-slate-400"
-                                          }
-                                          ${isToday && !hasSession ? "border-2 border-blue-500/40" : ""}
-                                          ${isToday && hasSession ? "ring-2 ring-blue-500 ring-offset-2" : ""}
-                                        `}
-                                      >
-                                        {day}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </details>
-                          </Card>
-                        </>
-                      );
-                    })()}
-                      </div>
+                              );
+                            })}
+                        </div>
+                      </Card>
                     )}
 
-                    {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
-                    {highlightsSectionExpanded && (visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Camera Usage Statistics */}
-                        {visibleHighlights.cameraUsage && Object.keys(cameraCounts).length > 0 && (
-                          <Card className="p-5">
-                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                              Uso de cámaras (% de lights)
-                            </div>
-                            <div className="flex flex-wrap gap-3">
-                              {Object.entries(cameraCounts)
-                                .sort(([, a], [, b]) => b - a)
-                                .map(([camera, count]) => {
-                                  const percentage =
-                                    totalCameraLights > 0 ? ((count / totalCameraLights) * 100).toFixed(1) : 0;
-                                  return (
-                                    <div
-                                      key={camera}
-                                      className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
-                                    >
-                                      <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
-                                      <div className="text-xs text-blue-700 dark:text-blue-300">
-                                        {count} lights ({percentage}%)
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </Card>
-                        )}
-
-                        {/* Telescope Usage Statistics */}
-                        {visibleHighlights.telescopeUsage && Object.keys(telescopeCounts).length > 0 && (
-                          <Card className="p-5">
-                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
-                            <div className="flex flex-wrap gap-3">
-                              {Object.entries(telescopeCounts)
-                                .sort(([, a], [, b]) => b.seconds - a.seconds)
-                                .map(([telescope, data]) => {
-                                  const percentage =
-                                    totalTelescopeLights > 0
-                                      ? ((data.lights / totalTelescopeLights) * 100).toFixed(1)
-                                      : "0";
-                                  return (
-                                    <div
-                                      key={telescope}
-                                      className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
-                                    >
-                                      <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
-                                        {telescope}
-                                      </div>
-                                      <div className="text-xs text-purple-700 dark:text-purple-300">
-                                        {hh(data.seconds)} • {data.lights} lights ({percentage}%)
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </Card>
-                        )}
-                      </div>
+                    {/* Telescope Usage Statistics */}
+                    {visibleHighlights.telescopeUsage && Object.keys(globalMetrics.telescopeCounts).length > 0 && (
+                      <Card className="p-5">
+                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
+                        <div className="flex flex-wrap gap-3">
+                          {Object.entries(globalMetrics.telescopeCounts)
+                            .sort(([, a], [, b]) => b.seconds - a.seconds)
+                            .map(([telescope, data]) => {
+                              const percentage =
+                                globalMetrics.totalTelescopeLights > 0
+                                  ? ((data.lights / globalMetrics.totalTelescopeLights) * 100).toFixed(1)
+                                  : "0";
+                              return (
+                                <div
+                                  key={telescope}
+                                  className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
+                                >
+                                  <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                                    {telescope}
+                                  </div>
+                                  <div className="text-xs text-purple-700 dark:text-purple-300">
+                                    {hh(data.seconds)} • {data.lights} lights ({percentage}%)
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </Card>
                     )}
-                  </>
-                );
-              })()}
+                  </div>
+                )}
+              </>
 
 
               <div className="flex items-center justify-between mb-4">
