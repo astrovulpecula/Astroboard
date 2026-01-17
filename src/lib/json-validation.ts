@@ -92,6 +92,12 @@ const telescopeSchema = z.object({
   focalLength: z.union([safeString(20), z.number()]).optional(),
 }).passthrough();
 
+// Guide telescope schema (same structure as regular telescope)
+const guideTelescopeSchema = z.object({
+  name: safeString(),
+  focalLength: z.union([safeString(20), z.number()]).optional(),
+}).passthrough();
+
 // Settings schema
 const settingsSchema = z.object({
   userName: optionalSafeString(100),
@@ -99,12 +105,13 @@ const settingsSchema = z.object({
   telescopes: z.array(telescopeSchema).max(20).optional(),
   locations: z.array(locationSchema).max(20).optional(),
   mainLocation: locationSchema.optional(),
-  guideTelescope: optionalSafeString(),
+  guideTelescope: guideTelescopeSchema.optional(),
   guideCamera: optionalSafeString(),
   mount: optionalSafeString(),
   dateFormat: optionalSafeString(20),
   defaultTheme: optionalSafeString(20),
   jsonPath: optionalSafeString(500),
+  visibleHighlights: z.array(safeString(50)).max(20).optional(),
 }).passthrough();
 
 // Full export format schema
