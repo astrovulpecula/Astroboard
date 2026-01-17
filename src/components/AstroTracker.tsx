@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { validateJsonUpload } from "@/lib/json-validation";
 import {
   Plus,
   FolderOpen,
@@ -3897,27 +3898,21 @@ export default function AstroTracker() {
                     try {
                       json = JSON.parse(text);
                     } catch {
-                      alert("JSON no válido");
+                      alert("JSON no válido: el archivo no contiene JSON válido");
                       e.target.value = "";
                       return;
                     }
 
-                    // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
-                    let objectsData;
-                    let settingsData = null;
-
-                    if (json.objects && Array.isArray(json.objects)) {
-                      // Formato nuevo: { objects: [...], settings: {...} }
-                      objectsData = json.objects;
-                      settingsData = json.settings;
-                    } else if (Array.isArray(json)) {
-                      // Formato antiguo: solo array de objetos
-                      objectsData = json;
-                    } else {
-                      alert("Formato no válido");
+                    // Validar y sanitizar datos con Zod
+                    const validationResult = validateJsonUpload(json);
+                    if (!validationResult.success) {
+                      alert(validationResult.error || "Error de validación");
                       e.target.value = "";
                       return;
                     }
+
+                    const objectsData = validationResult.data!.objects;
+                    const settingsData = validationResult.data!.settings;
 
                     // Procesar objetos
                     const processedObjects = objectsData.map((obj: any) => {
@@ -6710,25 +6705,21 @@ export default function AstroTracker() {
                       try {
                         json = JSON.parse(text);
                       } catch {
-                        alert("JSON no válido");
+                        alert("JSON no válido: el archivo no contiene JSON válido");
                         e.target.value = "";
                         return;
                       }
                       
-                      // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
-                      let objectsData;
-                      let settingsData = null;
-                      
-                      if (json.objects && Array.isArray(json.objects)) {
-                        objectsData = json.objects;
-                        settingsData = json.settings;
-                      } else if (Array.isArray(json)) {
-                        objectsData = json;
-                      } else {
-                        alert("Formato no válido");
+                      // Validar y sanitizar datos con Zod
+                      const validationResult = validateJsonUpload(json);
+                      if (!validationResult.success) {
+                        alert(validationResult.error || "Error de validación");
                         e.target.value = "";
                         return;
                       }
+
+                      const objectsData = validationResult.data!.objects;
+                      const settingsData = validationResult.data!.settings;
                       
                       setObjects(objectsData);
                       try {
@@ -7669,25 +7660,21 @@ export default function AstroTracker() {
                   try {
                     json = JSON.parse(text);
                   } catch {
-                    alert("JSON no válido");
+                    alert("JSON no válido: el archivo no contiene JSON válido");
                     e.target.value = "";
                     return;
                   }
                   
-                  // Detectar formato: nuevo (con objects y settings) o antiguo (solo array)
-                  let objectsData;
-                  let settingsData = null;
-                  
-                  if (json.objects && Array.isArray(json.objects)) {
-                    objectsData = json.objects;
-                    settingsData = json.settings;
-                  } else if (Array.isArray(json)) {
-                    objectsData = json;
-                  } else {
-                    alert("Formato no válido");
+                  // Validar y sanitizar datos con Zod
+                  const validationResult = validateJsonUpload(json);
+                  if (!validationResult.success) {
+                    alert(validationResult.error || "Error de validación");
                     e.target.value = "";
                     return;
                   }
+
+                  const objectsData = validationResult.data!.objects;
+                  const settingsData = validationResult.data!.settings;
                   
                   setObjects(objectsData);
                   try {
