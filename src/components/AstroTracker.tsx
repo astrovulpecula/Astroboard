@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateJsonUpload } from "@/lib/json-validation";
+import { safeLocalStorageSave, checkStorageQuota, formatBytes } from "@/lib/storage-utils";
 import {
   Plus,
   FolderOpen,
@@ -2771,15 +2772,33 @@ export default function AstroTracker() {
 
   // Auto-save objects to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem("astroTrackerData", JSON.stringify(objects));
-    } catch (err) {
-      console.warn("No se pudo guardar en localStorage:", err);
-    }
-  }, [objects]);
+    const saveData = async () => {
+      const saved = await safeLocalStorageSave(
+        "astroTrackerData",
+        JSON.stringify(objects),
+        (warningMessage) => {
+          toast({
+            title: "Aviso de almacenamiento",
+            description: warningMessage,
+            variant: "destructive",
+          });
+        }
+      );
+      
+      if (!saved) {
+        toast({
+          title: "Error de almacenamiento",
+          description: "No se pudieron guardar los datos. Exporta tu proyecto para evitar pérdida de datos.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    saveData();
+  }, [objects, toast]);
 
   // Save settings to localStorage
-  const saveSettings = useCallback(() => {
+  const saveSettings = useCallback(async () => {
     const settings = {
       defaultTheme,
       jsonPath,
@@ -2793,9 +2812,29 @@ export default function AstroTracker() {
       userName,
       dateFormat,
     };
-    localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
-    setShowSettings(false);
-  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat]);
+    
+    const saved = await safeLocalStorageSave(
+      "astroTrackerSettings",
+      JSON.stringify(settings),
+      (warningMessage) => {
+        toast({
+          title: "Aviso de almacenamiento",
+          description: warningMessage,
+          variant: "destructive",
+        });
+      }
+    );
+    
+    if (saved) {
+      setShowSettings(false);
+    } else {
+      toast({
+        title: "Error de almacenamiento",
+        description: "No se pudieron guardar los ajustes.",
+        variant: "destructive",
+      });
+    }
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, toast]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
