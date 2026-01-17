@@ -14,69 +14,77 @@ const safeString = (maxLength = MAX_STRING_LENGTH) =>
 const optionalSafeString = (maxLength = MAX_STRING_LENGTH) =>
   z.string().max(maxLength).optional().transform((val) => val?.slice(0, maxLength));
 
-// Session schema
+// Flexible number that accepts string or number and coerces to number
+const flexibleNumber = () =>
+  z.union([z.number(), z.string().transform((val) => {
+    const num = parseFloat(val);
+    return isNaN(num) ? undefined : num;
+  })]).optional();
+
+// Session schema - more flexible to accept legacy formats
 const sessionSchema = z.object({
-  id: safeString(),
-  date: safeString(),
-  duration: z.number().min(0).max(100000).optional(),
-  integrationTime: z.number().min(0).max(100000).optional(),
-  subs: z.number().int().min(0).max(100000).optional(),
+  id: z.string().optional().default(""),
+  date: z.string().optional().default(""),
+  duration: flexibleNumber(),
+  integrationTime: flexibleNumber(),
+  subs: flexibleNumber(),
   filter: optionalSafeString(),
   notes: optionalSafeString(MAX_LONG_STRING_LENGTH),
   camera: optionalSafeString(),
   telescope: optionalSafeString(),
   location: optionalSafeString(),
-  seeing: z.number().min(0).max(10).optional(),
-  transparency: z.number().min(0).max(10).optional(),
-  bortle: z.number().int().min(1).max(9).optional(),
-  moonPhase: z.number().min(0).max(100).optional(),
-  temperature: z.number().min(-100).max(100).optional(),
-  humidity: z.number().min(0).max(100).optional(),
-  gain: z.number().min(0).max(10000).optional(),
-  offset: z.number().min(0).max(10000).optional(),
+  seeing: flexibleNumber(),
+  transparency: flexibleNumber(),
+  bortle: flexibleNumber(),
+  moonPhase: flexibleNumber(),
+  temperature: flexibleNumber(),
+  humidity: flexibleNumber(),
+  gain: flexibleNumber(),
+  offset: flexibleNumber(),
   binning: optionalSafeString(10),
-  quality: z.number().min(0).max(5).optional(),
+  quality: flexibleNumber(),
 }).passthrough(); // Allow additional fields for forward compatibility
 
 // Panel schema (legacy format support)
 const panelSchema = z.object({
-  id: safeString(),
+  id: z.string().optional().default(""),
   name: optionalSafeString(),
   sessions: z.array(sessionSchema).max(MAX_SESSIONS_PER_PROJECT).optional(),
 }).passthrough();
 
-// Project schema
+// Project schema - name is optional, fallback to id
 const projectSchema = z.object({
-  id: safeString(),
-  name: safeString(),
+  id: z.string().optional().default(""),
+  name: z.string().optional().default(""),
   dateStart: optionalSafeString(),
   dateEnd: optionalSafeString(),
   status: optionalSafeString(50),
   notes: optionalSafeString(MAX_LONG_STRING_LENGTH),
-  filters: z.array(safeString()).max(50).optional(),
+  filters: z.array(z.string()).max(50).optional(),
   sessions: z.array(sessionSchema).max(MAX_SESSIONS_PER_PROJECT).optional(),
   panels: z.array(panelSchema).max(20).optional(),
-  targetIntegrationTime: z.number().min(0).max(1000000).optional(),
-  rating: z.number().min(0).max(5).optional(),
+  targetIntegrationTime: flexibleNumber(),
+  rating: flexibleNumber(),
 }).passthrough();
 
-// Celestial object schema
+// Celestial object schema - more flexible for legacy formats
 const celestialObjectSchema = z.object({
-  id: safeString(),
-  name: safeString(),
+  id: z.string().optional().default(""),
+  name: z.string().optional(), // Optional - old files may not have it
+  commonName: z.string().optional(),
   catalog: optionalSafeString(50),
   type: optionalSafeString(100),
   constellation: optionalSafeString(100),
   ra: optionalSafeString(50),
   dec: optionalSafeString(50),
-  magnitude: z.number().min(-30).max(30).optional(),
+  magnitude: flexibleNumber(),
   size: optionalSafeString(50),
   notes: optionalSafeString(MAX_LONG_STRING_LENGTH),
-  priority: z.number().int().min(1).max(5).optional(),
-  difficulty: z.number().int().min(1).max(5).optional(),
+  priority: flexibleNumber(),
+  difficulty: flexibleNumber(),
   bestSeason: optionalSafeString(50),
-  image: optionalSafeString(100000), // Base64 images can be large
-  thumbnail: optionalSafeString(100000),
+  image: z.string().optional(), // No limit - base64 images can be very large
+  thumbnail: z.string().optional(), // No limit
   projects: z.array(projectSchema).max(MAX_PROJECTS_PER_OBJECT).optional(),
 }).passthrough();
 
