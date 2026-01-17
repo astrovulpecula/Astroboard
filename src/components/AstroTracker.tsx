@@ -2773,9 +2773,23 @@ export default function AstroTracker() {
   // Auto-save objects to localStorage whenever they change
   useEffect(() => {
     const saveData = async () => {
+      const dataString = JSON.stringify(objects);
+      const dataSizeKB = (dataString.length * 2) / 1024;
+      
+      // Check if data is too large (localStorage limit ~5MB = 5120KB, warn at 4MB)
+      if (dataSizeKB > 4096) {
+        console.warn(`Datos muy grandes para localStorage: ${(dataSizeKB / 1024).toFixed(2)}MB`);
+        toast({
+          title: "Datos demasiado grandes",
+          description: `Los datos ocupan ${(dataSizeKB / 1024).toFixed(2)}MB. El límite del navegador es ~5MB. Considera eliminar algunas imágenes. Los datos están en memoria pero no se guardarán automáticamente.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       const saved = await safeLocalStorageSave(
         "astroTrackerData",
-        JSON.stringify(objects),
+        dataString,
         (warningMessage) => {
           toast({
             title: "Aviso de almacenamiento",
@@ -2788,7 +2802,7 @@ export default function AstroTracker() {
       if (!saved) {
         toast({
           title: "Error de almacenamiento",
-          description: "No se pudieron guardar los datos. Exporta tu proyecto para evitar pérdida de datos.",
+          description: "No se pudieron guardar los datos. Exporta tu proyecto para evitar pérdida de datos. Los datos están en memoria pero no se guardarán automáticamente.",
           variant: "destructive",
         });
       }
