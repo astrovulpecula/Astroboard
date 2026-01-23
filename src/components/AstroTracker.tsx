@@ -901,6 +901,7 @@ function FProject({
   guideTelescope,
   guideCamera,
   mount,
+  initialData,
 }: {
   onSubmit: (proj: any) => void;
   cameras?: string[];
@@ -910,16 +911,25 @@ function FProject({
   guideTelescope?: { name: string; focalLength: string };
   guideCamera?: string;
   mount?: string;
+  initialData?: {
+    name?: string;
+    description?: string;
+    projectType?: string;
+    numPanels?: number;
+    goalHours?: number;
+    location?: string;
+    encuadreImage?: string;
+  };
 }) {
   // Determinar localización inicial
-  const initialLocation = mainLocation?.name || locations[0]?.name || "";
+  const initialLocation = initialData?.location || mainLocation?.name || locations[0]?.name || "";
   const initialCoords = mainLocation?.coords || locations[0]?.coords || "";
   
-  const [name, setName] = useState("Proyecto Trevinca");
-  const [description, setDescription] = useState("Campaña principal");
+  const [name, setName] = useState(initialData?.name || "Proyecto Trevinca");
+  const [description, setDescription] = useState(initialData?.description || "Campaña principal");
   const [location, setLocation] = useState(initialLocation);
   const [googleCoords, setGoogleCoords] = useState(initialCoords);
-  const [projectType, setProjectType] = useState("ONP");
+  const [projectType, setProjectType] = useState(initialData?.projectType || "ONP");
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
@@ -932,12 +942,13 @@ function FProject({
   const [showCustomCamera, setShowCustomCamera] = useState(false);
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
   const [showCustomLocation, setShowCustomLocation] = useState(false);
-  const [numPanels, setNumPanels] = useState(1);
-  const [goalHours, setGoalHours] = useState<number | "">("");
+  const [numPanels, setNumPanels] = useState(initialData?.numPanels || 1);
+  const [goalHours, setGoalHours] = useState<number | "">(initialData?.goalHours || "");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedGuideCamera, setSelectedGuideCamera] = useState(guideCamera || "");
   const [selectedGuideTelescope, setSelectedGuideTelescope] = useState(guideTelescope?.name || "");
   const [selectedMount, setSelectedMount] = useState(mount || "");
+  const [encuadreImage] = useState(initialData?.encuadreImage || null);
 
   const handleAddFilter = () => {
     if (newFilter.trim() && !filters.includes(newFilter.trim())) {
@@ -972,6 +983,7 @@ function FProject({
       numPanels,
       goalHours: goalHours === "" ? undefined : goalHours,
       startDate: new Date(startDate).toISOString(),
+      encuadreImage,
     });
   };
 
@@ -1269,6 +1281,350 @@ function FProject({
       <div className="flex items-center justify-end gap-2 mt-2">
         <Btn type="submit">
           <Plus className="w-3 h-3 md:w-4 md:h-4" /> Crear proyecto
+        </Btn>
+      </div>
+    </form>
+  );
+}
+
+function FPlanned({
+  onSubmit,
+  locations = [],
+  mainLocation,
+}: {
+  onSubmit: (planned: any) => void;
+  locations?: { name: string; coords: string }[];
+  mainLocation?: { name: string; coords: string };
+}) {
+  const [objectId, setObjectId] = useState("");
+  const [objectName, setObjectName] = useState("");
+  const [constellation, setConstellation] = useState("");
+  const [objectType, setObjectType] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [projectType, setProjectType] = useState("ONP");
+  const [numPanels, setNumPanels] = useState(1);
+  const [goalHours, setGoalHours] = useState<number | "">("");
+  const [notes, setNotes] = useState("");
+  const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState(mainLocation?.name || "");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    loadCelestialObjects().catch(err => {
+      console.error('Error precargando objetos celestes:', err);
+    });
+  }, []);
+
+  const handleIdChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setObjectId(value);
+    
+    if (value.trim().length > 0) {
+      try {
+        const results = await searchCelestialObjects(value.trim());
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error('Error searching celestial objects:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (obj: any) => {
+    setObjectId(obj.code || "");
+    setObjectName(obj.nameEsp || "");
+    setConstellation(obj.constellation || "");
+    setObjectType(obj.objectType || "");
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setSelectedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleEncuadreUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if (w > h) {
+          if (w > maxDim) { h *= maxDim / w; w = maxDim; }
+        } else {
+          if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx?.drawImage(img, 0, 0, w, h);
+        resolve();
+      };
+    });
+    setEncuadreImage(canvas.toDataURL("image/jpeg", 0.8));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!objectId.trim()) {
+      alert("Debes proporcionar un código de objeto.");
+      return;
+    }
+    
+    onSubmit({
+      id: uid("plan"),
+      objectId: objectId.trim(),
+      objectName,
+      constellation,
+      objectType,
+      name: name.trim() || `Planificación ${objectId}`,
+      description,
+      projectType,
+      numPanels,
+      goalHours: goalHours === "" ? undefined : goalHours,
+      notes,
+      encuadreImage,
+      location: selectedLocation,
+      createdAt: new Date().toISOString(),
+    });
+  };
+
+  return (
+    <form className="grid gap-4" onSubmit={handleSubmit}>
+      <label className="grid gap-1 relative">
+        <Label>Código del objeto</Label>
+        <input 
+          ref={inputRef}
+          value={objectId} 
+          onChange={handleIdChange}
+          onKeyDown={handleKeyDown}
+          className={INPUT_CLS} 
+          placeholder="M31, NGC1234, etc." 
+          autoComplete="off"
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+            {suggestions.map((obj, idx) => (
+              <button
+                key={obj.code}
+                type="button"
+                onClick={() => handleSelectSuggestion(obj)}
+                className={`w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${
+                  idx === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
+                }`}
+              >
+                <div className="font-semibold text-sm">{obj.code}</div>
+                {obj.nameEsp && <div className="text-xs text-slate-600 dark:text-slate-400">{obj.nameEsp}</div>}
+                {obj.constellation && <div className="text-xs text-slate-500 dark:text-slate-500">{obj.constellation} · {obj.objectType}</div>}
+              </button>
+            ))}
+          </div>
+        )}
+      </label>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Nombre común</Label>
+          <input
+            value={objectName}
+            onChange={(e) => setObjectName(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Galaxia de Andrómeda"
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Constelación</Label>
+          <input
+            value={constellation}
+            onChange={(e) => setConstellation(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Andrómeda"
+          />
+        </label>
+      </div>
+
+      <label className="grid gap-1">
+        <Label>Tipo de objeto</Label>
+        <input
+          value={objectType}
+          onChange={(e) => setObjectType(e.target.value)}
+          className={INPUT_CLS}
+          placeholder="Galaxia espiral, Nebulosa, etc."
+        />
+      </label>
+
+      <label className="grid gap-1">
+        <Label>Nombre del proyecto</Label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className={INPUT_CLS}
+          placeholder="Mi proyecto de M31"
+        />
+      </label>
+
+      <label className="grid gap-1">
+        <Label>Descripción</Label>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className={INPUT_CLS}
+          rows={2}
+          placeholder="Notas sobre el proyecto..."
+        />
+      </label>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Tipo de proyecto</Label>
+          <select
+            value={projectType}
+            onChange={(e) => setProjectType(e.target.value)}
+            className={INPUT_CLS}
+          >
+            <option value="ONP">ONP (One-Night Project)</option>
+            <option value="SNP">SNP (Several-Nights Project)</option>
+          </select>
+        </label>
+        <label className="grid gap-1">
+          <Label>Número de paneles</Label>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={numPanels}
+            onChange={(e) => setNumPanels(parseInt(e.target.value) || 1)}
+            className={INPUT_CLS}
+          />
+        </label>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Objetivo horas</Label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={goalHours}
+            onChange={(e) => setGoalHours(e.target.value === "" ? "" : parseFloat(e.target.value))}
+            className={INPUT_CLS}
+            placeholder="10"
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Localización</Label>
+          <select
+            value={selectedLocation}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            className={INPUT_CLS}
+          >
+            <option value="">Seleccionar...</option>
+            {mainLocation?.name && (
+              <option value={mainLocation.name}>{mainLocation.name} (Principal)</option>
+            )}
+            {locations
+              .filter((l) => l.name.trim() && l.name !== mainLocation?.name)
+              .map((loc) => (
+                <option key={loc.name} value={loc.name}>{loc.name}</option>
+              ))}
+          </select>
+        </label>
+      </div>
+
+      <label className="grid gap-1">
+        <Label>Notas adicionales</Label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className={INPUT_CLS}
+          rows={2}
+          placeholder="Consideraciones, mejores fechas, etc..."
+        />
+      </label>
+
+      <div className="grid gap-1">
+        <Label>Imagen de encuadre (opcional)</Label>
+        {encuadreImage ? (
+          <div className="relative">
+            <img
+              src={encuadreImage}
+              alt="Encuadre"
+              className="w-full max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-700"
+            />
+            <button
+              type="button"
+              onClick={() => setEncuadreImage(null)}
+              className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="border-2 border-dashed rounded-xl p-6 text-center border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600">
+            <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+              Arrastra una imagen o haz clic para seleccionar
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEncuadreUpload}
+              className="hidden"
+              id="encuadre-upload"
+            />
+            <label
+              htmlFor="encuadre-upload"
+              className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Seleccionar archivo
+            </label>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mt-2">
+        <Btn type="submit">
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Crear planificación
         </Btn>
       </div>
     </form>
@@ -2723,8 +3079,16 @@ export default function AstroTracker() {
   const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
-  const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria">("objetos");
+  const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
+  
+  // Estado para proyectos planificados
+  const [plannedProjects, setPlannedProjects] = useState<any[]>([]);
+  const [selectedPlannedId, setSelectedPlannedId] = useState<string | null>(null);
+  const [mPlanned, setMPlanned] = useState(false);
+  const [plannedSearchText, setPlannedSearchText] = useState("");
+  const [showPlannedFilters, setShowPlannedFilters] = useState(false);
+  const [plannedFromPlan, setPlannedFromPlan] = useState<any>(null);
   const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
   const [weatherData, setWeatherData] = useState<any>(null);
   const [visibleHighlights, setVisibleHighlights] = useState({
@@ -2824,6 +3188,21 @@ export default function AstroTracker() {
       } catch (e) {
         console.error("Error loading data:", e);
         setShowInitialFilePrompt(true);
+      }
+    } else {
+      setShowInitialFilePrompt(true);
+    }
+
+    // Load planned projects from localStorage
+    const savedPlanned = localStorage.getItem("astroTrackerPlannedProjects");
+    if (savedPlanned) {
+      try {
+        const planned = JSON.parse(savedPlanned);
+        if (Array.isArray(planned)) {
+          setPlannedProjects(planned);
+        }
+      } catch (e) {
+        console.error("Error loading planned projects:", e);
       }
     } else {
       setShowInitialFilePrompt(true);
@@ -2940,6 +3319,11 @@ export default function AstroTracker() {
     
     saveData();
   }, [objects, toast]);
+
+  // Auto-save planned projects to localStorage
+  useEffect(() => {
+    localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(plannedProjects));
+  }, [plannedProjects]);
 
   // Save settings to localStorage
   const saveSettings = useCallback(async () => {
@@ -3123,6 +3507,13 @@ export default function AstroTracker() {
       for (let i = 1; i <= (base.numPanels || 1); i++) {
         panels[i] = [];
       }
+      
+      // Si viene con imagen de encuadre desde planificación, añadirla a las imágenes
+      const images: any = {};
+      if (base.encuadreImage && base.numPanels > 1) {
+        images.panelSchema = base.encuadreImage;
+      }
+      
       const np = {
         id: uid("proj"),
         ...base,
@@ -3132,7 +3523,7 @@ export default function AstroTracker() {
         completedDate: undefined,
         sessions: [],
         panels,
-        images: {},
+        images,
         ratings: {},
       };
       setObjects(objects.map((o) => (o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o)));
@@ -4332,7 +4723,7 @@ export default function AstroTracker() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
                 <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
@@ -4346,6 +4737,22 @@ export default function AstroTracker() {
                   </div>
                   <span className="font-semibold">
                     Pronóstico
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setMainSection("planificacion")}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                    mainSection === "planificacion"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${mainSection === "planificacion" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                    <Calendar className={`w-5 h-5 ${mainSection === "planificacion" ? "text-primary-foreground" : "text-primary"}`} />
+                  </div>
+                  <span className="font-semibold">
+                    Planificación
                   </span>
                 </button>
 
@@ -4459,6 +4866,260 @@ export default function AstroTracker() {
                           />
                         ))}
                       </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* SECTION: Planificación */}
+              {mainSection === "planificacion" && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <Calendar className="w-6 h-6" /> Proyectos Planificados
+                    </h2>
+                    <Btn onClick={() => setMPlanned(true)}>
+                      <Plus className="w-4 h-4" /> Nueva planificación
+                    </Btn>
+                  </div>
+                  
+                  <p className="text-muted-foreground">
+                    Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
+                  </p>
+
+                  {/* Search */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={plannedSearchText}
+                        onChange={(e) => setPlannedSearchText(e.target.value)}
+                        placeholder="Buscar por objeto, nombre o descripción..."
+                        className={`${INPUT_CLS} w-full pl-10`}
+                      />
+                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      {plannedSearchText && (
+                        <button
+                          onClick={() => setPlannedSearchText("")}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Planned Projects Grid */}
+                  {(() => {
+                    const filteredPlanned = plannedProjects.filter((p) => {
+                      if (!plannedSearchText.trim()) return true;
+                      const search = plannedSearchText.toLowerCase();
+                      return (
+                        p.objectId?.toLowerCase().includes(search) ||
+                        p.objectName?.toLowerCase().includes(search) ||
+                        p.name?.toLowerCase().includes(search) ||
+                        p.description?.toLowerCase().includes(search)
+                      );
+                    });
+
+                    if (filteredPlanned.length === 0) {
+                      return (
+                        <Card className="p-8 text-center">
+                          <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                          <p className="text-muted-foreground mb-4">
+                            {plannedProjects.length === 0 
+                              ? "No tienes proyectos planificados todavía"
+                              : "No se encontraron proyectos que coincidan con la búsqueda"
+                            }
+                          </p>
+                          {plannedProjects.length === 0 && (
+                            <Btn onClick={() => setMPlanned(true)}>
+                              <Plus className="w-4 h-4" /> Crear primera planificación
+                            </Btn>
+                          )}
+                        </Card>
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                        {filteredPlanned.map((planned) => (
+                          <Card
+                            key={planned.id}
+                            className="p-4"
+                            onClick={() => setSelectedPlannedId(planned.id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              {/* Thumbnail */}
+                              {planned.encuadreImage ? (
+                                <img
+                                  src={planned.encuadreImage}
+                                  alt={planned.objectId}
+                                  className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                />
+                              ) : (
+                                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
+                                  <Telescope className="w-6 h-6 text-slate-400" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-lg font-bold truncate">{planned.objectId}</p>
+                                {planned.objectName && (
+                                  <p className="text-sm text-muted-foreground truncate">{planned.objectName}</p>
+                                )}
+                                <p className="text-sm font-medium mt-1 truncate">{planned.name}</p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {planned.constellation && <Badge>{planned.constellation}</Badge>}
+                                  {planned.projectType && <Badge>{planned.projectType}</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
+                                </p>
+                              </div>
+                              <IconBtn
+                                title="Eliminar"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm("¿Eliminar este proyecto planificado?")) {
+                                    setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </IconBtn>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Planned Project Detail View */}
+                  {selectedPlannedId && (() => {
+                    const planned = plannedProjects.find((p) => p.id === selectedPlannedId);
+                    if (!planned) return null;
+
+                    return (
+                      <Modal
+                        open={true}
+                        onClose={() => setSelectedPlannedId(null)}
+                        title={`${planned.objectId} - ${planned.name}`}
+                        wide
+                      >
+                        <div className="space-y-4">
+                          {/* Encuadre Image */}
+                          {planned.encuadreImage && (
+                            <div>
+                              <Label>Encuadre</Label>
+                              <img
+                                src={planned.encuadreImage}
+                                alt="Encuadre"
+                                className="w-full max-h-64 object-contain rounded-xl border border-slate-200 dark:border-slate-700 mt-2 cursor-pointer"
+                                onClick={() => {
+                                  setImageModalSrc(planned.encuadreImage);
+                                  setImageModalOpen(true);
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Info Grid */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label>Objeto</Label>
+                              <p className="font-medium">{planned.objectId}</p>
+                              {planned.objectName && <p className="text-sm text-muted-foreground">{planned.objectName}</p>}
+                            </div>
+                            <div>
+                              <Label>Constelación</Label>
+                              <p className="font-medium">{planned.constellation || "—"}</p>
+                            </div>
+                            <div>
+                              <Label>Tipo de objeto</Label>
+                              <p className="font-medium">{planned.objectType || "—"}</p>
+                            </div>
+                            <div>
+                              <Label>Tipo de proyecto</Label>
+                              <p className="font-medium">{planned.projectType || "—"}</p>
+                            </div>
+                            {planned.numPanels > 1 && (
+                              <div>
+                                <Label>Paneles</Label>
+                                <p className="font-medium">{planned.numPanels}</p>
+                              </div>
+                            )}
+                            {planned.goalHours && (
+                              <div>
+                                <Label>Objetivo horas</Label>
+                                <p className="font-medium">{planned.goalHours}h</p>
+                              </div>
+                            )}
+                            {planned.location && (
+                              <div>
+                                <Label>Localización</Label>
+                                <p className="font-medium">{planned.location}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {planned.description && (
+                            <div>
+                              <Label>Descripción</Label>
+                              <p className="text-sm mt-1">{planned.description}</p>
+                            </div>
+                          )}
+
+                          {planned.notes && (
+                            <div>
+                              <Label>Notas</Label>
+                              <p className="text-sm mt-1">{planned.notes}</p>
+                            </div>
+                          )}
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-2 pt-4 border-t">
+                            <Btn
+                              outline
+                              onClick={() => setSelectedPlannedId(null)}
+                            >
+                              Cerrar
+                            </Btn>
+                            <Btn
+                              onClick={() => {
+                                // Check if object exists
+                                const existingObj = objects.find(
+                                  (o) => o.id.toLowerCase() === planned.objectId.toLowerCase()
+                                );
+
+                                if (existingObj) {
+                                  // Object exists, set up to create project for it
+                                  setSelectedObjectId(existingObj.id);
+                                  setPlannedFromPlan(planned);
+                                  setMProj(true);
+                                } else {
+                                  // Need to create object first
+                                  const newObj = {
+                                    id: planned.objectId,
+                                    commonName: planned.objectName || "",
+                                    constellation: planned.constellation || "",
+                                    type: planned.objectType || "",
+                                    createdAt: new Date().toISOString(),
+                                    projects: [],
+                                    image: undefined,
+                                  };
+                                  setObjects([...objects, newObj]);
+                                  setSelectedObjectId(newObj.id);
+                                  setPlannedFromPlan(planned);
+                                  setMProj(true);
+                                }
+                                setSelectedPlannedId(null);
+                              }}
+                            >
+                              <Plus className="w-4 h-4" /> Crear proyecto
+                            </Btn>
+                          </div>
+                        </div>
+                      </Modal>
                     );
                   })()}
                 </div>
@@ -7118,9 +7779,16 @@ export default function AstroTracker() {
         <Modal open={mObj} onClose={() => setMObj(false)} title="Nuevo objeto">
           <FObject onSubmit={addObj} />
         </Modal>
-        <Modal open={mProj} onClose={() => setMProj(false)} title="Nuevo proyecto">
+        <Modal open={mProj} onClose={() => { setMProj(false); setPlannedFromPlan(null); }} title="Nuevo proyecto">
           <FProject 
-            onSubmit={addProj} 
+            onSubmit={(projData) => {
+              addProj(projData);
+              // If created from a planned project, remove it and add encuadre image
+              if (plannedFromPlan) {
+                setPlannedProjects(plannedProjects.filter((p) => p.id !== plannedFromPlan.id));
+                setPlannedFromPlan(null);
+              }
+            }} 
             cameras={cameras} 
             telescopes={telescopes} 
             locations={locations} 
@@ -7128,6 +7796,29 @@ export default function AstroTracker() {
             guideTelescope={guideTelescope}
             guideCamera={guideCamera}
             mount={mount}
+            initialData={plannedFromPlan ? {
+              name: plannedFromPlan.name,
+              description: plannedFromPlan.description,
+              projectType: plannedFromPlan.projectType,
+              numPanels: plannedFromPlan.numPanels,
+              goalHours: plannedFromPlan.goalHours,
+              location: plannedFromPlan.location,
+              encuadreImage: plannedFromPlan.encuadreImage,
+            } : undefined}
+          />
+        </Modal>
+        <Modal 
+          open={mPlanned} 
+          onClose={() => setMPlanned(false)} 
+          title="Nueva planificación"
+        >
+          <FPlanned 
+            onSubmit={(planned) => {
+              setPlannedProjects([...plannedProjects, planned]);
+              setMPlanned(false);
+            }}
+            locations={locations}
+            mainLocation={mainLocation}
           />
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
