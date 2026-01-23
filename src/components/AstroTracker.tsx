@@ -4860,8 +4860,8 @@ export default function AstroTracker() {
                           const existingObjImage = existingObj?.image || 
                             (existingObj?.projects[existingObj.projects.length - 1] as any)?.finalImage;
                           
-                          // Priority: existing object image > encuadre image > placeholder
-                          const thumbnailImage = existingObjImage || planned.encuadreImage;
+                          // Only show existing object image (encuadre is shown in detail view)
+                          const thumbnailImage = existingObjImage || null;
                           
                           return (
                             <Card
