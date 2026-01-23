@@ -185,8 +185,8 @@ const sample = [
   },
 ];
 
-const Badge = ({ children }: { children: React.ReactNode }) => (
-  <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200 border-slate-300/60 dark:border-slate-700/60">
+const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200 border-slate-300/60 dark:border-slate-700/60 ${className}`}>
     {children}
   </span>
 );
@@ -1332,6 +1332,8 @@ function FPlanned({
   const [ocaso, setOcaso] = useState("");
   const [isCircumpolar, setIsCircumpolar] = useState(false);
   const [signal, setSignal] = useState("");
+  const [teselas, setTeselas] = useState("");
+  const [cenit, setCenit] = useState("");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -1339,6 +1341,8 @@ function FPlanned({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
+  const TESELAS_OPTIONS = ["Sí", "No"];
+  const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1461,6 +1465,8 @@ function FPlanned({
       isCircumpolar,
       visibleMonths: isCircumpolar ? 12 : visibleMonths,
       signal,
+      teselas,
+      cenit,
       encuadreImage,
       createdAt: new Date().toISOString(),
     });
@@ -1541,6 +1547,36 @@ function FPlanned({
           {SIGNAL_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Teselas</Label>
+        <select
+          value={teselas}
+          onChange={(e) => setTeselas(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {TESELAS_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Cenit</Label>
+        <select
+          value={cenit}
+          onChange={(e) => setCenit(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {MONTH_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m}
             </option>
           ))}
         </select>
@@ -1678,6 +1714,8 @@ function FPlannedEdit({
   const [ocaso, setOcaso] = useState(initial.ocaso || "");
   const [isCircumpolar, setIsCircumpolar] = useState(initial.isCircumpolar || false);
   const [signal, setSignal] = useState(initial.signal || "");
+  const [teselas, setTeselas] = useState(initial.teselas || "");
+  const [cenit, setCenit] = useState(initial.cenit || "");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(initial.encuadreImage || null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -1685,6 +1723,8 @@ function FPlannedEdit({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
+  const TESELAS_OPTIONS = ["Sí", "No"];
+  const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1801,6 +1841,8 @@ function FPlannedEdit({
       isCircumpolar,
       visibleMonths: isCircumpolar ? 12 : visibleMonths,
       signal,
+      teselas,
+      cenit,
       encuadreImage,
     });
   };
@@ -1880,6 +1922,36 @@ function FPlannedEdit({
           {SIGNAL_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Teselas</Label>
+        <select
+          value={teselas}
+          onChange={(e) => setTeselas(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {TESELAS_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Cenit</Label>
+        <select
+          value={cenit}
+          onChange={(e) => setCenit(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {MONTH_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m}
             </option>
           ))}
         </select>
@@ -5463,6 +5535,9 @@ export default function AstroTracker() {
                                   <div className="flex flex-wrap gap-2 mt-2">
                                     {planned.constellation && <Badge>{planned.constellation}</Badge>}
                                     {planned.projectType && <Badge>{planned.projectType}</Badge>}
+                                    {planned.signal && <Badge className="bg-secondary text-secondary-foreground">{planned.signal}</Badge>}
+                                    {planned.teselas && <Badge className="border border-border bg-transparent">Teselas: {planned.teselas}</Badge>}
+                                    {planned.cenit && <Badge className="border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-2">
                                     Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
