@@ -1319,10 +1319,12 @@ function FPlanned({
   onSubmit,
   locations = [],
   mainLocation,
+  existingObjects = [],
 }: {
   onSubmit: (planned: any) => void;
   locations?: { name: string; coords: string }[];
   mainLocation?: { name: string; coords: string };
+  existingObjects?: any[];
 }) {
   const [objectId, setObjectId] = useState("");
   const [objectName, setObjectName] = useState("");
@@ -1336,10 +1338,30 @@ function FPlanned({
   const [cenit, setCenit] = useState("");
   const [prioridad, setPrioridad] = useState("");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
+  const [objectImage, setObjectImage] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Check if the object already exists in the Objects section
+  const existingObject = useMemo(() => {
+    if (!objectId.trim()) return null;
+    return existingObjects.find(
+      (o) => o.id.toLowerCase() === objectId.trim().toLowerCase()
+    );
+  }, [objectId, existingObjects]);
+
+  // Get the image from the existing object (if any)
+  const existingObjectImage = useMemo(() => {
+    if (!existingObject) return null;
+    return existingObject.image || 
+      (existingObject.projects?.[existingObject.projects.length - 1] as any)?.finalImage || 
+      null;
+  }, [existingObject]);
+
+  // Determine if the object image uploader should be disabled
+  const isObjectImageDisabled = !!existingObject;
 
   const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
   const TESELAS_OPTIONS = ["Sí", "No"];
@@ -1386,6 +1408,8 @@ function FPlanned({
     setShowSuggestions(false);
     setSuggestions([]);
     setSelectedIndex(-1);
+    // Clear custom object image when selecting a new suggestion
+    setObjectImage(null);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1441,6 +1465,33 @@ function FPlanned({
     setEncuadreImage(canvas.toDataURL("image/jpeg", 0.8));
   };
 
+  const handleObjectImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isObjectImageDisabled) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if (w > h) {
+          if (w > maxDim) { h *= maxDim / w; w = maxDim; }
+        } else {
+          if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx?.drawImage(img, 0, 0, w, h);
+        resolve();
+      };
+    });
+    setObjectImage(canvas.toDataURL("image/jpeg", 0.8));
+  };
+
   const handleCircumpolarToggle = () => {
     setIsCircumpolar(!isCircumpolar);
     if (!isCircumpolar) {
@@ -1455,6 +1506,9 @@ function FPlanned({
       alert("Debes proporcionar un código de objeto.");
       return;
     }
+    
+    // Use existing object image if available, otherwise use custom uploaded image
+    const finalObjectImage = isObjectImageDisabled ? existingObjectImage : objectImage;
     
     onSubmit({
       id: uid("plan"),
@@ -1471,6 +1525,7 @@ function FPlanned({
       cenit,
       prioridad,
       encuadreImage,
+      objectImage: finalObjectImage,
       createdAt: new Date().toISOString(),
     });
   };
@@ -1664,6 +1719,77 @@ function FPlanned({
             </span>
           </div>
         </label>
+      </div>
+
+      {/* Object Image Uploader */}
+      <div className="grid gap-1">
+        <Label>
+          Imagen del objeto
+          {isObjectImageDisabled && (
+            <span className="ml-2 text-xs text-muted-foreground">(Usando imagen del objeto existente)</span>
+          )}
+        </Label>
+        {isObjectImageDisabled ? (
+          // Show existing object image (disabled state)
+          <div className="relative">
+            {existingObjectImage ? (
+              <img
+                src={existingObjectImage}
+                alt="Imagen del objeto existente"
+                className="w-full max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-700 opacity-70"
+              />
+            ) : (
+              <div className="border-2 border-dashed rounded-xl p-6 text-center border-slate-300 dark:border-slate-700 opacity-50 bg-muted/30">
+                <ImageIcon className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm text-muted-foreground">
+                  El objeto existe pero no tiene imagen
+                </p>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-muted/20 rounded-xl flex items-center justify-center">
+              <span className="bg-background/90 px-3 py-1 rounded-lg text-xs font-medium text-muted-foreground">
+                Objeto existente en la sección de Objetos
+              </span>
+            </div>
+          </div>
+        ) : objectImage ? (
+          // Show uploaded custom image
+          <div className="relative">
+            <img
+              src={objectImage}
+              alt="Imagen del objeto"
+              className="w-full max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-700"
+            />
+            <button
+              type="button"
+              onClick={() => setObjectImage(null)}
+              className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          // Upload area for new objects
+          <div className="border-2 border-dashed rounded-xl p-6 text-center border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600">
+            <ImageIcon className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+              Sube una imagen del objeto para mostrar en la planificación
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleObjectImageUpload}
+              className="hidden"
+              id="object-image-upload"
+            />
+            <label
+              htmlFor="object-image-upload"
+              className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Seleccionar archivo
+            </label>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-1">
@@ -5579,8 +5705,8 @@ export default function AstroTracker() {
                           const existingObjImage = existingObj?.image || 
                             (existingObj?.projects[existingObj.projects.length - 1] as any)?.finalImage;
                           
-                          // Only show existing object image (encuadre is shown in detail view)
-                          const thumbnailImage = existingObjImage || null;
+                          // Priority: existing object image > planned.objectImage (custom uploaded)
+                          const thumbnailImage = existingObjImage || planned.objectImage || null;
                           
                           return (
                             <Card
@@ -8459,6 +8585,7 @@ export default function AstroTracker() {
             }}
             locations={locations}
             mainLocation={mainLocation}
+            existingObjects={objects}
           />
         </Modal>
         {/* Modal para editar planificación */}
