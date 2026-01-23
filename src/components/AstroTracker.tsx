@@ -1287,6 +1287,34 @@ function FProject({
   );
 }
 
+const MONTHS = [
+  { value: "1", label: "Enero" },
+  { value: "2", label: "Febrero" },
+  { value: "3", label: "Marzo" },
+  { value: "4", label: "Abril" },
+  { value: "5", label: "Mayo" },
+  { value: "6", label: "Junio" },
+  { value: "7", label: "Julio" },
+  { value: "8", label: "Agosto" },
+  { value: "9", label: "Septiembre" },
+  { value: "10", label: "Octubre" },
+  { value: "11", label: "Noviembre" },
+  { value: "12", label: "Diciembre" },
+];
+
+const calculateVisibleMonths = (orto: string, ocaso: string): number => {
+  if (!orto || !ocaso) return 0;
+  const ortoNum = parseInt(orto);
+  const ocasoNum = parseInt(ocaso);
+  
+  if (ortoNum <= ocasoNum) {
+    return ocasoNum - ortoNum + 1;
+  } else {
+    // Crosses year boundary (e.g., orto=10, ocaso=3 means Oct-Mar)
+    return (12 - ortoNum + 1) + ocasoNum;
+  }
+};
+
 function FPlanned({
   onSubmit,
   locations = [],
@@ -1300,12 +1328,19 @@ function FPlanned({
   const [objectName, setObjectName] = useState("");
   const [constellation, setConstellation] = useState("");
   const [objectType, setObjectType] = useState("");
-  const [name, setName] = useState("");
+  const [orto, setOrto] = useState("");
+  const [ocaso, setOcaso] = useState("");
+  const [isCircumpolar, setIsCircumpolar] = useState(false);
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const visibleMonths = useMemo(() => {
+    if (isCircumpolar) return 12;
+    return calculateVisibleMonths(orto, ocaso);
+  }, [orto, ocaso, isCircumpolar]);
 
   useEffect(() => {
     loadCelestialObjects().catch(err => {
@@ -1397,6 +1432,14 @@ function FPlanned({
     setEncuadreImage(canvas.toDataURL("image/jpeg", 0.8));
   };
 
+  const handleCircumpolarToggle = () => {
+    setIsCircumpolar(!isCircumpolar);
+    if (!isCircumpolar) {
+      setOrto("");
+      setOcaso("");
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!objectId.trim()) {
@@ -1410,7 +1453,10 @@ function FPlanned({
       objectName,
       constellation,
       objectType,
-      name: name.trim() || `Planificación ${objectId}`,
+      orto: isCircumpolar ? null : orto,
+      ocaso: isCircumpolar ? null : ocaso,
+      isCircumpolar,
+      visibleMonths: isCircumpolar ? 12 : visibleMonths,
       encuadreImage,
       createdAt: new Date().toISOString(),
     });
@@ -1480,16 +1526,71 @@ function FPlanned({
         />
       </label>
 
-      <label className="grid gap-1">
-        <Label>Nombre del proyecto</Label>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className={INPUT_CLS}
-          placeholder="Mi proyecto de M31"
-        />
-      </label>
+      {/* Circumpolar toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleCircumpolarToggle}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+            isCircumpolar
+              ? "bg-blue-600 text-white"
+              : "border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          Circumpolar
+        </button>
+        {isCircumpolar && (
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            Visible todo el año
+          </span>
+        )}
+      </div>
 
+      {/* Orto, Ocaso, Visible fields */}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <label className="grid gap-1">
+          <Label>Orto</Label>
+          <select
+            value={orto}
+            onChange={(e) => setOrto(e.target.value)}
+            disabled={isCircumpolar}
+            className={`${INPUT_CLS} ${isCircumpolar ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <option value="">Seleccionar...</option>
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          <Label>Ocaso</Label>
+          <select
+            value={ocaso}
+            onChange={(e) => setOcaso(e.target.value)}
+            disabled={isCircumpolar}
+            className={`${INPUT_CLS} ${isCircumpolar ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <option value="">Seleccionar...</option>
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          <Label>Visible</Label>
+          <div
+            className={`${INPUT_CLS} flex items-center ${isCircumpolar ? "opacity-50 bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <span className="font-medium">
+              {isCircumpolar ? "12 meses" : visibleMonths > 0 ? `${visibleMonths} ${visibleMonths === 1 ? "mes" : "meses"}` : "–"}
+            </span>
+          </div>
+        </label>
+      </div>
 
       <div className="grid gap-1">
         <Label>Imagen de encuadre (opcional)</Label>
