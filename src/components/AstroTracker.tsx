@@ -4716,7 +4716,7 @@ export default function AstroTracker() {
         }
       `}</style>
       <div
-        className={`min-h-screen ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
+        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
       >
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70">
           <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -4948,7 +4948,7 @@ export default function AstroTracker() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-6">
+        <main className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-6">
           {view === "objects" && (
             <div className="grid gap-4" key="view-objects">
               {/* Saludo personalizado con fase lunar */}
@@ -5055,8 +5055,8 @@ export default function AstroTracker() {
                 </div>
               )}
 
-              {/* Navigation Buttons */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+              {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
+              <div className="hidden md:grid md:grid-cols-5 gap-3 mb-6">
                 <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
@@ -9726,6 +9726,70 @@ export default function AstroTracker() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Mobile Bottom Navigation Bar - Only visible on mobile when in objects view */}
+        {view === "objects" && (
+          <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+            <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-lg">
+              <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
+                <button
+                  onClick={() => setMainSection("pronostico")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "pronostico"
+                      ? "bg-primary/20"
+                      : ""
+                  }`}
+                >
+                  <CloudSun className={`w-6 h-6 ${mainSection === "pronostico" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  onClick={() => setMainSection("planificacion")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "planificacion"
+                      ? "bg-primary/20"
+                      : ""
+                  }`}
+                >
+                  <Calendar className={`w-6 h-6 ${mainSection === "planificacion" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  onClick={() => setMainSection("objetos")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "objetos"
+                      ? "bg-primary/20"
+                      : ""
+                  }`}
+                >
+                  <Telescope className={`w-6 h-6 ${mainSection === "objetos" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  onClick={() => setMainSection("estadisticas")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "estadisticas"
+                      ? "bg-primary/20"
+                      : ""
+                  }`}
+                >
+                  <BarChart3 className={`w-6 h-6 ${mainSection === "estadisticas" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
+                  onClick={() => setMainSection("galeria")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "galeria"
+                      ? "bg-primary/20"
+                      : ""
+                  }`}
+                >
+                  <ImageIcon className={`w-6 h-6 ${mainSection === "galeria" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+              </div>
+            </div>
+          </nav>
+        )}
       </div>
     </div>
   );
