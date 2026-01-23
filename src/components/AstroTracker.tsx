@@ -1301,13 +1301,7 @@ function FPlanned({
   const [constellation, setConstellation] = useState("");
   const [objectType, setObjectType] = useState("");
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [projectType, setProjectType] = useState("ONP");
-  const [numPanels, setNumPanels] = useState(1);
-  const [goalHours, setGoalHours] = useState<number | "">("");
-  const [notes, setNotes] = useState("");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState(mainLocation?.name || "");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -1417,13 +1411,7 @@ function FPlanned({
       constellation,
       objectType,
       name: name.trim() || `Planificación ${objectId}`,
-      description,
-      projectType,
-      numPanels,
-      goalHours: goalHours === "" ? undefined : goalHours,
-      notes,
       encuadreImage,
-      location: selectedLocation,
       createdAt: new Date().toISOString(),
     });
   };
@@ -1502,85 +1490,6 @@ function FPlanned({
         />
       </label>
 
-      <label className="grid gap-1">
-        <Label>Descripción</Label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className={INPUT_CLS}
-          rows={2}
-          placeholder="Notas sobre el proyecto..."
-        />
-      </label>
-
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <Label>Tipo de proyecto</Label>
-          <select
-            value={projectType}
-            onChange={(e) => setProjectType(e.target.value)}
-            className={INPUT_CLS}
-          >
-            <option value="ONP">ONP (One-Night Project)</option>
-            <option value="SNP">SNP (Several-Nights Project)</option>
-          </select>
-        </label>
-        <label className="grid gap-1">
-          <Label>Número de paneles</Label>
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={numPanels}
-            onChange={(e) => setNumPanels(parseInt(e.target.value) || 1)}
-            className={INPUT_CLS}
-          />
-        </label>
-      </div>
-
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <Label>Objetivo horas</Label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={goalHours}
-            onChange={(e) => setGoalHours(e.target.value === "" ? "" : parseFloat(e.target.value))}
-            className={INPUT_CLS}
-            placeholder="10"
-          />
-        </label>
-        <label className="grid gap-1">
-          <Label>Localización</Label>
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className={INPUT_CLS}
-          >
-            <option value="">Seleccionar...</option>
-            {mainLocation?.name && (
-              <option value={mainLocation.name}>{mainLocation.name} (Principal)</option>
-            )}
-            {locations
-              .filter((l) => l.name.trim() && l.name !== mainLocation?.name)
-              .map((loc) => (
-                <option key={loc.name} value={loc.name}>{loc.name}</option>
-              ))}
-          </select>
-        </label>
-      </div>
-
-      <label className="grid gap-1">
-        <Label>Notas adicionales</Label>
-        <textarea
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          className={INPUT_CLS}
-          rows={2}
-          placeholder="Consideraciones, mejores fechas, etc..."
-        />
-      </label>
 
       <div className="grid gap-1">
         <Label>Imagen de encuadre (opcional)</Label>
@@ -5051,42 +4960,10 @@ export default function AstroTracker() {
                               <p className="font-medium">{planned.objectType || "—"}</p>
                             </div>
                             <div>
-                              <Label>Tipo de proyecto</Label>
-                              <p className="font-medium">{planned.projectType || "—"}</p>
+                              <Label>Nombre proyecto</Label>
+                              <p className="font-medium">{planned.name || "—"}</p>
                             </div>
-                            {planned.numPanels > 1 && (
-                              <div>
-                                <Label>Paneles</Label>
-                                <p className="font-medium">{planned.numPanels}</p>
-                              </div>
-                            )}
-                            {planned.goalHours && (
-                              <div>
-                                <Label>Objetivo horas</Label>
-                                <p className="font-medium">{planned.goalHours}h</p>
-                              </div>
-                            )}
-                            {planned.location && (
-                              <div>
-                                <Label>Localización</Label>
-                                <p className="font-medium">{planned.location}</p>
-                              </div>
-                            )}
                           </div>
-
-                          {planned.description && (
-                            <div>
-                              <Label>Descripción</Label>
-                              <p className="text-sm mt-1">{planned.description}</p>
-                            </div>
-                          )}
-
-                          {planned.notes && (
-                            <div>
-                              <Label>Notas</Label>
-                              <p className="text-sm mt-1">{planned.notes}</p>
-                            </div>
-                          )}
 
                           {/* Actions */}
                           <div className="flex items-center justify-end gap-2 pt-4 border-t">
@@ -7810,11 +7687,6 @@ export default function AstroTracker() {
             mount={mount}
             initialData={plannedFromPlan ? {
               name: plannedFromPlan.name,
-              description: plannedFromPlan.description,
-              projectType: plannedFromPlan.projectType,
-              numPanels: plannedFromPlan.numPanels,
-              goalHours: plannedFromPlan.goalHours,
-              location: plannedFromPlan.location,
               encuadreImage: plannedFromPlan.encuadreImage,
             } : undefined}
           />
