@@ -4320,64 +4320,64 @@ export default function AstroTracker() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <button
                   onClick={() => setMainSection("pronostico")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
                     mainSection === "pronostico"
-                      ? "bg-blue-500/10 border-blue-500/50 dark:bg-blue-500/20 dark:border-blue-400/50"
-                      : "bg-card border-border hover:bg-accent/50"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "pronostico" ? "bg-blue-500/20" : "bg-muted"}`}>
-                    <CloudSun className={`w-5 h-5 ${mainSection === "pronostico" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`} />
+                  <div className={`p-2 rounded-xl ${mainSection === "pronostico" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                    <CloudSun className={`w-5 h-5 ${mainSection === "pronostico" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className={`font-semibold ${mainSection === "pronostico" ? "text-blue-900 dark:text-blue-100" : "text-foreground"}`}>
+                  <span className="font-semibold">
                     Pronóstico
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("objetos")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
                     mainSection === "objetos"
-                      ? "bg-purple-500/10 border-purple-500/50 dark:bg-purple-500/20 dark:border-purple-400/50"
-                      : "bg-card border-border hover:bg-accent/50"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "objetos" ? "bg-purple-500/20" : "bg-muted"}`}>
-                    <Telescope className={`w-5 h-5 ${mainSection === "objetos" ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"}`} />
+                  <div className={`p-2 rounded-xl ${mainSection === "objetos" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                    <Telescope className={`w-5 h-5 ${mainSection === "objetos" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className={`font-semibold ${mainSection === "objetos" ? "text-purple-900 dark:text-purple-100" : "text-foreground"}`}>
+                  <span className="font-semibold">
                     Objetos
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("estadisticas")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
                     mainSection === "estadisticas"
-                      ? "bg-green-500/10 border-green-500/50 dark:bg-green-500/20 dark:border-green-400/50"
-                      : "bg-card border-border hover:bg-accent/50"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "estadisticas" ? "bg-green-500/20" : "bg-muted"}`}>
-                    <BarChart3 className={`w-5 h-5 ${mainSection === "estadisticas" ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`} />
+                  <div className={`p-2 rounded-xl ${mainSection === "estadisticas" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                    <BarChart3 className={`w-5 h-5 ${mainSection === "estadisticas" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className={`font-semibold ${mainSection === "estadisticas" ? "text-green-900 dark:text-green-100" : "text-foreground"}`}>
+                  <span className="font-semibold">
                     Estadísticas
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("galeria")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
                     mainSection === "galeria"
-                      ? "bg-amber-500/10 border-amber-500/50 dark:bg-amber-500/20 dark:border-amber-400/50"
-                      : "bg-card border-border hover:bg-accent/50"
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "galeria" ? "bg-amber-500/20" : "bg-muted"}`}>
-                    <ImageIcon className={`w-5 h-5 ${mainSection === "galeria" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+                  <div className={`p-2 rounded-xl ${mainSection === "galeria" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                    <ImageIcon className={`w-5 h-5 ${mainSection === "galeria" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className={`font-semibold ${mainSection === "galeria" ? "text-amber-900 dark:text-amber-100" : "text-foreground"}`}>
+                  <span className="font-semibold">
                     Galería
                   </span>
                 </button>
