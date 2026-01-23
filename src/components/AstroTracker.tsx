@@ -5323,6 +5323,46 @@ export default function AstroTracker() {
                 </div>
               )}
 
+              {/* Currently visible objects indicator - shows right after ephemeris */}
+              {plannedProjects.length > 0 && (() => {
+                const currentMonth = new Date().getMonth() + 1; // 1-12
+                const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                const currentMonthName = MONTH_NAMES[currentMonth - 1];
+                
+                const visibleNow = plannedProjects.filter(planned => {
+                  if (planned.isCircumpolar) return true;
+                  if (!planned.orto || !planned.ocaso) return false;
+                  
+                  const ortoNum = parseInt(planned.orto);
+                  const ocasoNum = parseInt(planned.ocaso);
+                  
+                  if (ortoNum <= ocasoNum) {
+                    return currentMonth >= ortoNum && currentMonth <= ocasoNum;
+                  } else {
+                    // Crosses year boundary
+                    return currentMonth >= ortoNum || currentMonth <= ocasoNum;
+                  }
+                });
+                
+                if (visibleNow.length === 0) {
+                  return (
+                    <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border">
+                      <p className="text-sm text-muted-foreground">
+                        No hay objetos planificados visibles en <span className="font-semibold">{currentMonthName}</span>
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                      🔭 Objetos visibles en <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
+                    </p>
+                  </div>
+                );
+              })()}
+
               {/* Image Carousel - Before Navigation Buttons */}
               {dashboardCarouselImages.length > 0 && (
                 <div className="mb-6">
@@ -5502,50 +5542,6 @@ export default function AstroTracker() {
                   <p className="text-muted-foreground">
                     Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
                   </p>
-
-                  {/* Currently visible objects indicator */}
-                  {(() => {
-                    const currentMonth = new Date().getMonth() + 1; // 1-12
-                    const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-                    const currentMonthName = MONTH_NAMES[currentMonth - 1];
-                    
-                    const visibleNow = plannedProjects.filter(planned => {
-                      if (planned.isCircumpolar) return true;
-                      if (!planned.orto || !planned.ocaso) return false;
-                      
-                      const ortoNum = parseInt(planned.orto);
-                      const ocasoNum = parseInt(planned.ocaso);
-                      
-                      if (ortoNum <= ocasoNum) {
-                        return currentMonth >= ortoNum && currentMonth <= ocasoNum;
-                      } else {
-                        // Crosses year boundary
-                        return currentMonth >= ortoNum || currentMonth <= ocasoNum;
-                      }
-                    });
-                    
-                    if (visibleNow.length === 0 && plannedProjects.length > 0) {
-                      return (
-                        <div className="p-4 rounded-xl bg-muted/50 border border-border">
-                          <p className="text-sm text-muted-foreground">
-                            No hay objetos planificados visibles en <span className="font-semibold">{currentMonthName}</span>
-                          </p>
-                        </div>
-                      );
-                    }
-                    
-                    if (visibleNow.length > 0) {
-                      return (
-                        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                            🔭 Objetos visibles en <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
-                          </p>
-                        </div>
-                      );
-                    }
-                    
-                    return null;
-                  })()}
                   {plannedProjects.length > 0 && (
                     <Card className="p-4">
                       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -5605,8 +5601,9 @@ export default function AstroTracker() {
                           
                           const visibleMonths = getVisibleMonths();
                           
-                          // Check if month is the zenith month
-                          const cenitMonthIdx = planned.cenit ? parseInt(planned.cenit) - 1 : -1;
+                          // Check if month is the zenith month - convert month name to index
+                          const MONTH_NAMES_FOR_CENIT = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                          const cenitMonthIdx = planned.cenit ? MONTH_NAMES_FOR_CENIT.indexOf(planned.cenit) : -1;
                           
                           return (
                             <div key={planned.id} className="flex items-center">
