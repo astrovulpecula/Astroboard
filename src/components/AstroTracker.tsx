@@ -4642,29 +4642,31 @@ export default function AstroTracker() {
                         {/* Calendar Card - with calendar popup */}
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Card className="p-5 cursor-pointer hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all">
-                              <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
-                                  <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                  <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
-                                  <div className="text-2xl font-bold">
-                                    {(() => {
-                                      const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
-                                      const currentMonthSessions = allSessions.filter((s) => {
-                                        const sessionDate = new Date(s.date);
-                                        return sessionDate.getFullYear() === calendarYear && sessionDate.getMonth() === calendarMonth;
-                                      });
-                                      return new Set(currentMonthSessions.map((s) => new Date(s.date).getDate())).size;
-                                    })()}
+                            <div className="cursor-pointer">
+                              <Card className="p-5 hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
+                                    <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
                                   </div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                    en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
+                                  <div>
+                                    <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                                    <div className="text-2xl font-bold">
+                                      {(() => {
+                                        const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
+                                        const currentMonthSessions = allSessions.filter((s) => {
+                                          const sessionDate = new Date(s.date);
+                                          return sessionDate.getFullYear() === calendarYear && sessionDate.getMonth() === calendarMonth;
+                                        });
+                                        return new Set(currentMonthSessions.map((s) => new Date(s.date).getDate())).size;
+                                      })()}
+                                    </div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                      en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            </Card>
+                              </Card>
+                            </div>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0 z-50 bg-background border shadow-lg" align="start">
                             <div className="p-3">
