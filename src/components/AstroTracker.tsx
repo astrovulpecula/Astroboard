@@ -245,23 +245,32 @@ const ImageCarousel = ({
     }
   };
 
+  if (images.length === 0) {
+    return null;
+  }
+
+  const currentImage = images[currentImageIndex] || images[0];
+  if (!currentImage) {
+    return null;
+  }
+
   return (
     <Card className="p-4 mb-4">
       <div className="relative h-48 overflow-hidden rounded-xl">
         <img
-          src={images[currentImageIndex].src}
-          alt={images[currentImageIndex].title}
+          src={currentImage.src}
+          alt={currentImage.title}
           className={`w-full h-full object-cover transition-opacity duration-500 ${
-            onImageClick && images[currentImageIndex].objectId && images[currentImageIndex].projectId
+            onImageClick && currentImage.objectId && currentImage.projectId
               ? "cursor-pointer hover:opacity-90"
               : ""
           }`}
           onClick={handleImageClick}
         />
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-          <div className="text-white text-sm font-medium">{images[currentImageIndex].title}</div>
-          {images[currentImageIndex].type && (
-            <div className="text-white/80 text-xs">{images[currentImageIndex].type}</div>
+          <div className="text-white text-sm font-medium">{currentImage.title}</div>
+          {currentImage.type && (
+            <div className="text-white/80 text-xs">{currentImage.type}</div>
           )}
         </div>
         <div className="absolute bottom-4 right-4 flex gap-1">
