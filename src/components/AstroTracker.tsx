@@ -1331,11 +1331,14 @@ function FPlanned({
   const [orto, setOrto] = useState("");
   const [ocaso, setOcaso] = useState("");
   const [isCircumpolar, setIsCircumpolar] = useState(false);
+  const [signal, setSignal] = useState("");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1457,6 +1460,7 @@ function FPlanned({
       ocaso: isCircumpolar ? null : ocaso,
       isCircumpolar,
       visibleMonths: isCircumpolar ? 12 : visibleMonths,
+      signal,
       encuadreImage,
       createdAt: new Date().toISOString(),
     });
@@ -1524,6 +1528,22 @@ function FPlanned({
           className={INPUT_CLS}
           placeholder="Galaxia espiral, Nebulosa, etc."
         />
+      </label>
+
+      <label className="grid gap-1">
+        <Label>Señal</Label>
+        <select
+          value={signal}
+          onChange={(e) => setSignal(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {SIGNAL_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </label>
 
       {/* Circumpolar toggle */}
@@ -1657,11 +1677,14 @@ function FPlannedEdit({
   const [orto, setOrto] = useState(initial.orto || "");
   const [ocaso, setOcaso] = useState(initial.ocaso || "");
   const [isCircumpolar, setIsCircumpolar] = useState(initial.isCircumpolar || false);
+  const [signal, setSignal] = useState(initial.signal || "");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(initial.encuadreImage || null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1777,6 +1800,7 @@ function FPlannedEdit({
       ocaso: isCircumpolar ? null : ocaso,
       isCircumpolar,
       visibleMonths: isCircumpolar ? 12 : visibleMonths,
+      signal,
       encuadreImage,
     });
   };
@@ -1843,6 +1867,22 @@ function FPlannedEdit({
           className={INPUT_CLS}
           placeholder="Galaxia espiral, Nebulosa, etc."
         />
+      </label>
+
+      <label className="grid gap-1">
+        <Label>Señal</Label>
+        <select
+          value={signal}
+          onChange={(e) => setSignal(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {SIGNAL_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
       </label>
 
       {/* Circumpolar toggle */}
