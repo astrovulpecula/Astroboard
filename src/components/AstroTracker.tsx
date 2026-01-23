@@ -4316,6 +4316,21 @@ export default function AstroTracker() {
                 </div>
               )}
 
+              {/* Image Carousel - Before Navigation Buttons */}
+              {dashboardCarouselImages.length > 0 && (
+                <div className="mb-6">
+                  <ImageCarousel
+                    images={dashboardCarouselImages}
+                    onImageClick={(objectId, projectId) => {
+                      setSelectedObjectId(objectId);
+                      setSelectedProjectId(projectId);
+                      setView("project");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Navigation Buttons */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <button
@@ -4452,18 +4467,6 @@ export default function AstroTracker() {
               {/* SECTION: Objetos */}
               {mainSection === "objetos" && (
                 <>
-                  {/* Image Carousel */}
-                  {dashboardCarouselImages.length > 0 && (
-                    <ImageCarousel
-                      images={dashboardCarouselImages}
-                      onImageClick={(objectId, projectId) => {
-                        setSelectedObjectId(objectId);
-                        setSelectedProjectId(projectId);
-                        setView("project");
-                        window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                    />
-                  )}
 
                   {/* Objects Section Title and Controls */}
                   <div className="flex items-center justify-between mb-4">
