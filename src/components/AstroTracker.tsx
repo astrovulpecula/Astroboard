@@ -27,6 +27,9 @@ import {
   Clock,
   FileText,
   Loader2,
+  CloudSun,
+  BarChart3,
+  ImageIcon,
 } from "lucide-react";
 import {
   LineChart,
@@ -537,6 +540,121 @@ const FAB = ({ onClick, title }: { onClick: () => void; title: string }) => (
     <Plus className="w-6 h-6" />
   </button>
 );
+
+// Weather card for individual locations
+const WeatherCard = ({ 
+  location, 
+  getWeatherIcon, 
+  getWeatherDescription 
+}: { 
+  location: { name: string; coords: string }; 
+  getWeatherIcon: (code: number) => string;
+  getWeatherDescription: (code: number) => string;
+}) => {
+  const [weather, setWeather] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const coords = location.coords.split(',').map(c => c.trim());
+        if (coords.length !== 2) {
+          setLoading(false);
+          return;
+        }
+        const [lat, lon] = coords;
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=3`
+        );
+        if (!response.ok) throw new Error('Weather API error');
+        const data = await response.json();
+        setWeather(data);
+      } catch (error) {
+        console.error("Error loading weather data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWeather();
+  }, [location.coords]);
+
+  if (loading) {
+    return (
+      <Card className="p-6">
+        <div className="flex items-center justify-center h-40">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-muted-foreground">
+          <CloudSun className="w-8 h-8 mx-auto mb-2" />
+          <p>No se pudo cargar el pronóstico</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6">
+      <div className="flex items-start gap-4">
+        <div className="p-3 rounded-xl bg-blue-500/20">
+          <CloudSun className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-lg font-bold mb-1">{location.name}</h3>
+          <p className="text-xs text-muted-foreground mb-3">📍 {location.coords}</p>
+          
+          {/* Current Weather */}
+          <div className="mb-4 p-4 rounded-xl bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Ahora</p>
+                <p className="text-3xl font-bold">
+                  {Math.round(weather.current_weather.temperature)}°C
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {getWeatherDescription(weather.current_weather.weathercode)}
+                </p>
+              </div>
+              <div className="text-5xl">
+                {getWeatherIcon(weather.current_weather.weathercode)}
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Viento: {Math.round(weather.current_weather.windspeed)} km/h
+            </div>
+          </div>
+
+          {/* 3-day Forecast */}
+          <div className="grid grid-cols-3 gap-2">
+            {weather.daily.time.slice(0, 3).map((date: string, i: number) => {
+              const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
+              return (
+                <div key={i} className="text-center p-2 rounded-xl bg-muted/50">
+                  <p className="text-xs font-medium mb-1">{dayName}</p>
+                  <div className="text-xl mb-1">
+                    {getWeatherIcon(weather.daily.weathercode[i])}
+                  </div>
+                  <p className="text-xs font-semibold">
+                    {Math.round(weather.daily.temperature_2m_max[i])}° / {Math.round(weather.daily.temperature_2m_min[i])}°
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    💧 {weather.daily.precipitation_probability_max[i]}%
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+};
 
 function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   const [id, setId] = useState("");
@@ -2605,6 +2723,7 @@ export default function AstroTracker() {
   const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
+  const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
   const [weatherData, setWeatherData] = useState<any>(null);
@@ -4197,129 +4316,353 @@ export default function AstroTracker() {
                 </div>
               )}
 
-              {/* Weather Forecast Card */}
-              {weatherData && (() => {
-                const getWeatherIcon = (code: number) => {
-                  if (code === 0) return "☀️";
-                  if (code <= 3) return "⛅";
-                  if (code <= 48) return "☁️";
-                  if (code <= 67) return "🌧️";
-                  if (code <= 77) return "🌨️";
-                  if (code <= 82) return "🌦️";
-                  if (code >= 95) return "⛈️";
-                  return "🌤️";
-                };
-
-                const getWeatherDescription = (code: number) => {
-                  if (code === 0) return "Cielo despejado";
-                  if (code <= 3) return "Parcialmente nublado";
-                  if (code <= 48) return "Nublado";
-                  if (code <= 67) return "Lluvia";
-                  if (code <= 77) return "Nieve";
-                  if (code <= 82) return "Chubascos";
-                  if (code >= 95) return "Tormenta";
-                  return "Variable";
-                };
-
-                return (
-                  <div className="mb-6">
-                    <div className="bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-sky-500/10 dark:from-blue-500/20 dark:via-cyan-500/20 dark:to-sky-500/20 rounded-2xl p-6 border border-blue-200/50 dark:border-blue-500/30">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 rounded-xl bg-blue-500/20 dark:bg-blue-500/30">
-                          <Sun className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3">
-                            Previsión Meteorológica
-                          </h3>
-                          
-                          {/* Current Weather */}
-                          <div className="mb-4 p-4 rounded-xl bg-white/50 dark:bg-slate-900/30">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">Ahora</p>
-                                <p className="text-3xl font-bold text-slate-800 dark:text-slate-100">
-                                  {Math.round(weatherData.current_weather.temperature)}°C
-                                </p>
-                                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                  {getWeatherDescription(weatherData.current_weather.weathercode)}
-                                </p>
-                              </div>
-                              <div className="text-5xl">
-                                {getWeatherIcon(weatherData.current_weather.weathercode)}
-                              </div>
-                            </div>
-                            <div className="mt-3 text-xs text-slate-600 dark:text-slate-400">
-                              Viento: {Math.round(weatherData.current_weather.windspeed)} km/h
-                            </div>
-                          </div>
-
-                          {/* 3-day Forecast */}
-                          <div className="grid grid-cols-3 gap-3">
-                            {weatherData.daily.time.slice(0, 3).map((date: string, i: number) => {
-                              const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
-                              return (
-                                <div key={i} className="text-center p-3 rounded-xl bg-white/50 dark:bg-slate-900/30">
-                                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    {dayName}
-                                  </p>
-                                  <div className="text-2xl mb-2">
-                                    {getWeatherIcon(weatherData.daily.weathercode[i])}
-                                  </div>
-                                  <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                                    {Math.round(weatherData.daily.temperature_2m_max[i])}° / {Math.round(weatherData.daily.temperature_2m_min[i])}°
-                                  </p>
-                                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
-                                    💧 {weatherData.daily.precipitation_probability_max[i]}%
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          
-                          {mainLocation?.name && (
-                            <p className="text-xs text-slate-500 dark:text-slate-500 mt-3">
-                              📍 {mainLocation.name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+              {/* Navigation Buttons */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                <button
+                  onClick={() => setMainSection("pronostico")}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                    mainSection === "pronostico"
+                      ? "bg-blue-500/10 border-blue-500/50 dark:bg-blue-500/20 dark:border-blue-400/50"
+                      : "bg-card border-border hover:bg-accent/50"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${mainSection === "pronostico" ? "bg-blue-500/20" : "bg-muted"}`}>
+                    <CloudSun className={`w-5 h-5 ${mainSection === "pronostico" ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`} />
                   </div>
-                );
-              })()}
+                  <span className={`font-semibold ${mainSection === "pronostico" ? "text-blue-900 dark:text-blue-100" : "text-foreground"}`}>
+                    Pronóstico
+                  </span>
+                </button>
 
-              {/* Image Carousel */}
-              {dashboardCarouselImages.length > 0 && (
-                <ImageCarousel
-                  images={dashboardCarouselImages}
-                  onImageClick={(objectId, projectId) => {
-                    setSelectedObjectId(objectId);
-                    setSelectedProjectId(projectId);
-                    setView("project");
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }}
-                />
+                <button
+                  onClick={() => setMainSection("objetos")}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                    mainSection === "objetos"
+                      ? "bg-purple-500/10 border-purple-500/50 dark:bg-purple-500/20 dark:border-purple-400/50"
+                      : "bg-card border-border hover:bg-accent/50"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${mainSection === "objetos" ? "bg-purple-500/20" : "bg-muted"}`}>
+                    <Telescope className={`w-5 h-5 ${mainSection === "objetos" ? "text-purple-600 dark:text-purple-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`font-semibold ${mainSection === "objetos" ? "text-purple-900 dark:text-purple-100" : "text-foreground"}`}>
+                    Objetos
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setMainSection("estadisticas")}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                    mainSection === "estadisticas"
+                      ? "bg-green-500/10 border-green-500/50 dark:bg-green-500/20 dark:border-green-400/50"
+                      : "bg-card border-border hover:bg-accent/50"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${mainSection === "estadisticas" ? "bg-green-500/20" : "bg-muted"}`}>
+                    <BarChart3 className={`w-5 h-5 ${mainSection === "estadisticas" ? "text-green-600 dark:text-green-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`font-semibold ${mainSection === "estadisticas" ? "text-green-900 dark:text-green-100" : "text-foreground"}`}>
+                    Estadísticas
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setMainSection("galeria")}
+                  className={`flex items-center gap-3 p-4 rounded-2xl border transition-all ${
+                    mainSection === "galeria"
+                      ? "bg-amber-500/10 border-amber-500/50 dark:bg-amber-500/20 dark:border-amber-400/50"
+                      : "bg-card border-border hover:bg-accent/50"
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${mainSection === "galeria" ? "bg-amber-500/20" : "bg-muted"}`}>
+                    <ImageIcon className={`w-5 h-5 ${mainSection === "galeria" ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`} />
+                  </div>
+                  <span className={`font-semibold ${mainSection === "galeria" ? "text-amber-900 dark:text-amber-100" : "text-foreground"}`}>
+                    Galería
+                  </span>
+                </button>
+              </div>
+
+              {/* SECTION: Pronóstico */}
+              {mainSection === "pronostico" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <CloudSun className="w-6 h-6" /> Pronóstico Meteorológico
+                  </h2>
+                  
+                  {/* Weather for each location */}
+                  {(() => {
+                    const allLocations = [
+                      mainLocation,
+                      ...locations.filter(l => l.name.trim() && l.coords.trim() && l.name !== mainLocation?.name)
+                    ].filter(l => l?.name?.trim() && l?.coords?.trim());
+
+                    if (allLocations.length === 0) {
+                      return (
+                        <Card className="p-8 text-center">
+                          <CloudSun className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                          <p className="text-muted-foreground mb-4">
+                            No tienes localizaciones configuradas para ver el pronóstico
+                          </p>
+                          <Btn onClick={() => setShowSettings(true)}>
+                            <Settings className="w-4 h-4" /> Configurar localizaciones
+                          </Btn>
+                        </Card>
+                      );
+                    }
+
+                    const getWeatherIcon = (code: number) => {
+                      if (code === 0) return "☀️";
+                      if (code <= 3) return "⛅";
+                      if (code <= 48) return "☁️";
+                      if (code <= 67) return "🌧️";
+                      if (code <= 77) return "🌨️";
+                      if (code <= 82) return "🌦️";
+                      if (code >= 95) return "⛈️";
+                      return "🌤️";
+                    };
+
+                    const getWeatherDescription = (code: number) => {
+                      if (code === 0) return "Cielo despejado";
+                      if (code <= 3) return "Parcialmente nublado";
+                      if (code <= 48) return "Nublado";
+                      if (code <= 67) return "Lluvia";
+                      if (code <= 77) return "Nieve";
+                      if (code <= 82) return "Chubascos";
+                      if (code >= 95) return "Tormenta";
+                      return "Variable";
+                    };
+
+                    return (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {allLocations.map((loc, idx) => (
+                          <WeatherCard 
+                            key={`${loc.name}-${idx}`} 
+                            location={loc} 
+                            getWeatherIcon={getWeatherIcon}
+                            getWeatherDescription={getWeatherDescription}
+                          />
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
               )}
 
-              {/* Global Metrics - Using memoized values */}
-              <>
-                {/* Título de Highlights con botón de expandir/contraer */}
-                <div className="flex items-center justify-between mb-4">
-                  <button
-                    onClick={() => setHighlightsSectionExpanded(!highlightsSectionExpanded)}
-                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                  >
-                    <h3 className="text-xl md:text-2xl font-bold">Highlights</h3>
-                    {highlightsSectionExpanded ? (
-                      <ChevronUp className="w-5 h-5" />
-                    ) : (
-                      <ChevronDown className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
+              {/* SECTION: Objetos */}
+              {mainSection === "objetos" && (
+                <>
+                  {/* Image Carousel */}
+                  {dashboardCarouselImages.length > 0 && (
+                    <ImageCarousel
+                      images={dashboardCarouselImages}
+                      onImageClick={(objectId, projectId) => {
+                        setSelectedObjectId(objectId);
+                        setSelectedProjectId(projectId);
+                        setView("project");
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    />
+                  )}
 
-                {highlightsSectionExpanded && (
+                  {/* Objects Section Title and Controls */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Telescope className="w-5 h-5" />
+                      <h3 className="text-xl md:text-2xl font-bold">Objetos astronómicos</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <IconBtn title="Ordenar alfabéticamente (A-Z)" onClick={() => setSortObjects("alpha")}>
+                        <span className="text-sm font-semibold">A-Z</span>
+                      </IconBtn>
+                      <IconBtn title="Ordenar por más recientes" onClick={() => setSortObjects("recent")}>
+                        <span className="text-sm font-semibold">1-3</span>
+                      </IconBtn>
+                      <Btn onClick={() => setMObj(true)}>
+                        <Plus className="w-4 h-4" /> Nuevo objeto
+                      </Btn>
+                    </div>
+                  </div>
+
+                  {/* Search and Filters */}
+                  <div className="grid gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={searchText}
+                          onChange={(e) => setSearchText(e.target.value)}
+                          placeholder="Buscar por código, nombre, constelación o tipo..."
+                          className={`${INPUT_CLS} w-full pl-10`}
+                        />
+                        <Telescope className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        {searchText && (
+                          <button
+                            onClick={() => setSearchText("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                      <Btn outline onClick={() => setShowFilters(!showFilters)}>
+                        {showFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                      </Btn>
+                    </div>
+
+                    {showFilters && (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                        <label className="grid gap-1">
+                          <Label>Filtrar por constelación</Label>
+                          <select
+                            value={filterConstellation}
+                            onChange={(e) => setFilterConstellation(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todas las constelaciones</option>
+                            {constellations.map((c) => (
+                              <option key={c} value={c}>
+                                {c}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
+                          <Label>Filtrar por tipo</Label>
+                          <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={INPUT_CLS}>
+                            <option value="all">Todos los tipos</option>
+                            {types.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
+                          <Label>Filtrar por estado</Label>
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todos los estados</option>
+                            <option value="active">Activo</option>
+                            <option value="paused">Pausado</option>
+                            <option value="closed">Terminado</option>
+                          </select>
+                        </label>
+                        {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all") && (
+                          <div className="md:col-span-3">
+                            <Btn
+                              outline
+                              onClick={() => {
+                                setFilterConstellation("all");
+                                setFilterType("all");
+                                setFilterStatus("all");
+                              }}
+                            >
+                              Limpiar filtros
+                            </Btn>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(searchText || filterConstellation !== "all" || filterType !== "all") && (
+                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                        {filteredObjects.length} objeto(s) encontrado(s)
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Objects Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredObjects
+                      .slice()
+                      .sort((a, b) => {
+                        if (sortObjects === "alpha") return a.id.localeCompare(b.id);
+                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                      })
+                      .map((o) => {
+                        const all = o.projects.flatMap((p: any) => p.sessions);
+                        const seconds = totalExposureSec(all);
+                        const nights = new Set(all.map((s: any) => s.date)).size;
+                        return (
+                          <Card
+                            key={o.id}
+                            className="p-4"
+                            onClick={() => {
+                              setSelectedObjectId(o.id);
+                              setView("projects");
+                            }}
+                          >
+                            <div className="flex items-start gap-3">
+                              <ObjectThumbnail
+                                objectId={o.id}
+                                displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
+                                onUpload={upObjImg}
+                                onDelete={(id) => upObjImg(id, null)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditObjectOriginalId(o.id);
+                                      setEditObjectData({
+                                        id: o.id,
+                                        commonName: o.commonName || "",
+                                        constellation: o.constellation || "",
+                                        type: o.type || "",
+                                      });
+                                      setShowEditObjectModal(true);
+                                    }}
+                                    className="text-lg md:text-xl font-bold truncate hover:underline text-left"
+                                    title="Clic para editar"
+                                  >
+                                    {o.id}
+                                  </button>
+                                </div>
+                                {o.commonName && (
+                                  <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">
+                                    {o.commonName}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {o.constellation && <Badge>{o.constellation}</Badge>}
+                                  {o.type && <Badge>{o.type}</Badge>}
+                                </div>
+                                <p className="text-xs md:text-sm text-slate-500 mt-2">
+                                  {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <IconBtn
+                                  title="Eliminar"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    delObj(o.id);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </IconBtn>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                </>
+              )}
+
+              {/* SECTION: Estadísticas */}
+              {mainSection === "estadisticas" && (
+                <>
+                  {/* Título de Highlights */}
+                  <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
+                    <BarChart3 className="w-6 h-6" /> Estadísticas
+                  </h2>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     {/* Total de Objetos */}
                     {visibleHighlights.totalObjects && (
@@ -4452,11 +4795,11 @@ export default function AstroTracker() {
                       </Card>
                     )}
 
-                    {/* Valoraciones de Fotos */}
+                    {/* Fotos Valoradas - navigates to gallery section */}
                     {visibleHighlights.ratedPhotos && (
                       <Card 
                         className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
-                        onClick={() => setView("ratings")}
+                        onClick={() => setMainSection("galeria")}
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-3 rounded-xl bg-purple-500/10">
@@ -4781,268 +5124,326 @@ export default function AstroTracker() {
                       </>
                     )}
                   </div>
-                )}
 
-                {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
-                {highlightsSectionExpanded && (visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Camera Usage Statistics */}
-                    {visibleHighlights.cameraUsage && Object.keys(globalMetrics.cameraCounts).length > 0 && (
-                      <Card className="p-5">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                          Uso de cámaras (% de lights)
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          {Object.entries(globalMetrics.cameraCounts)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([camera, count]) => {
-                              const percentage =
-                                globalMetrics.totalCameraLights > 0 ? ((count / globalMetrics.totalCameraLights) * 100).toFixed(1) : 0;
-                              return (
-                                <div
-                                  key={camera}
-                                  className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
-                                >
-                                  <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
-                                  <div className="text-xs text-blue-700 dark:text-blue-300">
-                                    {count} lights ({percentage}%)
+                  {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
+                  {(visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Camera Usage Statistics */}
+                      {visibleHighlights.cameraUsage && Object.keys(globalMetrics.cameraCounts).length > 0 && (
+                        <Card className="p-5">
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                            Uso de cámaras (% de lights)
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {Object.entries(globalMetrics.cameraCounts)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([camera, count]) => {
+                                const percentage =
+                                  globalMetrics.totalCameraLights > 0 ? ((count / globalMetrics.totalCameraLights) * 100).toFixed(1) : 0;
+                                return (
+                                  <div
+                                    key={camera}
+                                    className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
+                                  >
+                                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
+                                    <div className="text-xs text-blue-700 dark:text-blue-300">
+                                      {count} lights ({percentage}%)
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </Card>
-                    )}
+                                );
+                              })}
+                          </div>
+                        </Card>
+                      )}
 
-                    {/* Telescope Usage Statistics */}
-                    {visibleHighlights.telescopeUsage && Object.keys(globalMetrics.telescopeCounts).length > 0 && (
-                      <Card className="p-5">
-                        <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
-                        <div className="flex flex-wrap gap-3">
-                          {Object.entries(globalMetrics.telescopeCounts)
-                            .sort(([, a], [, b]) => b.seconds - a.seconds)
-                            .map(([telescope, data]) => {
-                              const percentage =
-                                globalMetrics.totalTelescopeLights > 0
-                                  ? ((data.lights / globalMetrics.totalTelescopeLights) * 100).toFixed(1)
-                                  : "0";
-                              return (
-                                <div
-                                  key={telescope}
-                                  className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
-                                >
-                                  <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
-                                    {telescope}
+                      {/* Telescope Usage Statistics */}
+                      {visibleHighlights.telescopeUsage && Object.keys(globalMetrics.telescopeCounts).length > 0 && (
+                        <Card className="p-5">
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
+                          <div className="flex flex-wrap gap-3">
+                            {Object.entries(globalMetrics.telescopeCounts)
+                              .sort(([, a], [, b]) => b.seconds - a.seconds)
+                              .map(([telescope, data]) => {
+                                const percentage =
+                                  globalMetrics.totalTelescopeLights > 0
+                                    ? ((data.lights / globalMetrics.totalTelescopeLights) * 100).toFixed(1)
+                                    : "0";
+                                return (
+                                  <div
+                                    key={telescope}
+                                    className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
+                                  >
+                                    <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
+                                      {telescope}
+                                    </div>
+                                    <div className="text-xs text-purple-700 dark:text-purple-300">
+                                      {hh(data.seconds)} • {data.lights} lights ({percentage}%)
+                                    </div>
                                   </div>
-                                  <div className="text-xs text-purple-700 dark:text-purple-300">
-                                    {hh(data.seconds)} • {data.lights} lights ({percentage}%)
-                                  </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </Card>
-                    )}
-                  </div>
-                )}
-              </>
-
-
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => setObjectsSectionExpanded(!objectsSectionExpanded)}
-                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                >
-                  <Telescope className="w-5 h-5" />
-                  <h3 className="text-xl md:text-2xl font-bold">Objetos astronómicos</h3>
-                  {objectsSectionExpanded ? (
-                    <ChevronUp className="w-5 h-5" />
-                  ) : (
-                    <ChevronDown className="w-5 h-5" />
-                  )}
-                </button>
-                <div className="flex items-center gap-2">
-                  <IconBtn title="Ordenar alfabéticamente (A-Z)" onClick={() => setSortObjects("alpha")}>
-                    <span className="text-sm font-semibold">A-Z</span>
-                  </IconBtn>
-                  <IconBtn title="Ordenar por más recientes" onClick={() => setSortObjects("recent")}>
-                    <span className="text-sm font-semibold">1-3</span>
-                  </IconBtn>
-                  <Btn onClick={() => setMObj(true)}>
-                    <Plus className="w-4 h-4" /> Nuevo objeto
-                  </Btn>
-                </div>
-              </div>
-
-              {objectsSectionExpanded && (
-                <>
-                  <div className="grid gap-3">
-                    <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="text"
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      placeholder="Buscar por código, nombre, constelación o tipo..."
-                      className={`${INPUT_CLS} w-full pl-10`}
-                    />
-                    <Telescope className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    {searchText && (
-                      <button
-                        onClick={() => setSearchText("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  <Btn outline onClick={() => setShowFilters(!showFilters)}>
-                    {showFilters ? "Ocultar filtros" : "Filtros avanzados"}
-                  </Btn>
-                </div>
-
-                {showFilters && (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
-                    <label className="grid gap-1">
-                      <Label>Filtrar por constelación</Label>
-                      <select
-                        value={filterConstellation}
-                        onChange={(e) => setFilterConstellation(e.target.value)}
-                        className={INPUT_CLS}
-                      >
-                        <option value="all">Todas las constelaciones</option>
-                        {constellations.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="grid gap-1">
-                      <Label>Filtrar por tipo</Label>
-                      <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={INPUT_CLS}>
-                        <option value="all">Todos los tipos</option>
-                        {types.map((t) => (
-                          <option key={t} value={t}>
-                            {t}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="grid gap-1">
-                      <Label>Filtrar por estado</Label>
-                      <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className={INPUT_CLS}
-                      >
-                        <option value="all">Todos los estados</option>
-                        <option value="active">Activo</option>
-                        <option value="paused">Pausado</option>
-                        <option value="closed">Terminado</option>
-                      </select>
-                    </label>
-                    {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all") && (
-                      <div className="md:col-span-3">
-                        <Btn
-                          outline
-                          onClick={() => {
-                            setFilterConstellation("all");
-                            setFilterType("all");
-                            setFilterStatus("all");
-                          }}
-                        >
-                          Limpiar filtros
-                        </Btn>
-                      </div>
-                    )}
+                                );
+                              })}
+                          </div>
+                        </Card>
+                      )}
                     </div>
                   )}
-
-                  {(searchText || filterConstellation !== "all" || filterType !== "all") && (
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {filteredObjects.length} objeto(s) encontrado(s)
-                    </div>
-                  )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredObjects
-                  .slice()
-                  .sort((a, b) => {
-                    if (sortObjects === "alpha") return a.id.localeCompare(b.id);
-                    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                  })
-                  .map((o) => {
-                    const all = o.projects.flatMap((p: any) => p.sessions);
-                    const seconds = totalExposureSec(all);
-                    const nights = new Set(all.map((s: any) => s.date)).size;
-                    return (
-                      <Card
-                        key={o.id}
-                        className="p-4"
-                        onClick={() => {
-                          setSelectedObjectId(o.id);
-                          setView("projects");
-                        }}
-                      >
-                        <div className="flex items-start gap-3">
-                          <ObjectThumbnail
-                            objectId={o.id}
-                            displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
-                            onUpload={upObjImg}
-                            onDelete={(id) => upObjImg(id, null)}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-base font-semibold">
-                                {o.id}{" "}
-                                <span className="text-slate-500 dark:text-slate-400">
-                                  {o.commonName ? `· ${o.commonName}` : ""}
-                                </span>
-                              </h4>
-                            </div>
-                            <div className="mt-1 flex flex-wrap gap-2 text-sm">
-                              {o.type && <Badge>{o.type}</Badge>}
-                              {o.constellation && <Badge>{o.constellation}</Badge>}
-                              <Badge>{o.projects.length} proyecto(s)</Badge>
-                              <Badge>{nights} noche(s)</Badge>
-                              <Badge>{hh(seconds)} totales</Badge>
-                            </div>
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <IconBtn
-                              title="Editar objeto"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditObjectOriginalId(o.id);
-                                setEditObjectData({
-                                  id: o.id,
-                                  commonName: o.commonName || "",
-                                  constellation: o.constellation || "",
-                                  type: o.type || "",
-                                });
-                                setShowEditObjectModal(true);
-                              }}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </IconBtn>
-                            <IconBtn
-                              title="Eliminar"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                delObj(o.id);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </IconBtn>
-                          </div>
-                        </div>
-                      </Card>
-                      );
-                    })}
-                  </div>
                 </>
+              )}
+
+              {/* SECTION: Galería */}
+              {mainSection === "galeria" && (
+                <div className="space-y-6">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <ImageIcon className="w-6 h-6" /> Galería de Valoraciones
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Todas tus fotos organizadas por valoración
+                  </p>
+
+                  {(() => {
+                    // Collect all rated images
+                    const allRatedImages: Array<{
+                      src: string;
+                      title: string;
+                      rating: number;
+                      objectId: string;
+                      objectName: string;
+                      projectId: string;
+                      projectName: string;
+                      keyName: string;
+                    }> = [];
+                    
+                    objects.forEach((obj) => {
+                      obj.projects.forEach((proj: any) => {
+                        const ratings = proj.ratings || {};
+                        const images = proj.images || {};
+                        
+                        Object.keys(ratings).forEach((keyName) => {
+                          const rating = ratings[keyName];
+                          const imageSrc = images[keyName];
+                          
+                          if (rating > 0 && imageSrc) {
+                            // Generate a readable title based on keyName
+                            let title = keyName;
+                            if (keyName === "finalProject") {
+                              title = "Imagen final del proyecto";
+                            } else if (keyName.startsWith("initial")) {
+                              title = `Imagen inicial ${keyName.replace("initial", "")}`;
+                            } else if (keyName.startsWith("final")) {
+                              title = `Imagen final ${keyName.replace("final", "")}`;
+                            } else if (keyName === "panelSchema") {
+                              title = "Esquema de paneles";
+                            }
+                            
+                            allRatedImages.push({
+                              src: imageSrc,
+                              title,
+                              rating,
+                              objectId: obj.id,
+                              objectName: obj.commonName || obj.id,
+                              projectId: proj.id,
+                              projectName: proj.name,
+                              keyName,
+                            });
+                          }
+                        });
+                      });
+                    });
+
+                    // Count images by rating
+                    const rating3Count = allRatedImages.filter((img) => img.rating === 3).length;
+                    const rating2Count = allRatedImages.filter((img) => img.rating === 2).length;
+                    const rating1Count = allRatedImages.filter((img) => img.rating === 1).length;
+
+                    return (
+                      <>
+                        {/* Statistics Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-purple-500/10">
+                                <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">Total Valoradas</div>
+                                <div className="text-2xl font-bold">{allRatedImages.length}</div>
+                              </div>
+                            </div>
+                          </Card>
+                          
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-yellow-500/10">
+                                <div className="flex gap-0.5">
+                                  {[1, 2, 3].map((i) => (
+                                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">3 Estrellas</div>
+                                <div className="text-2xl font-bold">{rating3Count}</div>
+                              </div>
+                            </div>
+                          </Card>
+                          
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-blue-500/10">
+                                <div className="flex gap-0.5">
+                                  {[1, 2].map((i) => (
+                                    <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
+                                  ))}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">2 Estrellas</div>
+                                <div className="text-2xl font-bold">{rating2Count}</div>
+                              </div>
+                            </div>
+                          </Card>
+                          
+                          <Card className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-slate-500/10">
+                                <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">1 Estrella</div>
+                                <div className="text-2xl font-bold">{rating1Count}</div>
+                              </div>
+                            </div>
+                          </Card>
+                        </div>
+
+                        {/* Filter */}
+                        <Card className="p-5">
+                          <label className="mb-3 block text-base font-semibold">Filtrar por valoración</label>
+                          <RadioGroup
+                            value={filterRating}
+                            onValueChange={(value: any) => setFilterRating(value)}
+                            className="flex flex-wrap gap-4"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="all" id="gallery-all" />
+                              <label htmlFor="gallery-all" className="cursor-pointer font-normal">
+                                Todas ({allRatedImages.length})
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="3" id="gallery-3stars" />
+                              <label htmlFor="gallery-3stars" className="cursor-pointer font-normal flex items-center gap-1">
+                                3 Estrellas
+                                <div className="flex gap-0.5 ml-1">
+                                  {[1, 2, 3].map((i) => (
+                                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                                  ))}
+                                </div>
+                                ({rating3Count})
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="2" id="gallery-2stars" />
+                              <label htmlFor="gallery-2stars" className="cursor-pointer font-normal flex items-center gap-1">
+                                2 Estrellas
+                                <div className="flex gap-0.5 ml-1">
+                                  {[1, 2].map((i) => (
+                                    <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
+                                  ))}
+                                </div>
+                                ({rating2Count})
+                              </label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="1" id="gallery-1star" />
+                              <label htmlFor="gallery-1star" className="cursor-pointer font-normal flex items-center gap-1">
+                                1 Estrella
+                                <Star className="w-3 h-3 fill-slate-400 text-slate-400 ml-1" />
+                                ({rating1Count})
+                              </label>
+                            </div>
+                          </RadioGroup>
+                        </Card>
+
+                        {/* Gallery */}
+                        {(() => {
+                          const filteredImages = allRatedImages
+                            .filter((img) => {
+                              if (filterRating === "all") return true;
+                              return img.rating === parseInt(filterRating);
+                            })
+                            .sort((a, b) => b.rating - a.rating);
+
+                          if (filteredImages.length === 0) {
+                            return (
+                              <Card className="p-8 text-center">
+                                <Star className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  No hay imágenes {filterRating !== "all" ? `con ${filterRating} ${filterRating === "1" ? "estrella" : "estrellas"}` : "valoradas"} aún
+                                </p>
+                              </Card>
+                            );
+                          }
+
+                          return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              {filteredImages.map((img, idx) => (
+                                <Card key={`${img.projectId}-${img.keyName}-${idx}`} className="p-4 relative">
+                                  <div className="mb-3 relative group">
+                                    <img
+                                      src={img.src}
+                                      alt={img.title}
+                                      className="w-full h-64 object-cover rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                      onClick={() => {
+                                        setImageModalSrc(img.src);
+                                        setImageModalOpen(true);
+                                      }}
+                                    />
+                                    {/* Delete button */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteImageFromGallery(img.objectId, img.projectId, img.keyName);
+                                      }}
+                                      className="absolute bottom-2 right-2 bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                      title="Eliminar imagen"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                  
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                                      {img.title}
+                                    </h3>
+                                    {/* Interactive rating stars */}
+                                    <div className="flex gap-0.5">
+                                      {Array.from({ length: 3 }).map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`w-4 h-4 cursor-pointer transition-transform hover:scale-110 ${
+                                            i < img.rating
+                                              ? "fill-yellow-400 text-yellow-400"
+                                              : "text-slate-300 dark:text-slate-600"
+                                          }`}
+                                          onClick={() => updateImageRating(img.objectId, img.projectId, img.keyName, i + 1 === img.rating ? 0 : i + 1)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {img.objectName} · {img.projectName}
+                                  </p>
+                                </Card>
+                              ))}
+                            </div>
+                          );
+                        })()}
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           )}
