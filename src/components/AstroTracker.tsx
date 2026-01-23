@@ -48,6 +48,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import logoLight from "@/assets/logo-light.png";
@@ -4638,30 +4639,143 @@ export default function AstroTracker() {
                           </div>
                         </Card>
 
-                        {/* Calendar Card - simplified version without IIFE */}
-                        <Card className="p-5">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
-                              <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
-                              <div className="text-2xl font-bold">
+                        {/* Calendar Card - with calendar popup */}
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Card className="p-5 cursor-pointer hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all">
+                              <div className="flex items-center gap-3">
+                                <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
+                                  <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
+                                </div>
+                                <div>
+                                  <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                                  <div className="text-2xl font-bold">
+                                    {(() => {
+                                      const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
+                                      const currentMonthSessions = allSessions.filter((s) => {
+                                        const sessionDate = new Date(s.date);
+                                        return sessionDate.getFullYear() === calendarYear && sessionDate.getMonth() === calendarMonth;
+                                      });
+                                      return new Set(currentMonthSessions.map((s) => new Date(s.date).getDate())).size;
+                                    })()}
+                                  </div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-50 bg-background border shadow-lg" align="start">
+                            <div className="p-3">
+                              {/* Month/Year navigation */}
+                              <div className="flex items-center justify-between mb-3 px-1">
+                                <button
+                                  onClick={() => {
+                                    if (calendarMonth === 0) {
+                                      setCalendarMonth(11);
+                                      setCalendarYear(calendarYear - 1);
+                                    } else {
+                                      setCalendarMonth(calendarMonth - 1);
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition"
+                                >
+                                  <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <span className="font-semibold text-sm">
+                                  {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]} {calendarYear}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    if (calendarMonth === 11) {
+                                      setCalendarMonth(0);
+                                      setCalendarYear(calendarYear + 1);
+                                    } else {
+                                      setCalendarMonth(calendarMonth + 1);
+                                    }
+                                  }}
+                                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition"
+                                >
+                                  <ChevronRight className="w-4 h-4" />
+                                </button>
+                              </div>
+                              
+                              {/* Calendar grid */}
+                              <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                                {["L", "M", "X", "J", "V", "S", "D"].map((d) => (
+                                  <div key={d} className="w-8 h-8 flex items-center justify-center font-medium text-slate-500 dark:text-slate-400">
+                                    {d}
+                                  </div>
+                                ))}
                                 {(() => {
-                                  const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
-                                  const currentMonthSessions = allSessions.filter((s) => {
-                                    const sessionDate = new Date(s.date);
-                                    return sessionDate.getFullYear() === calendarYear && sessionDate.getMonth() === calendarMonth;
-                                  });
-                                  return new Set(currentMonthSessions.map((s) => new Date(s.date).getDate())).size;
+                                  const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => 
+                                    (p.sessions || []).map((s: any) => ({ ...s, objectId: o.id, objectName: o.id, projectId: p.id, projectName: p.name }))
+                                  ));
+                                  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+                                  const firstDayOfWeek = (new Date(calendarYear, calendarMonth, 1).getDay() + 6) % 7;
+                                  const days: React.ReactNode[] = [];
+                                  
+                                  // Empty cells before first day
+                                  for (let i = 0; i < firstDayOfWeek; i++) {
+                                    days.push(<div key={`empty-${i}`} className="w-8 h-8" />);
+                                  }
+                                  
+                                  // Day cells
+                                  for (let day = 1; day <= daysInMonth; day++) {
+                                    const sessionsOnDay = allSessions.filter((s: any) => {
+                                      const d = new Date(s.date);
+                                      return d.getFullYear() === calendarYear && d.getMonth() === calendarMonth && d.getDate() === day;
+                                    });
+                                    const hasSessions = sessionsOnDay.length > 0;
+                                    
+                                    days.push(
+                                      <button
+                                        key={day}
+                                        onClick={() => {
+                                          if (hasSessions) {
+                                            // Group sessions by project
+                                            const projectMap = new Map<string, any>();
+                                            sessionsOnDay.forEach((s: any) => {
+                                              const key = `${s.objectId}-${s.projectId}`;
+                                              if (!projectMap.has(key)) {
+                                                projectMap.set(key, {
+                                                  objectId: s.objectId,
+                                                  objectName: s.objectName,
+                                                  projectId: s.projectId,
+                                                  projectName: s.projectName,
+                                                  sessionsCount: 0
+                                                });
+                                              }
+                                              projectMap.get(key).sessionsCount++;
+                                            });
+                                            setSelectedDayInfo({
+                                              day,
+                                              month: calendarMonth,
+                                              year: calendarYear,
+                                              projects: Array.from(projectMap.values())
+                                            });
+                                          }
+                                        }}
+                                        className={`w-8 h-8 flex items-center justify-center rounded-full text-xs transition
+                                          ${hasSessions 
+                                            ? "bg-green-500 text-white font-semibold cursor-pointer hover:bg-green-600" 
+                                            : "text-slate-600 dark:text-slate-400 cursor-default"
+                                          }
+                                        `}
+                                        disabled={!hasSessions}
+                                      >
+                                        {day}
+                                      </button>
+                                    );
+                                  }
+                                  
+                                  return days;
                                 })()}
                               </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
-                              </div>
                             </div>
-                          </div>
-                        </Card>
+                          </PopoverContent>
+                        </Popover>
                       </>
                     )}
                   </div>
