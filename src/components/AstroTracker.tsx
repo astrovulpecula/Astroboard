@@ -5596,23 +5596,44 @@ export default function AstroTracker() {
                           
                           const visibleMonths = getVisibleMonths();
                           
+                          // Check if month is the zenith month
+                          const cenitMonthIdx = planned.cenit ? parseInt(planned.cenit) - 1 : -1;
+                          
                           return (
                             <div key={planned.id} className="flex items-center">
                               <div className="w-24 flex-shrink-0 text-xs font-medium truncate pr-2" title={planned.objectId}>
                                 {planned.objectId}
                               </div>
                               <div className="flex-1 grid grid-cols-12 gap-px">
-                                {visibleMonths.map((isVisible, monthIdx) => (
-                                  <div
-                                    key={monthIdx}
-                                    className={`h-4 rounded-sm transition-colors ${
-                                      isVisible
-                                        ? barColor
-                                        : "bg-muted-foreground/20"
-                                    }`}
-                                    title={isVisible ? `${planned.objectId} visible` : ""}
-                                  />
-                                ))}
+                                {visibleMonths.map((isVisible, monthIdx) => {
+                                  const isZenith = monthIdx === cenitMonthIdx && isVisible;
+                                  return (
+                                    <div
+                                      key={monthIdx}
+                                      className={`h-4 rounded-sm transition-colors relative overflow-hidden ${
+                                        isVisible
+                                          ? barColor
+                                          : "bg-muted-foreground/20"
+                                      }`}
+                                      title={isVisible ? `${planned.objectId}${isZenith ? " (Cenit)" : ""}` : ""}
+                                    >
+                                      {isZenith && (
+                                        <div 
+                                          className="absolute inset-0"
+                                          style={{
+                                            background: `repeating-linear-gradient(
+                                              45deg,
+                                              transparent,
+                                              transparent 2px,
+                                              rgba(255, 255, 255, 0.4) 2px,
+                                              rgba(255, 255, 255, 0.4) 4px
+                                            )`
+                                          }}
+                                        />
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                           );
