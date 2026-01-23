@@ -1334,6 +1334,7 @@ function FPlanned({
   const [signal, setSignal] = useState("");
   const [teselas, setTeselas] = useState("");
   const [cenit, setCenit] = useState("");
+  const [prioridad, setPrioridad] = useState("");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -1343,6 +1344,7 @@ function FPlanned({
   const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
   const TESELAS_OPTIONS = ["Sí", "No"];
   const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const PRIORIDAD_OPTIONS = ["Alta", "Media", "Baja"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1467,6 +1469,7 @@ function FPlanned({
       signal,
       teselas,
       cenit,
+      prioridad,
       encuadreImage,
       createdAt: new Date().toISOString(),
     });
@@ -1577,6 +1580,21 @@ function FPlanned({
           {MONTH_OPTIONS.map((m) => (
             <option key={m} value={m}>
               {m}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Prioridad</Label>
+        <select
+          value={prioridad}
+          onChange={(e) => setPrioridad(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {PRIORIDAD_OPTIONS.map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
           ))}
         </select>
@@ -1716,6 +1734,7 @@ function FPlannedEdit({
   const [signal, setSignal] = useState(initial.signal || "");
   const [teselas, setTeselas] = useState(initial.teselas || "");
   const [cenit, setCenit] = useState(initial.cenit || "");
+  const [prioridad, setPrioridad] = useState(initial.prioridad || "");
   const [encuadreImage, setEncuadreImage] = useState<string | null>(initial.encuadreImage || null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -1725,6 +1744,7 @@ function FPlannedEdit({
   const SIGNAL_OPTIONS = ["RGB", "LRGB", "HA", "OIII", "HA + OIII", "RGB+HA/OIII"];
   const TESELAS_OPTIONS = ["Sí", "No"];
   const MONTH_OPTIONS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+  const PRIORIDAD_OPTIONS = ["Alta", "Media", "Baja"];
 
   const visibleMonths = useMemo(() => {
     if (isCircumpolar) return 12;
@@ -1843,6 +1863,7 @@ function FPlannedEdit({
       signal,
       teselas,
       cenit,
+      prioridad,
       encuadreImage,
     });
   };
@@ -1952,6 +1973,21 @@ function FPlannedEdit({
           {MONTH_OPTIONS.map((m) => (
             <option key={m} value={m}>
               {m}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="grid gap-1">
+        <Label>Prioridad</Label>
+        <select
+          value={prioridad}
+          onChange={(e) => setPrioridad(e.target.value)}
+          className={INPUT_CLS}
+        >
+          <option value="">Seleccionar...</option>
+          {PRIORIDAD_OPTIONS.map((p) => (
+            <option key={p} value={p}>
+              {p}
             </option>
           ))}
         </select>
@@ -5332,7 +5368,49 @@ export default function AstroTracker() {
                     Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
                   </p>
 
-                  {/* Visibility Timeline */}
+                  {/* Currently visible objects indicator */}
+                  {(() => {
+                    const currentMonth = new Date().getMonth() + 1; // 1-12
+                    const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                    const currentMonthName = MONTH_NAMES[currentMonth - 1];
+                    
+                    const visibleNow = plannedProjects.filter(planned => {
+                      if (planned.isCircumpolar) return true;
+                      if (!planned.orto || !planned.ocaso) return false;
+                      
+                      const ortoNum = parseInt(planned.orto);
+                      const ocasoNum = parseInt(planned.ocaso);
+                      
+                      if (ortoNum <= ocasoNum) {
+                        return currentMonth >= ortoNum && currentMonth <= ocasoNum;
+                      } else {
+                        // Crosses year boundary
+                        return currentMonth >= ortoNum || currentMonth <= ocasoNum;
+                      }
+                    });
+                    
+                    if (visibleNow.length === 0 && plannedProjects.length > 0) {
+                      return (
+                        <div className="p-4 rounded-xl bg-muted/50 border border-border">
+                          <p className="text-sm text-muted-foreground">
+                            No hay objetos planificados visibles en <span className="font-semibold">{currentMonthName}</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    if (visibleNow.length > 0) {
+                      return (
+                        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                          <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                            🔭 Objetos visibles en <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                   {plannedProjects.length > 0 && (
                     <Card className="p-4">
                       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
@@ -5404,7 +5482,7 @@ export default function AstroTracker() {
                                     className={`h-4 rounded-sm transition-colors ${
                                       isVisible
                                         ? barColor
-                                        : "bg-slate-200 dark:bg-slate-800"
+                                        : "bg-muted-foreground/20"
                                     }`}
                                     title={isVisible ? `${planned.objectId} visible` : ""}
                                   />
@@ -5516,10 +5594,10 @@ export default function AstroTracker() {
                                   <img
                                     src={thumbnailImage}
                                     alt={planned.objectId}
-                                    className="w-36 h-36 rounded-xl object-cover border border-border"
+                                    className="w-48 h-28 rounded-xl object-cover border border-border flex-shrink-0"
                                   />
                                 ) : (
-                                  <div className="w-36 h-36 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                                  <div className="w-48 h-28 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
                                     <Telescope className="w-10 h-10 text-muted-foreground/50" />
                                   </div>
                                 )}
@@ -5535,6 +5613,7 @@ export default function AstroTracker() {
                                     {planned.signal && <Badge className="bg-secondary text-secondary-foreground">{planned.signal}</Badge>}
                                     {planned.teselas && <Badge className="border border-border bg-transparent">Teselas: {planned.teselas}</Badge>}
                                     {planned.cenit && <Badge className="border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
+                                    {planned.prioridad && <Badge className={`${planned.prioridad === "Alta" ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700" : planned.prioridad === "Media" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700"}`}>Prioridad: {planned.prioridad}</Badge>}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-2">
                                     Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
