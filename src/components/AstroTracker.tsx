@@ -5622,11 +5622,11 @@ export default function AstroTracker() {
                                           className="absolute inset-0"
                                           style={{
                                             background: `repeating-linear-gradient(
-                                              45deg,
+                                              -45deg,
                                               transparent,
-                                              transparent 2px,
-                                              rgba(255, 255, 255, 0.4) 2px,
-                                              rgba(255, 255, 255, 0.4) 4px
+                                              transparent 3px,
+                                              rgba(0, 0, 0, 0.5) 3px,
+                                              rgba(0, 0, 0, 0.5) 6px
                                             )`
                                           }}
                                         />
