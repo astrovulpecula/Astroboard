@@ -5351,19 +5351,16 @@ export default function AstroTracker() {
                         
                         {/* Object visibility bars */}
                         {plannedProjects.map((planned, idx) => {
-                          const colors = [
-                            "bg-blue-500",
-                            "bg-emerald-500",
-                            "bg-purple-500",
-                            "bg-amber-500",
-                            "bg-rose-500",
-                            "bg-cyan-500",
-                            "bg-orange-500",
-                            "bg-indigo-500",
-                            "bg-teal-500",
-                            "bg-pink-500",
-                          ];
-                          const barColor = colors[idx % colors.length];
+                          // Signal-based colors - each signal type has a unique color
+                          const signalColors: Record<string, string> = {
+                            "RGB": "bg-emerald-500",
+                            "LRGB": "bg-blue-500",
+                            "HA": "bg-rose-500",
+                            "OIII": "bg-cyan-500",
+                            "HA + OIII": "bg-purple-500",
+                            "RGB+HA/OIII": "bg-amber-500",
+                          };
+                          const barColor = planned.signal ? signalColors[planned.signal] || "bg-slate-400" : "bg-slate-400";
                           
                           // Calculate which months are visible
                           const getVisibleMonths = () => {
@@ -5519,11 +5516,11 @@ export default function AstroTracker() {
                                   <img
                                     src={thumbnailImage}
                                     alt={planned.objectId}
-                                    className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                    className="w-36 h-36 rounded-xl object-cover border border-border"
                                   />
                                 ) : (
-                                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
-                                    <Telescope className="w-6 h-6 text-slate-400" />
+                                  <div className="w-36 h-36 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                                    <Telescope className="w-10 h-10 text-muted-foreground/50" />
                                   </div>
                                 )}
                                 <div className="flex-1 min-w-0">
