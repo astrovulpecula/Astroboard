@@ -1909,6 +1909,15 @@ const generatePDFReport = async (
   dateFormat: string,
   toast: any
 ) => {
+  // HTML escape function for XSS prevention
+  const escapeHtml = (str: string | null | undefined): string => {
+    if (str === null || str === undefined) return '';
+    const stringVal = String(str);
+    const div = document.createElement('div');
+    div.textContent = stringVal;
+    return div.innerHTML;
+  };
+
   const { nights, totalLights, totalSeconds, currentHours, goalHours, diffDays, mainLocation } = (() => {
     const dates: string[] = proj.sessions.map((s: any) => s.date).filter((d: string) => d);
     const uniqueDates = Array.from(new Set(dates));
@@ -2038,7 +2047,8 @@ const generatePDFReport = async (
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Reporte - ${obj.id} - ${proj.name}</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+  <title>Reporte - ${escapeHtml(obj.id)} - ${escapeHtml(proj.name)}</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2075,10 +2085,10 @@ const generatePDFReport = async (
     <div class="header">
       <div class="header-left">
         <h1>Reporte del Proyecto</h1>
-        <p>${obj.id} ${obj.commonName ? `- ${obj.commonName}` : ''}</p>
-        <p style="margin-top: 0.5rem; font-size: 1rem;">${proj.name}</p>
+        <p>${escapeHtml(obj.id)} ${obj.commonName ? `- ${escapeHtml(obj.commonName)}` : ''}</p>
+        <p style="margin-top: 0.5rem; font-size: 1rem;">${escapeHtml(proj.name)}</p>
       </div>
-      ${config.includeImage && finalImage ? `<div class="header-right"><img src="${finalImage}" alt="Imagen final" /></div>` : ''}
+      ${config.includeImage && finalImage ? `<div class="header-right"><img src="${escapeHtml(finalImage)}" alt="Imagen final" /></div>` : ''}
     </div>
     `;
 
@@ -2110,14 +2120,14 @@ const generatePDFReport = async (
       filterImagesArray.forEach((item) => {
         html += `
           <div class="card">
-            <h3 style="font-size: 1.2rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1.5rem; text-align: center;">${item.filter}</h3>
+            <h3 style="font-size: 1.2rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1.5rem; text-align: center;">${escapeHtml(item.filter)}</h3>
             <div style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">`;
         
         if (item.initial) {
           html += `
               <div style="width: 100%; text-align: center;">
                 <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Inicial</p>
-                <img src="${item.initial}" alt="Imagen inicial ${item.filter}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
+                <img src="${escapeHtml(item.initial)}" alt="Imagen inicial ${escapeHtml(item.filter)}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
               </div>`;
         }
         
@@ -2125,7 +2135,7 @@ const generatePDFReport = async (
           html += `
               <div style="width: 100%; text-align: center;">
                 <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Final</p>
-                <img src="${item.final}" alt="Imagen final ${item.filter}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
+                <img src="${escapeHtml(item.final)}" alt="Imagen final ${escapeHtml(item.filter)}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
               </div>`;
         }
         
@@ -2154,10 +2164,10 @@ const generatePDFReport = async (
     if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
     if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
     if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
-    if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${telescope}</div></div>`;
-    if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${camera}</div></div>`;
-    if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${mainLocation.name}</div>${mainLocation.coords ? `<div class="card-subtitle">${mainLocation.coords}</div>` : ''}</div>`;
-    if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${mainLocation.bortle}</div></div>`;
+    if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
+    if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
+    if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainLocation.name)}</div>${mainLocation.coords ? `<div class="card-subtitle">${escapeHtml(mainLocation.coords)}</div>` : ''}</div>`;
+    if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${escapeHtml(mainLocation.bortle)}</div></div>`;
     
     html += `</div></div>`;
   }
@@ -2236,12 +2246,12 @@ const generatePDFReport = async (
         <tbody>
           ${sessionDataWithSNR.map(s => `
             <tr>
-              <td>${s.date}</td>
-              <td>${s.filter}</td>
-              <td>${s.lights}</td>
-              <td>${s.sessionHours.toFixed(2)}h</td>
-              <td>${s.cumulativeHours.toFixed(2)}h</td>
-              <td>${s.snrMean}</td>
+              <td>${escapeHtml(s.date)}</td>
+              <td>${escapeHtml(s.filter)}</td>
+              <td>${escapeHtml(String(s.lights))}</td>
+              <td>${escapeHtml(s.sessionHours.toFixed(2))}h</td>
+              <td>${escapeHtml(s.cumulativeHours.toFixed(2))}h</td>
+              <td>${escapeHtml(s.snrMean)}</td>
             </tr>
           `).join('')}
         </tbody>
