@@ -4897,6 +4897,114 @@ export default function AstroTracker() {
                     Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
                   </p>
 
+                  {/* Visibility Timeline */}
+                  {plannedProjects.length > 0 && (
+                    <Card className="p-4">
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" /> Visibilidad Anual
+                      </h3>
+                      <div className="space-y-2">
+                        {/* Month headers */}
+                        <div className="flex">
+                          <div className="w-24 flex-shrink-0" />
+                          <div className="flex-1 grid grid-cols-12 gap-px text-xs text-center text-muted-foreground">
+                            {["E", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"].map((m, i) => (
+                              <div key={i} className="py-1">{m}</div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* Object visibility bars */}
+                        {plannedProjects.map((planned, idx) => {
+                          const colors = [
+                            "bg-blue-500",
+                            "bg-emerald-500",
+                            "bg-purple-500",
+                            "bg-amber-500",
+                            "bg-rose-500",
+                            "bg-cyan-500",
+                            "bg-orange-500",
+                            "bg-indigo-500",
+                            "bg-teal-500",
+                            "bg-pink-500",
+                          ];
+                          const barColor = colors[idx % colors.length];
+                          
+                          // Calculate which months are visible
+                          const getVisibleMonths = () => {
+                            if (planned.isCircumpolar) {
+                              return Array(12).fill(true);
+                            }
+                            if (!planned.orto || !planned.ocaso) {
+                              return Array(12).fill(false);
+                            }
+                            const ortoNum = parseInt(planned.orto);
+                            const ocasoNum = parseInt(planned.ocaso);
+                            const visible = Array(12).fill(false);
+                            
+                            if (ortoNum <= ocasoNum) {
+                              for (let i = ortoNum - 1; i <= ocasoNum - 1; i++) {
+                                visible[i] = true;
+                              }
+                            } else {
+                              // Crosses year boundary
+                              for (let i = ortoNum - 1; i < 12; i++) {
+                                visible[i] = true;
+                              }
+                              for (let i = 0; i <= ocasoNum - 1; i++) {
+                                visible[i] = true;
+                              }
+                            }
+                            return visible;
+                          };
+                          
+                          const visibleMonths = getVisibleMonths();
+                          
+                          return (
+                            <div key={planned.id} className="flex items-center">
+                              <div className="w-24 flex-shrink-0 text-xs font-medium truncate pr-2" title={planned.objectId}>
+                                {planned.objectId}
+                              </div>
+                              <div className="flex-1 grid grid-cols-12 gap-px">
+                                {visibleMonths.map((isVisible, monthIdx) => (
+                                  <div
+                                    key={monthIdx}
+                                    className={`h-4 rounded-sm transition-colors ${
+                                      isVisible
+                                        ? barColor
+                                        : "bg-slate-200 dark:bg-slate-800"
+                                    }`}
+                                    title={isVisible ? `${planned.objectId} visible` : ""}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* Current month indicator */}
+                        <div className="flex mt-2">
+                          <div className="w-24 flex-shrink-0" />
+                          <div className="flex-1 grid grid-cols-12 gap-px">
+                            {Array(12).fill(null).map((_, i) => {
+                              const currentMonth = new Date().getMonth();
+                              return (
+                                <div
+                                  key={i}
+                                  className={`h-1 rounded-full ${
+                                    i === currentMonth
+                                      ? "bg-foreground"
+                                      : "bg-transparent"
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+
                   {/* Search */}
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
