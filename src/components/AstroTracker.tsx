@@ -4943,53 +4943,65 @@ export default function AstroTracker() {
 
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filteredPlanned.map((planned) => (
-                          <Card
-                            key={planned.id}
-                            className="p-4"
-                            onClick={() => setSelectedPlannedId(planned.id)}
-                          >
-                            <div className="flex items-start gap-3">
-                              {/* Thumbnail */}
-                              {planned.encuadreImage ? (
-                                <img
-                                  src={planned.encuadreImage}
-                                  alt={planned.objectId}
-                                  className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
-                                />
-                              ) : (
-                                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
-                                  <Telescope className="w-6 h-6 text-slate-400" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-lg font-bold truncate">{planned.objectId}</p>
-                                {planned.objectName && (
-                                  <p className="text-sm text-muted-foreground truncate">{planned.objectName}</p>
+                        {filteredPlanned.map((planned) => {
+                          // Check if object exists and get its image
+                          const existingObj = objects.find(
+                            (o) => o.id.toLowerCase() === planned.objectId.toLowerCase()
+                          );
+                          const existingObjImage = existingObj?.image || 
+                            (existingObj?.projects[existingObj.projects.length - 1] as any)?.finalImage;
+                          
+                          // Priority: existing object image > encuadre image > placeholder
+                          const thumbnailImage = existingObjImage || planned.encuadreImage;
+                          
+                          return (
+                            <Card
+                              key={planned.id}
+                              className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => setSelectedPlannedId(planned.id)}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Thumbnail - uses existing object image if available */}
+                                {thumbnailImage ? (
+                                  <img
+                                    src={thumbnailImage}
+                                    alt={planned.objectId}
+                                    className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                  />
+                                ) : (
+                                  <div className="w-20 h-20 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center">
+                                    <Telescope className="w-6 h-6 text-slate-400" />
+                                  </div>
                                 )}
-                                <p className="text-sm font-medium mt-1 truncate">{planned.name}</p>
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {planned.constellation && <Badge>{planned.constellation}</Badge>}
-                                  {planned.projectType && <Badge>{planned.projectType}</Badge>}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-lg font-bold truncate">{planned.objectId}</p>
+                                  {planned.objectName && (
+                                    <p className="text-sm text-muted-foreground truncate">{planned.objectName}</p>
+                                  )}
+                                  <p className="text-sm font-medium mt-1 truncate">{planned.name}</p>
+                                  <div className="flex flex-wrap gap-2 mt-2">
+                                    {planned.constellation && <Badge>{planned.constellation}</Badge>}
+                                    {planned.projectType && <Badge>{planned.projectType}</Badge>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-2">
+                                    Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
+                                  </p>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-2">
-                                  Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
-                                </p>
+                                <IconBtn
+                                  title="Eliminar"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm("¿Eliminar este proyecto planificado?")) {
+                                      setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </IconBtn>
                               </div>
-                              <IconBtn
-                                title="Eliminar"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (confirm("¿Eliminar este proyecto planificado?")) {
-                                    setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
-                                  }
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </IconBtn>
-                            </div>
-                          </Card>
-                        ))}
+                            </Card>
+                          );
+                        })}
                       </div>
                     );
                   })()}
