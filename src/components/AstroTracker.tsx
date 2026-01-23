@@ -1641,6 +1641,328 @@ function FPlanned({
   );
 }
 
+function FPlannedEdit({
+  initial,
+  onSubmit,
+  onCancel,
+}: {
+  initial: any;
+  onSubmit: (planned: any) => void;
+  onCancel: () => void;
+}) {
+  const [objectId, setObjectId] = useState(initial.objectId || "");
+  const [objectName, setObjectName] = useState(initial.objectName || "");
+  const [constellation, setConstellation] = useState(initial.constellation || "");
+  const [objectType, setObjectType] = useState(initial.objectType || "");
+  const [orto, setOrto] = useState(initial.orto || "");
+  const [ocaso, setOcaso] = useState(initial.ocaso || "");
+  const [isCircumpolar, setIsCircumpolar] = useState(initial.isCircumpolar || false);
+  const [encuadreImage, setEncuadreImage] = useState<string | null>(initial.encuadreImage || null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const visibleMonths = useMemo(() => {
+    if (isCircumpolar) return 12;
+    return calculateVisibleMonths(orto, ocaso);
+  }, [orto, ocaso, isCircumpolar]);
+
+  const handleIdChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setObjectId(value);
+    
+    if (value.trim().length > 0) {
+      try {
+        const results = await searchCelestialObjects(value.trim());
+        setSuggestions(results);
+        setShowSuggestions(results.length > 0);
+        setSelectedIndex(-1);
+      } catch (error) {
+        console.error('Error searching celestial objects:', error);
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (obj: any) => {
+    setObjectId(obj.code || "");
+    setObjectName(obj.nameEsp || "");
+    setConstellation(obj.constellation || "");
+    setObjectType(obj.objectType || "");
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setSelectedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSelectSuggestion(suggestions[selectedIndex]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleEncuadreUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        const maxDim = 800;
+        let w = img.width, h = img.height;
+        if (w > h) {
+          if (w > maxDim) { h *= maxDim / w; w = maxDim; }
+        } else {
+          if (h > maxDim) { w *= maxDim / h; h = maxDim; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        ctx?.drawImage(img, 0, 0, w, h);
+        resolve();
+      };
+    });
+    setEncuadreImage(canvas.toDataURL("image/jpeg", 0.8));
+  };
+
+  const handleCircumpolarToggle = () => {
+    setIsCircumpolar(!isCircumpolar);
+    if (!isCircumpolar) {
+      setOrto("");
+      setOcaso("");
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!objectId.trim()) {
+      alert("Debes proporcionar un código de objeto.");
+      return;
+    }
+    
+    onSubmit({
+      ...initial,
+      objectId: objectId.trim(),
+      objectName,
+      constellation,
+      objectType,
+      orto: isCircumpolar ? null : orto,
+      ocaso: isCircumpolar ? null : ocaso,
+      isCircumpolar,
+      visibleMonths: isCircumpolar ? 12 : visibleMonths,
+      encuadreImage,
+    });
+  };
+
+  return (
+    <form className="grid gap-4" onSubmit={handleSubmit}>
+      <label className="grid gap-1 relative">
+        <Label>Código del objeto</Label>
+        <input 
+          ref={inputRef}
+          value={objectId} 
+          onChange={handleIdChange}
+          onKeyDown={handleKeyDown}
+          className={INPUT_CLS} 
+          placeholder="M31, NGC1234, etc." 
+          autoComplete="off"
+        />
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+            {suggestions.map((obj, idx) => (
+              <button
+                key={obj.code}
+                type="button"
+                onClick={() => handleSelectSuggestion(obj)}
+                className={`w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border-b border-slate-200 dark:border-slate-700 last:border-b-0 ${
+                  idx === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
+                }`}
+              >
+                <div className="font-semibold text-sm">{obj.code}</div>
+                {obj.nameEsp && <div className="text-xs text-slate-600 dark:text-slate-400">{obj.nameEsp}</div>}
+                {obj.constellation && <div className="text-xs text-slate-500 dark:text-slate-500">{obj.constellation} · {obj.objectType}</div>}
+              </button>
+            ))}
+          </div>
+        )}
+      </label>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Nombre común</Label>
+          <input
+            value={objectName}
+            onChange={(e) => setObjectName(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Galaxia de Andrómeda"
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Constelación</Label>
+          <input
+            value={constellation}
+            onChange={(e) => setConstellation(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Andrómeda"
+          />
+        </label>
+      </div>
+
+      <label className="grid gap-1">
+        <Label>Tipo de objeto</Label>
+        <input
+          value={objectType}
+          onChange={(e) => setObjectType(e.target.value)}
+          className={INPUT_CLS}
+          placeholder="Galaxia espiral, Nebulosa, etc."
+        />
+      </label>
+
+      {/* Circumpolar toggle */}
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleCircumpolarToggle}
+          className={`px-4 py-2 rounded-xl text-sm font-medium transition ${
+            isCircumpolar
+              ? "bg-blue-600 text-white"
+              : "border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
+        >
+          Circumpolar
+        </button>
+        {isCircumpolar && (
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            Visible todo el año
+          </span>
+        )}
+      </div>
+
+      {/* Orto, Ocaso, Visible fields */}
+      <div className="grid sm:grid-cols-3 gap-3">
+        <label className="grid gap-1">
+          <Label>Orto</Label>
+          <select
+            value={orto}
+            onChange={(e) => setOrto(e.target.value)}
+            disabled={isCircumpolar}
+            className={`${INPUT_CLS} ${isCircumpolar ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <option value="">Seleccionar...</option>
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          <Label>Ocaso</Label>
+          <select
+            value={ocaso}
+            onChange={(e) => setOcaso(e.target.value)}
+            disabled={isCircumpolar}
+            className={`${INPUT_CLS} ${isCircumpolar ? "opacity-50 cursor-not-allowed bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <option value="">Seleccionar...</option>
+            {MONTHS.map((m) => (
+              <option key={m.value} value={m.value}>
+                {m.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-1">
+          <Label>Visible</Label>
+          <div
+            className={`${INPUT_CLS} flex items-center ${isCircumpolar ? "opacity-50 bg-slate-200 dark:bg-slate-800" : ""}`}
+          >
+            <span className="font-medium">
+              {isCircumpolar ? "12 meses" : visibleMonths > 0 ? `${visibleMonths} ${visibleMonths === 1 ? "mes" : "meses"}` : "–"}
+            </span>
+          </div>
+        </label>
+      </div>
+
+      <div className="grid gap-1">
+        <Label>Imagen de encuadre (opcional)</Label>
+        {encuadreImage ? (
+          <div className="relative">
+            <img
+              src={encuadreImage}
+              alt="Encuadre"
+              className="w-full max-h-48 object-contain rounded-xl border border-slate-200 dark:border-slate-700"
+            />
+            <button
+              type="button"
+              onClick={() => setEncuadreImage(null)}
+              className="absolute top-2 right-2 p-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="border-2 border-dashed rounded-xl p-6 text-center border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600">
+            <Upload className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+              Arrastra una imagen o haz clic para seleccionar
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEncuadreUpload}
+              className="hidden"
+              id="encuadre-edit-upload"
+            />
+            <label
+              htmlFor="encuadre-edit-upload"
+              className="cursor-pointer text-sm text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Seleccionar archivo
+            </label>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mt-2">
+        <Btn outline onClick={onCancel}>
+          Cancelar
+        </Btn>
+        <Btn type="submit">
+          <Pencil className="w-3 h-3 md:w-4 md:h-4" /> Guardar cambios
+        </Btn>
+      </div>
+    </form>
+  );
+}
+
 function FSession({
   onSubmit,
   initial,
@@ -3096,6 +3418,7 @@ export default function AstroTracker() {
   const [plannedProjects, setPlannedProjects] = useState<any[]>([]);
   const [selectedPlannedId, setSelectedPlannedId] = useState<string | null>(null);
   const [mPlanned, setMPlanned] = useState(false);
+  const [editingPlannedId, setEditingPlannedId] = useState<string | null>(null);
   const [plannedSearchText, setPlannedSearchText] = useState("");
   const [showPlannedFilters, setShowPlannedFilters] = useState(false);
   const [plannedFromPlan, setPlannedFromPlan] = useState<any>(null);
@@ -5174,6 +5497,30 @@ export default function AstroTracker() {
                             </div>
                           </div>
 
+                          {/* Visibility Info */}
+                          {(planned.orto || planned.ocaso || planned.isCircumpolar) && (
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label>Orto</Label>
+                                <p className="font-medium">
+                                  {planned.isCircumpolar ? "—" : planned.orto ? MONTHS.find(m => m.value === planned.orto)?.label : "—"}
+                                </p>
+                              </div>
+                              <div>
+                                <Label>Ocaso</Label>
+                                <p className="font-medium">
+                                  {planned.isCircumpolar ? "—" : planned.ocaso ? MONTHS.find(m => m.value === planned.ocaso)?.label : "—"}
+                                </p>
+                              </div>
+                              <div>
+                                <Label>Visible</Label>
+                                <p className="font-medium">
+                                  {planned.isCircumpolar ? "Circumpolar (12 meses)" : planned.visibleMonths ? `${planned.visibleMonths} meses` : "—"}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Actions */}
                           <div className="flex items-center justify-end gap-2 pt-4 border-t">
                             <Btn
@@ -5181,6 +5528,15 @@ export default function AstroTracker() {
                               onClick={() => setSelectedPlannedId(null)}
                             >
                               Cerrar
+                            </Btn>
+                            <Btn
+                              outline
+                              onClick={() => {
+                                setEditingPlannedId(planned.id);
+                                setSelectedPlannedId(null);
+                              }}
+                            >
+                              <Pencil className="w-4 h-4" /> Editar
                             </Btn>
                             <Btn
                               onClick={() => {
@@ -7913,6 +8269,29 @@ export default function AstroTracker() {
             locations={locations}
             mainLocation={mainLocation}
           />
+        </Modal>
+        {/* Modal para editar planificación */}
+        <Modal 
+          open={!!editingPlannedId} 
+          onClose={() => setEditingPlannedId(null)} 
+          title="Editar planificación"
+        >
+          {editingPlannedId && (() => {
+            const plannedToEdit = plannedProjects.find(p => p.id === editingPlannedId);
+            if (!plannedToEdit) return null;
+            return (
+              <FPlannedEdit
+                initial={plannedToEdit}
+                onSubmit={(updated) => {
+                  setPlannedProjects(plannedProjects.map(p => 
+                    p.id === editingPlannedId ? updated : p
+                  ));
+                  setEditingPlannedId(null);
+                }}
+                onCancel={() => setEditingPlannedId(null)}
+              />
+            );
+          })()}
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
           <FSession
