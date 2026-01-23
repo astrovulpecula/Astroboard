@@ -5050,6 +5050,7 @@ export default function AstroTracker() {
                   // Incluir objects y settings en la exportación
                 const exportData = {
                   objects,
+                  plannedProjects,
                   settings: {
                     userName,
                     cameras: cameras.filter((c) => c.trim() !== ""),
@@ -5201,6 +5202,12 @@ export default function AstroTracker() {
                         userName: settingsData.userName || userName,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                    }
+
+                    // Restaurar plannedProjects si existen
+                    if (json.plannedProjects && Array.isArray(json.plannedProjects)) {
+                      setPlannedProjects(json.plannedProjects);
+                      localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(json.plannedProjects));
                     }
 
                     setView("objects");
