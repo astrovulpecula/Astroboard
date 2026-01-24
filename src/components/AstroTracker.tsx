@@ -5458,83 +5458,83 @@ export default function AstroTracker() {
               )}
 
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
-              <div className="hidden md:grid md:grid-cols-5 gap-3 mb-6">
+              <div className="hidden md:grid md:grid-cols-5 gap-2 mb-6">
                 <button
                   onClick={() => setMainSection("pronostico")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
                     mainSection === "pronostico"
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "pronostico" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${mainSection === "pronostico" ? "bg-primary-foreground/20" : "bg-background"}`}>
                     <CloudSun className={`w-5 h-5 ${mainSection === "pronostico" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className="font-semibold">
+                  <span className="font-semibold truncate text-sm">
                     {t('forecast')}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("planificacion")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
                     mainSection === "planificacion"
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "planificacion" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${mainSection === "planificacion" ? "bg-primary-foreground/20" : "bg-background"}`}>
                     <Calendar className={`w-5 h-5 ${mainSection === "planificacion" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className="font-semibold">
+                  <span className="font-semibold truncate text-sm">
                     {t('planning')}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("objetos")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
                     mainSection === "objetos"
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "objetos" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${mainSection === "objetos" ? "bg-primary-foreground/20" : "bg-background"}`}>
                     <Telescope className={`w-5 h-5 ${mainSection === "objetos" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className="font-semibold">
+                  <span className="font-semibold truncate text-sm">
                     {t('objectsSection')}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("estadisticas")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
                     mainSection === "estadisticas"
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "estadisticas" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${mainSection === "estadisticas" ? "bg-primary-foreground/20" : "bg-background"}`}>
                     <BarChart3 className={`w-5 h-5 ${mainSection === "estadisticas" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className="font-semibold">
+                  <span className="font-semibold truncate text-sm">
                     {t('statisticsSection')}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setMainSection("galeria")}
-                  className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all shadow-sm ${
+                  className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
                     mainSection === "galeria"
                       ? "bg-primary text-primary-foreground border-primary shadow-md"
                       : "bg-secondary/50 border-border hover:bg-secondary hover:border-primary/30"
                   }`}
                 >
-                  <div className={`p-2 rounded-xl ${mainSection === "galeria" ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  <div className={`p-2 rounded-xl shrink-0 ${mainSection === "galeria" ? "bg-primary-foreground/20" : "bg-background"}`}>
                     <ImageIcon className={`w-5 h-5 ${mainSection === "galeria" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
-                  <span className="font-semibold">
+                  <span className="font-semibold truncate text-sm">
                     {t('gallery')}
                   </span>
                 </button>
