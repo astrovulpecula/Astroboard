@@ -5048,24 +5048,29 @@ export default function AstroTracker() {
                 outline
                 onClick={() => {
                   // Incluir objects, plannedProjects y TODOS los settings en la exportación
-                const exportData = {
-                  objects,
-                  plannedProjects,
-                  settings: {
-                    userName,
-                    cameras: cameras.filter((c) => c.trim() !== ""),
-                    telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-                    locations: locations.filter((l) => l.name.trim() !== ""),
-                    mainLocation,
-                    guideTelescope,
-                    guideCamera,
-                    mount,
-                    dateFormat,
-                    defaultTheme,
-                    jsonPath,
-                    visibleHighlights,
-                  },
-                };
+                  console.log("📦 Exportando datos:", { 
+                    objectsCount: objects.length, 
+                    plannedProjectsCount: plannedProjects.length,
+                    plannedProjects 
+                  });
+                  const exportData = {
+                    objects,
+                    plannedProjects,
+                    settings: {
+                      userName,
+                      cameras: cameras.filter((c) => c.trim() !== ""),
+                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+                      locations: locations.filter((l) => l.name.trim() !== ""),
+                      mainLocation,
+                      guideTelescope,
+                      guideCamera,
+                      mount,
+                      dateFormat,
+                      defaultTheme,
+                      jsonPath,
+                      visibleHighlights,
+                    },
+                  };
                   const data = JSON.stringify(exportData, null, 2),
                     blob = new Blob([data], { type: "application/json" }),
                     url = URL.createObjectURL(blob),
