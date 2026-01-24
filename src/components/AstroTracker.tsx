@@ -3710,6 +3710,7 @@ export default function AstroTracker() {
     { name: "", focalLength: "" },
   ]);
   const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
+  const [hasImportedData, setHasImportedData] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState(1);
   const [showEditPanels, setShowEditPanels] = useState(false);
   const [editNumPanels, setEditNumPanels] = useState(1);
@@ -3855,15 +3856,19 @@ export default function AstroTracker() {
         const data = JSON.parse(savedData);
         if (Array.isArray(data) && data.length > 0) {
           setObjects(data);
+          setHasImportedData(true);
         } else {
           setShowInitialFilePrompt(true);
+          setHasImportedData(false);
         }
       } catch (e) {
         console.error("Error loading data:", e);
         setShowInitialFilePrompt(true);
+        setHasImportedData(false);
       }
     } else {
       setShowInitialFilePrompt(true);
+      setHasImportedData(false);
     }
 
     // Load planned projects from localStorage
@@ -5283,6 +5288,7 @@ export default function AstroTracker() {
                       localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(json.plannedProjects));
                     }
 
+                    setHasImportedData(true);
                     setView("objects");
                     setSelectedObjectId(null);
                     setSelectedProjectId(null);
@@ -5344,7 +5350,7 @@ export default function AstroTracker() {
                 }
                 
                 const moonTimes = calculateMoonTimes(now, latitude, longitude);
-                const displayName = userName || t('astronomer');
+                const displayName = hasImportedData && userName ? userName : '';
 
                 const formatTime = (date: Date) => {
                   return date.toLocaleTimeString(language === 'en' ? "en-US" : "es-ES", { hour: "2-digit", minute: "2-digit" });
@@ -5353,23 +5359,25 @@ export default function AstroTracker() {
                 return (
                   <div className="mb-4">
                     <h2 className="text-3xl md:text-4xl font-bold mb-2">
-                      {greeting}, {displayName}
+                      {greeting}{displayName ? `, ${displayName}` : ''}
                     </h2>
-                    <div className="space-y-1">
-                      <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
-                        {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
-                      </p>
-                      <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
-                        {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
-                        {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
-                      </p>
-                    </div>
+                    {hasImportedData && (
+                      <div className="space-y-1">
+                        <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                          {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
+                        </p>
+                        <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
+                          {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
+                          {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
 
               {/* Next Ephemeris Card */}
-              {nextEphemeris && (
+              {hasImportedData && nextEphemeris && (
                 <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
@@ -5404,7 +5412,7 @@ export default function AstroTracker() {
               )}
 
               {/* Currently visible objects indicator - shows right after ephemeris */}
-              {plannedProjects.length > 0 && (() => {
+              {hasImportedData && plannedProjects.length > 0 && (() => {
                 const currentMonth = new Date().getMonth() + 1; // 1-12
                 const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                 const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -5445,7 +5453,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Image Carousel - Before Navigation Buttons */}
-              {dashboardCarouselImages.length > 0 && (
+              {hasImportedData && dashboardCarouselImages.length > 0 && (
                 <div className="mb-6">
                   <ImageCarousel
                     images={dashboardCarouselImages}
@@ -5620,6 +5628,15 @@ export default function AstroTracker() {
                     </Btn>
                   </div>
                   
+                  {!hasImportedData ? (
+                    <Card className="p-8 text-center">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {language === 'en' ? 'No planning data yet. Import a JSON file to see your planned projects.' : 'No hay datos de planificación todavía. Importa un archivo JSON para ver tus proyectos planificados.'}
+                      </p>
+                    </Card>
+                  ) : (
+                  <>
                   <p className="text-muted-foreground">
                     Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
                   </p>
@@ -6001,6 +6018,8 @@ export default function AstroTracker() {
                       </Modal>
                     );
                   })()}
+                  </>
+                  )}
                 </div>
               )}
 
@@ -6015,27 +6034,39 @@ export default function AstroTracker() {
                       <h3 className="text-xl md:text-2xl font-bold">{t('astronomicalObjects')}</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                        <button 
-                          onClick={() => setSortObjects("alpha")}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                          title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"}
-                        >
-                          A-Z
-                        </button>
-                        <button 
-                          onClick={() => setSortObjects("recent")}
-                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "recent" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                          title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"}
-                        >
-                          1-3
-                        </button>
-                      </div>
+                      {hasImportedData && (
+                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                          <button 
+                            onClick={() => setSortObjects("alpha")}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                            title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"}
+                          >
+                            A-Z
+                          </button>
+                          <button 
+                            onClick={() => setSortObjects("recent")}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "recent" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                            title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"}
+                          >
+                            1-3
+                          </button>
+                        </div>
+                      )}
                       <Btn onClick={() => setMObj(true)}>
                         <Plus className="w-4 h-4" /> <span className="hidden md:inline">{t('newObject')}</span><span className="md:hidden">{language === 'en' ? 'New' : 'Nuevo'}</span>
                       </Btn>
                     </div>
                   </div>
+
+                  {!hasImportedData ? (
+                    <Card className="p-8 text-center">
+                      <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {language === 'en' ? 'No objects yet. Import a JSON file or create your first object.' : 'No hay objetos todavía. Importa un archivo JSON o crea tu primer objeto.'}
+                      </p>
+                    </Card>
+                  ) : (
+                  <>
 
                   {/* Search and Filters */}
                   <div className="grid gap-3">
@@ -6205,6 +6236,8 @@ export default function AstroTracker() {
                         );
                       })}
                   </div>
+                  </>
+                  )}
                 </>
               )}
 
@@ -6216,6 +6249,15 @@ export default function AstroTracker() {
                     <BarChart3 className="w-6 h-6" /> Estadísticas
                   </h2>
 
+                  {!hasImportedData ? (
+                    <Card className="p-8 text-center">
+                      <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {language === 'en' ? 'No statistics yet. Import a JSON file to see your data.' : 'No hay estadísticas todavía. Importa un archivo JSON para ver tus datos.'}
+                      </p>
+                    </Card>
+                  ) : (
+                  <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     {/* Total de Objetos */}
                     {visibleHighlights.totalObjects && (
@@ -6740,6 +6782,8 @@ export default function AstroTracker() {
                       )}
                     </div>
                   )}
+                  </>
+                  )}
                 </>
               )}
 
@@ -6749,6 +6793,15 @@ export default function AstroTracker() {
                   <h2 className="text-2xl font-bold flex items-center gap-2">
                     <ImageIcon className="w-6 h-6" /> Galería de Valoraciones
                   </h2>
+                  {!hasImportedData ? (
+                    <Card className="p-8 text-center">
+                      <ImageIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                      <p className="text-muted-foreground">
+                        {language === 'en' ? 'No gallery images yet. Import a JSON file to see your rated photos.' : 'No hay imágenes en la galería todavía. Importa un archivo JSON para ver tus fotos valoradas.'}
+                      </p>
+                    </Card>
+                  ) : (
+                  <>
                   <p className="text-muted-foreground">
                     Todas tus fotos organizadas por valoración
                   </p>
@@ -6996,6 +7049,8 @@ export default function AstroTracker() {
                       </>
                     );
                   })()}
+                  </>
+                  )}
                 </div>
               )}
             </div>
@@ -9913,6 +9968,7 @@ export default function AstroTracker() {
                     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                   }
                   
+                  setHasImportedData(true);
                   setShowInitialFilePrompt(false);
                   setJsonPath(f.name);
                   e.target.value = "";
