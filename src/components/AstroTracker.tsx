@@ -7240,9 +7240,9 @@ export default function AstroTracker() {
 
               {/* Projects Header with Filters */}
               <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold">Proyectos</h2>
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                  <h2 className="text-xl md:text-2xl font-bold">Proyectos</h2>
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
                       <button 
                         onClick={() => setSortProjects("alpha")}
@@ -7260,7 +7260,7 @@ export default function AstroTracker() {
                       </button>
                     </div>
                     <Btn onClick={() => setMProj(true)}>
-                      <Plus className="w-4 h-4" /> Nuevo proyecto
+                      <Plus className="w-4 h-4" /> <span className="hidden md:inline">Nuevo proyecto</span><span className="md:hidden">Nuevo</span>
                     </Btn>
                   </div>
                 </div>
