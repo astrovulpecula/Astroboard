@@ -3587,35 +3587,83 @@ const generatePDFReport = async (
       }
     });
 
-    // Convertir a PDF
+    // Convertir a PDF con paginación inteligente
     const reportElement = iframeDoc.getElementById('report');
     if (reportElement) {
-      const canvas = await html2canvas(reportElement, {
-        scale: 1.5,
-        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
-        logging: false,
-        useCORS: true,
-        allowTaint: true,
-        width: reportElement.scrollWidth,
-        height: reportElement.scrollHeight,
-        windowWidth: 1200,
-      });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.85);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-      heightLeft -= 297;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= 297;
+      const pageHeight = 297; // A4 height in mm
+      const pageWidth = 210; // A4 width in mm
+      const margin = 10; // margin in mm
+      const usableHeight = pageHeight - (margin * 2);
+      const usableWidth = pageWidth - (margin * 2);
+      
+      // Get all sections that should not be split
+      const sections = reportElement.querySelectorAll('.section, .header');
+      const sectionsArray = Array.from(sections);
+      
+      let currentY = margin;
+      let isFirstPage = true;
+      
+      for (let i = 0; i < sectionsArray.length; i++) {
+        const section = sectionsArray[i] as HTMLElement;
+        
+        // Capture this section
+        const sectionCanvas = await html2canvas(section, {
+          scale: 2,
+          backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+          logging: false,
+          useCORS: true,
+          allowTaint: true,
+          windowWidth: 1200,
+        });
+        
+        const sectionImgData = sectionCanvas.toDataURL('image/jpeg', 0.9);
+        const sectionWidth = usableWidth;
+        const sectionHeight = (sectionCanvas.height * sectionWidth) / sectionCanvas.width;
+        
+        // Check if this section fits on the current page
+        if (!isFirstPage && currentY + sectionHeight > pageHeight - margin) {
+          // Section doesn't fit, start a new page
+          pdf.addPage();
+          currentY = margin;
+        }
+        
+        // If section is taller than a full page, we need to split it
+        if (sectionHeight > usableHeight) {
+          // For very tall sections, use the old slicing method
+          let sectionHeightLeft = sectionHeight;
+          let sectionPosition = 0;
+          
+          while (sectionHeightLeft > 0) {
+            const availableSpace = isFirstPage && sectionPosition === 0 ? usableHeight - (currentY - margin) : usableHeight;
+            
+            if (sectionPosition > 0) {
+              pdf.addPage();
+              currentY = margin;
+            }
+            
+            pdf.addImage(
+              sectionImgData, 
+              'JPEG', 
+              margin, 
+              currentY - sectionPosition, 
+              sectionWidth, 
+              sectionHeight, 
+              undefined, 
+              'FAST'
+            );
+            
+            sectionPosition += availableSpace;
+            sectionHeightLeft -= availableSpace;
+            currentY = margin + Math.min(sectionHeightLeft, usableHeight);
+          }
+        } else {
+          // Section fits, add it to the current page
+          pdf.addImage(sectionImgData, 'JPEG', margin, currentY, sectionWidth, sectionHeight, undefined, 'FAST');
+          currentY += sectionHeight + 5; // Add 5mm spacing between sections
+        }
+        
+        isFirstPage = false;
       }
 
       pdf.save(`reporte-${obj.id}-${proj.name.replace(/[^a-z0-9]/gi, '-')}.pdf`);
