@@ -3150,10 +3150,10 @@ const generatePDFReport = async (
     .header-left p { color: ${theme.textSecondary}; font-size: 1.1rem; word-spacing: 0.15em; }
     .header-right { flex-shrink: 0; margin-left: 2rem; }
     .header-right img { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.borderAccent}; background: ${isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.5)'}; }
-    .section { margin: 2rem 0; }
+    .section { margin: 2rem 0; page-break-inside: avoid; break-inside: avoid; }
     .section-title { font-size: 1.5rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid ${theme.borderAccent}; word-spacing: 0.25em; letter-spacing: 0.01em; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
-    .card { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.25rem; }
+    .card { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.25rem; page-break-inside: avoid; break-inside: avoid; }
     .card-label { font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; word-spacing: 0.15em; }
     .card-value { font-size: 1.4rem; font-weight: 700; color: ${theme.textPrimary}; }
     .card-subtitle { font-size: 0.8rem; color: ${theme.textSecondary}; margin-top: 0.25rem; }
@@ -3161,7 +3161,8 @@ const generatePDFReport = async (
     .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
     .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
     .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .chart-container { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; }
+    .chart-container { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; page-break-inside: avoid; break-inside: avoid; }
+    .chart-section { page-break-inside: avoid; break-inside: avoid; }
     canvas { max-width: 100%; }
     table { width: 100%; border-collapse: collapse; background: ${theme.cardBg}; border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
     thead { background: ${isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(226, 232, 240, 0.8)'}; }
