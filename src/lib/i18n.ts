@@ -184,6 +184,28 @@ export const translations = {
     upcomingEvents: "Próximos eventos",
     recentActivity: "Actividad reciente",
     quickActions: "Acciones rápidas",
+    goodMorning: "Buenos días",
+    goodAfternoon: "Buenas tardes",
+    goodEvening: "Buenas noches",
+    astronomer: "Astrónomo",
+    todayMoonPhase: "Hoy la luna estará en fase",
+    illuminated: "iluminada",
+    risesAt: "Sale a las",
+    setsAt: "Se pone a las",
+    totalDarkness: "de oscuridad total",
+    nextEphemeris: "Próxima efeméride",
+    lunarPhases: "Fases lunares",
+    visibleObjectsIn: "Objetos visibles en",
+    noPlannedObjectsVisible: "No hay objetos planificados visibles en",
+    astronomicalObjects: "Objetos astronómicos",
+    
+    // Main sections
+    forecast: "Pronóstico",
+    planning: "Planificación",
+    objectsSection: "Objetos",
+    statisticsSection: "Estadísticas",
+    gallery: "Galería",
+    weatherForecast: "Pronóstico Meteorológico",
     
     // Calendar
     calendar: "Calendario",
@@ -240,6 +262,30 @@ export const translations = {
     // Tooltips
     clickToView: "Haz clic para ver",
     dragToReorder: "Arrastra para reordenar",
+    
+    // Filters
+    advancedFilters: "Filtros avanzados",
+    hideFilters: "Ocultar filtros",
+    filterByConstellation: "Filtrar por constelación",
+    filterByType: "Filtrar por tipo",
+    filterByStatus: "Filtrar por estado",
+    allConstellations: "Todas las constelaciones",
+    allTypes: "Todos los tipos",
+    allStatuses: "Todos los estados",
+    
+    // Search
+    searchPlaceholder: "Buscar por código, nombre, constelación o tipo...",
+    searchByObjectNameOrDescription: "Buscar por objeto, nombre o descripción...",
+    noResultsFound: "No se encontraron resultados",
+    
+    // Fases lunares button
+    lunarPhasesButton: "Fases lunares",
+    
+    // Create first
+    createFirstObject: "Crear primer objeto",
+    createFirstPlanning: "Crear primera planificación",
+    noPlannedProjectsYet: "No tienes proyectos planificados todavía",
+    noMatchingProjects: "No se encontraron proyectos que coincidan con la búsqueda",
   },
   en: {
     // General
@@ -424,6 +470,28 @@ export const translations = {
     upcomingEvents: "Upcoming events",
     recentActivity: "Recent activity",
     quickActions: "Quick actions",
+    goodMorning: "Good morning",
+    goodAfternoon: "Good afternoon",
+    goodEvening: "Good evening",
+    astronomer: "Astronomer",
+    todayMoonPhase: "Today the moon will be in",
+    illuminated: "illuminated",
+    risesAt: "Rises at",
+    setsAt: "Sets at",
+    totalDarkness: "of total darkness",
+    nextEphemeris: "Next ephemeris",
+    lunarPhases: "Lunar phases",
+    visibleObjectsIn: "Visible objects in",
+    noPlannedObjectsVisible: "No planned objects visible in",
+    astronomicalObjects: "Astronomical objects",
+    
+    // Main sections
+    forecast: "Forecast",
+    planning: "Planning",
+    objectsSection: "Objects",
+    statisticsSection: "Statistics",
+    gallery: "Gallery",
+    weatherForecast: "Weather Forecast",
     
     // Calendar
     calendar: "Calendar",
@@ -480,6 +548,30 @@ export const translations = {
     // Tooltips
     clickToView: "Click to view",
     dragToReorder: "Drag to reorder",
+    
+    // Filters
+    advancedFilters: "Advanced filters",
+    hideFilters: "Hide filters",
+    filterByConstellation: "Filter by constellation",
+    filterByType: "Filter by type",
+    filterByStatus: "Filter by status",
+    allConstellations: "All constellations",
+    allTypes: "All types",
+    allStatuses: "All statuses",
+    
+    // Search
+    searchPlaceholder: "Search by code, name, constellation or type...",
+    searchByObjectNameOrDescription: "Search by object, name or description...",
+    noResultsFound: "No results found",
+    
+    // Fases lunares button
+    lunarPhasesButton: "Lunar phases",
+    
+    // Create first
+    createFirstObject: "Create first object",
+    createFirstPlanning: "Create first planning",
+    noPlannedProjectsYet: "You don't have any planned projects yet",
+    noMatchingProjects: "No projects matching the search were found",
   }
 } as const;
 

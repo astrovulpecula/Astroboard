@@ -5098,7 +5098,7 @@ export default function AstroTracker() {
                     }
                   }}
                 >
-                  <ChevronLeft className="w-4 h-4" /> Volver
+                  <ChevronLeft className="w-4 h-4" /> {t('back')}
                 </Btn>
               )}
               <Btn
@@ -5121,6 +5121,7 @@ export default function AstroTracker() {
                       defaultTheme,
                       jsonPath,
                       visibleHighlights,
+                      language,
                     },
                   };
                   const data = JSON.stringify(exportData, null, 2),
@@ -5133,10 +5134,10 @@ export default function AstroTracker() {
                   setTimeout(() => URL.revokeObjectURL(url), 0);
                 }}
               >
-                <Download className="w-4 h-4" /> Exportar
+                <Download className="w-4 h-4" /> {t('export')}
               </Btn>
               <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-                <Upload className="w-4 h-4" /> Importar
+                <Upload className="w-4 h-4" /> {t('import')}
                 <input
                   type="file"
                   accept="application/json"
@@ -5252,7 +5253,9 @@ export default function AstroTracker() {
                       }
                       if (settingsData.jsonPath) setJsonPath(settingsData.jsonPath);
                       if (settingsData.visibleHighlights) setVisibleHighlights(settingsData.visibleHighlights);
-
+                      if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
+                        setLanguage(settingsData.language);
+                      }
                       // Guardar settings en localStorage
                       const settings = {
                         defaultTheme: settingsData.defaultTheme || defaultTheme,
@@ -5267,6 +5270,7 @@ export default function AstroTracker() {
                         dateFormat: settingsData.dateFormat || dateFormat,
                         userName: settingsData.userName || userName,
                         visibleHighlights: settingsData.visibleHighlights || visibleHighlights,
+                        language: settingsData.language || language,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                     }
@@ -5314,14 +5318,14 @@ export default function AstroTracker() {
                 const hour = now.getHours();
                 const minute = now.getMinutes();
 
-                let greeting = "Buenos días";
+                let greeting = t('goodMorning');
                 // Buenos días: 07:01 - 12:00
                 // Buenas tardes: 12:01 - 20:00
                 // Buenas noches: 20:01 - 07:00
                 if ((hour === 12 && minute >= 1) || (hour > 12 && hour < 20)) {
-                  greeting = "Buenas tardes";
+                  greeting = t('goodAfternoon');
                 } else if (hour >= 20 || hour < 7 || (hour === 7 && minute === 0)) {
-                  greeting = "Buenas noches";
+                  greeting = t('goodEvening');
                 }
 
                 const moonPhase = calculateMoonPhase(now);
@@ -5338,10 +5342,10 @@ export default function AstroTracker() {
                 }
                 
                 const moonTimes = calculateMoonTimes(now, latitude, longitude);
-                const displayName = userName || "Astrónomo";
+                const displayName = userName || t('astronomer');
 
                 const formatTime = (date: Date) => {
-                  return date.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+                  return date.toLocaleTimeString(language === 'en' ? "en-US" : "es-ES", { hour: "2-digit", minute: "2-digit" });
                 };
 
                 return (
@@ -5351,11 +5355,11 @@ export default function AstroTracker() {
                     </h2>
                     <div className="space-y-1">
                       <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
-                        Hoy la luna estará en fase {formatMoonPhase(moonPhase)} • {moonPhase.illumination}% iluminada
+                        {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
                       </p>
                       <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
-                        Sale a las {formatTime(moonTimes.moonrise)} • Se pone a las {formatTime(moonTimes.moonset)} •{" "}
-                        {formatHoursToHHMM(moonTimes.darkHours)} de oscuridad total
+                        {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
+                        {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
                       </p>
                     </div>
                   </div>
@@ -5375,13 +5379,13 @@ export default function AstroTracker() {
                       </div>
                       <div className="flex-1">
                         <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1">
-                          Próxima efeméride
+                          {t('nextEphemeris')}
                         </h3>
                         <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2">
                           {formatSpanishDate(nextEphemeris.date)}
                         </p>
                         <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">
-                          {nextEphemeris.eventES}
+                          {language === 'en' ? nextEphemeris.eventEN : nextEphemeris.eventES}
                         </p>
                         {nextEphemeris.notes && (
                           <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -5400,8 +5404,9 @@ export default function AstroTracker() {
               {/* Currently visible objects indicator - shows right after ephemeris */}
               {plannedProjects.length > 0 && (() => {
                 const currentMonth = new Date().getMonth() + 1; // 1-12
-                const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-                const currentMonthName = MONTH_NAMES[currentMonth - 1];
+                const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const currentMonthName = language === 'en' ? MONTH_NAMES_EN[currentMonth - 1] : MONTH_NAMES_ES[currentMonth - 1];
                 
                 const visibleNow = plannedProjects.filter(planned => {
                   if (planned.isCircumpolar) return true;
@@ -5422,7 +5427,7 @@ export default function AstroTracker() {
                   return (
                     <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border">
                       <p className="text-sm text-muted-foreground">
-                        No hay objetos planificados visibles en <span className="font-semibold">{currentMonthName}</span>
+                        {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
                       </p>
                     </div>
                   );
@@ -5431,7 +5436,7 @@ export default function AstroTracker() {
                 return (
                   <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
                     <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                      🔭 Objetos visibles en <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
+                      🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
                     </p>
                   </div>
                 );
@@ -5466,7 +5471,7 @@ export default function AstroTracker() {
                     <CloudSun className={`w-5 h-5 ${mainSection === "pronostico" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
                   <span className="font-semibold">
-                    Pronóstico
+                    {t('forecast')}
                   </span>
                 </button>
 
@@ -5482,7 +5487,7 @@ export default function AstroTracker() {
                     <Calendar className={`w-5 h-5 ${mainSection === "planificacion" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
                   <span className="font-semibold">
-                    Planificación
+                    {t('planning')}
                   </span>
                 </button>
 
@@ -5498,7 +5503,7 @@ export default function AstroTracker() {
                     <Telescope className={`w-5 h-5 ${mainSection === "objetos" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
                   <span className="font-semibold">
-                    Objetos
+                    {t('objectsSection')}
                   </span>
                 </button>
 
@@ -5514,7 +5519,7 @@ export default function AstroTracker() {
                     <BarChart3 className={`w-5 h-5 ${mainSection === "estadisticas" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
                   <span className="font-semibold">
-                    Estadísticas
+                    {t('statisticsSection')}
                   </span>
                 </button>
 
@@ -5530,7 +5535,7 @@ export default function AstroTracker() {
                     <ImageIcon className={`w-5 h-5 ${mainSection === "galeria" ? "text-primary-foreground" : "text-primary"}`} />
                   </div>
                   <span className="font-semibold">
-                    Galería
+                    {t('gallery')}
                   </span>
                 </button>
               </div>
@@ -5539,7 +5544,7 @@ export default function AstroTracker() {
               {mainSection === "pronostico" && (
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <CloudSun className="w-6 h-6" /> Pronóstico Meteorológico
+                    <CloudSun className="w-6 h-6" /> {t('weatherForecast')}
                   </h2>
                   
                   {/* Weather for each location */}
@@ -6005,17 +6010,17 @@ export default function AstroTracker() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Telescope className="w-5 h-5" />
-                      <h3 className="text-xl md:text-2xl font-bold">Objetos astronómicos</h3>
+                      <h3 className="text-xl md:text-2xl font-bold">{t('astronomicalObjects')}</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <IconBtn title="Ordenar alfabéticamente (A-Z)" onClick={() => setSortObjects("alpha")}>
+                      <IconBtn title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"} onClick={() => setSortObjects("alpha")}>
                         <span className="text-sm font-semibold">A-Z</span>
                       </IconBtn>
-                      <IconBtn title="Ordenar por más recientes" onClick={() => setSortObjects("recent")}>
+                      <IconBtn title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"} onClick={() => setSortObjects("recent")}>
                         <span className="text-sm font-semibold">1-3</span>
                       </IconBtn>
                       <Btn onClick={() => setMObj(true)}>
-                        <Plus className="w-4 h-4" /> Nuevo objeto
+                        <Plus className="w-4 h-4" /> {t('newObject')}
                       </Btn>
                     </div>
                   </div>
@@ -8636,22 +8641,22 @@ export default function AstroTracker() {
           let title = "";
           let handler: (() => void) | null = null;
           if (view === "objects") {
-            title = "Nuevo objeto";
+            title = t('newObject');
             handler = () => setMObj(true);
           } else if (view === "projects") {
-            title = "Nuevo proyecto";
+            title = t('newProject');
             handler = () => setMProj(true);
           } else if (view === "project") {
-            title = "Nueva sesión";
+            title = t('newSession');
             handler = () => setMSes(true);
           }
           return handler ? <FAB title={title} onClick={handler} /> : null;
         })()}
 
-        <Modal open={mObj} onClose={() => setMObj(false)} title="Nuevo objeto">
+        <Modal open={mObj} onClose={() => setMObj(false)} title={t('newObject')}>
           <FObject onSubmit={addObj} />
         </Modal>
-        <Modal open={mProj} onClose={() => { setMProj(false); setPlannedFromPlan(null); }} title="Nuevo proyecto">
+        <Modal open={mProj} onClose={() => { setMProj(false); setPlannedFromPlan(null); }} title={t('newProject')}>
           <FProject 
             onSubmit={(projData) => {
               addProj(projData);
@@ -9881,6 +9886,9 @@ export default function AstroTracker() {
                     if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                     if (settingsData.mount) setMount(settingsData.mount);
                     if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                    if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
+                      setLanguage(settingsData.language);
+                    }
                     
                     const settings = {
                       defaultTheme,
@@ -9894,6 +9902,7 @@ export default function AstroTracker() {
                       mount: settingsData.mount || mount,
                       dateFormat: settingsData.dateFormat || dateFormat,
                       userName: settingsData.userName || userName,
+                      language: settingsData.language || language,
                     };
                     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                   }

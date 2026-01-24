@@ -5,7 +5,9 @@
 
 export type MoonPhase = {
   phase: number; // 0-1 (0 = Luna nueva, 0.5 = Luna llena)
-  name: string;
+  name: string; // For backwards compatibility
+  nameES: string;
+  nameEN: string;
   emoji: string;
   illumination: number; // Porcentaje de iluminación 0-100
 };
@@ -40,38 +42,49 @@ export function calculateMoonPhase(date: Date | string): MoonPhase {
   const illumination = Math.round((1 - Math.cos(phase * 2 * Math.PI)) * 50);
   
   // Determinar nombre y emoji de la fase
-  let name: string;
+  let nameES: string;
+  let nameEN: string;
   let emoji: string;
   
   if (phase < 0.0625 || phase >= 0.9375) {
-    name = 'Luna nueva';
+    nameES = 'Luna nueva';
+    nameEN = 'New Moon';
     emoji = '🌑';
   } else if (phase < 0.1875) {
-    name = 'Creciente';
+    nameES = 'Creciente';
+    nameEN = 'Waxing Crescent';
     emoji = '🌒';
   } else if (phase < 0.3125) {
-    name = 'Cuarto creciente';
+    nameES = 'Cuarto creciente';
+    nameEN = 'First Quarter';
     emoji = '🌓';
   } else if (phase < 0.4375) {
-    name = 'Gibosa creciente';
+    nameES = 'Gibosa creciente';
+    nameEN = 'Waxing Gibbous';
     emoji = '🌔';
   } else if (phase < 0.5625) {
-    name = 'Luna llena';
+    nameES = 'Luna llena';
+    nameEN = 'Full Moon';
     emoji = '🌕';
   } else if (phase < 0.6875) {
-    name = 'Gibosa menguante';
+    nameES = 'Gibosa menguante';
+    nameEN = 'Waning Gibbous';
     emoji = '🌖';
   } else if (phase < 0.8125) {
-    name = 'Cuarto menguante';
+    nameES = 'Cuarto menguante';
+    nameEN = 'Last Quarter';
     emoji = '🌗';
   } else {
-    name = 'Menguante';
+    nameES = 'Menguante';
+    nameEN = 'Waning Crescent';
     emoji = '🌘';
   }
   
   return {
     phase,
-    name,
+    name: nameES, // Default to Spanish for backwards compatibility
+    nameES,
+    nameEN,
     emoji,
     illumination
   };
@@ -79,9 +92,12 @@ export function calculateMoonPhase(date: Date | string): MoonPhase {
 
 /**
  * Formatea la fase lunar para mostrar
+ * @param moonPhase Objeto con información de la fase lunar
+ * @param language Idioma ('es' | 'en'), por defecto 'es'
  */
-export function formatMoonPhase(moonPhase: MoonPhase): string {
-  return `${moonPhase.emoji} ${moonPhase.name}`;
+export function formatMoonPhase(moonPhase: MoonPhase, language: 'es' | 'en' = 'es'): string {
+  const name = language === 'en' ? moonPhase.nameEN : moonPhase.nameES;
+  return `${moonPhase.emoji} ${name}`;
 }
 
 /**
