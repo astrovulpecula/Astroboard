@@ -5047,7 +5047,7 @@ export default function AstroTracker() {
               <Btn
                 outline
                 onClick={() => {
-                  // Incluir objects y settings en la exportación
+                  // Incluir objects, plannedProjects y TODOS los settings en la exportación
                 const exportData = {
                   objects,
                   plannedProjects,
@@ -5061,6 +5061,9 @@ export default function AstroTracker() {
                     guideCamera,
                     mount,
                     dateFormat,
+                    defaultTheme,
+                    jsonPath,
+                    visibleHighlights,
                   },
                 };
                   const data = JSON.stringify(exportData, null, 2),
@@ -5186,11 +5189,17 @@ export default function AstroTracker() {
                       if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                       if (settingsData.mount) setMount(settingsData.mount);
                       if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                      if (settingsData.defaultTheme) {
+                        setDefaultTheme(settingsData.defaultTheme);
+                        setTheme(settingsData.defaultTheme);
+                      }
+                      if (settingsData.jsonPath) setJsonPath(settingsData.jsonPath);
+                      if (settingsData.visibleHighlights) setVisibleHighlights(settingsData.visibleHighlights);
 
                       // Guardar settings en localStorage
                       const settings = {
-                        defaultTheme,
-                        jsonPath,
+                        defaultTheme: settingsData.defaultTheme || defaultTheme,
+                        jsonPath: settingsData.jsonPath || jsonPath,
                         cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
                         telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
                         locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
@@ -5200,6 +5209,7 @@ export default function AstroTracker() {
                         mount: settingsData.mount || mount,
                         dateFormat: settingsData.dateFormat || dateFormat,
                         userName: settingsData.userName || userName,
+                        visibleHighlights: settingsData.visibleHighlights || visibleHighlights,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                     }
