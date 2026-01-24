@@ -3146,15 +3146,15 @@ const generatePDFReport = async (
     .container { max-width: 1200px; margin: 0 auto; background: ${theme.containerBg}; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0, 0, 0, ${isDark ? '0.5' : '0.1'}); }
     .header { display: flex; justify-content: space-between; align-items: start; padding: 2rem 0; border-bottom: 2px solid ${theme.border}; margin-bottom: 2rem; }
     .header-left { flex: 1; }
-    .header-left h1 { font-size: 2.5rem; font-weight: 700; color: ${theme.textAccent}; margin-bottom: 0.5rem; }
-    .header-left p { color: ${theme.textSecondary}; font-size: 1.1rem; }
+    .header-left h1 { font-size: 2.5rem; font-weight: 700; color: ${theme.textAccent}; margin-bottom: 0.5rem; word-spacing: 0.25em; }
+    .header-left p { color: ${theme.textSecondary}; font-size: 1.1rem; word-spacing: 0.15em; }
     .header-right { flex-shrink: 0; margin-left: 2rem; }
     .header-right img { max-width: 200px; max-height: 200px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.borderAccent}; background: ${isDark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.5)'}; }
     .section { margin: 2rem 0; }
-    .section-title { font-size: 1.5rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid ${theme.borderAccent}; }
+    .section-title { font-size: 1.5rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid ${theme.borderAccent}; word-spacing: 0.25em; letter-spacing: 0.01em; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
     .card { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.25rem; }
-    .card-label { font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card-label { font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; word-spacing: 0.15em; }
     .card-value { font-size: 1.4rem; font-weight: 700; color: ${theme.textPrimary}; }
     .card-subtitle { font-size: 0.8rem; color: ${theme.textSecondary}; margin-top: 0.25rem; }
     .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
@@ -3165,7 +3165,7 @@ const generatePDFReport = async (
     canvas { max-width: 100%; }
     table { width: 100%; border-collapse: collapse; background: ${theme.cardBg}; border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
     thead { background: ${isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(226, 232, 240, 0.8)'}; }
-    th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: ${theme.textAccent}; font-size: 0.8rem; }
+    th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: ${theme.textAccent}; font-size: 0.8rem; word-spacing: 0.15em; }
     td { padding: 0.75rem 0.5rem; border-top: 1px solid ${theme.border}; color: ${theme.textPrimary}; }
     .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid ${theme.border}; text-align: center; color: ${theme.textSecondary}; font-size: 0.875rem; }
   </style>
@@ -3395,6 +3395,7 @@ const generatePDFReport = async (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
           y: { 
@@ -3425,6 +3426,7 @@ const generatePDFReport = async (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { display: false } },
         scales: {
           y: { 
@@ -3455,6 +3457,7 @@ const generatePDFReport = async (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
           y: { 
@@ -3488,6 +3491,7 @@ const generatePDFReport = async (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
           y: { 
@@ -3540,6 +3544,7 @@ const generatePDFReport = async (
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
         scales: {
           y: { 
