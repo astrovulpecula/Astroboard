@@ -5058,9 +5058,9 @@ export default function AstroTracker() {
       <div
         className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
       >
-        <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
+          <div className="max-w-7xl mx-auto px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 md:gap-3">
               <button
                 onClick={() => {
                   setView("objects");
@@ -5069,16 +5069,17 @@ export default function AstroTracker() {
                 }}
                 className="hover:opacity-80 transition-opacity"
               >
-                <img src={theme === "dark" ? logoDark : logoLight} alt="StarBoard" className="h-14 w-14" />
+                <img src={theme === "dark" ? logoDark : logoLight} alt="StarBoard" className="h-10 w-10 md:h-14 md:w-14" />
               </button>
-              <div>
+              {/* Hide name on mobile, show on md+ */}
+              <div className="hidden md:block">
                 <div className="font-semibold">StarBoard</div>
                 <div className="text-xs text-slate-500">
                   {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : view === "constellationDetail" ? `Constelación: ${selectedConstellation}` : view === "ephemerides" ? "Efemérides" : "ONP vs SNP"}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               {view !== "objects" && (
                 <Btn
                   outline
@@ -5098,13 +5099,13 @@ export default function AstroTracker() {
                     }
                   }}
                 >
-                  <ChevronLeft className="w-4 h-4" /> {t('back')}
+                  <ChevronLeft className="w-4 h-4" /> <span className="hidden md:inline">{t('back')}</span>
                 </Btn>
               )}
-              <Btn
-                outline
+              {/* Export button: icon only on mobile */}
+              <IconBtn
+                title={t('export')}
                 onClick={() => {
-                  // Incluir objects, plannedProjects y TODOS los settings en la exportación
                   const exportData = {
                     objects,
                     plannedProjects,
@@ -5134,10 +5135,11 @@ export default function AstroTracker() {
                   setTimeout(() => URL.revokeObjectURL(url), 0);
                 }}
               >
-                <Download className="w-4 h-4" /> {t('export')}
-              </Btn>
-              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
-                <Upload className="w-4 h-4" /> {t('import')}
+                <Download className="w-4 h-4" />
+              </IconBtn>
+              {/* Import button: icon only on mobile */}
+              <label className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition cursor-pointer" title={t('import')}>
+                <Upload className="w-4 h-4" />
                 <input
                   type="file"
                   accept="application/json"
@@ -6007,20 +6009,30 @@ export default function AstroTracker() {
                 <>
 
                   {/* Objects Section Title and Controls */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2">
                       <Telescope className="w-5 h-5" />
                       <h3 className="text-xl md:text-2xl font-bold">{t('astronomicalObjects')}</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      <IconBtn title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"} onClick={() => setSortObjects("alpha")}>
-                        <span className="text-sm font-semibold">A-Z</span>
-                      </IconBtn>
-                      <IconBtn title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"} onClick={() => setSortObjects("recent")}>
-                        <span className="text-sm font-semibold">1-3</span>
-                      </IconBtn>
+                      <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                        <button 
+                          onClick={() => setSortObjects("alpha")}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                          title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"}
+                        >
+                          A-Z
+                        </button>
+                        <button 
+                          onClick={() => setSortObjects("recent")}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "recent" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                          title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"}
+                        >
+                          1-3
+                        </button>
+                      </div>
                       <Btn onClick={() => setMObj(true)}>
-                        <Plus className="w-4 h-4" /> {t('newObject')}
+                        <Plus className="w-4 h-4" /> <span className="hidden md:inline">{t('newObject')}</span><span className="md:hidden">{language === 'en' ? 'New' : 'Nuevo'}</span>
                       </Btn>
                     </div>
                   </div>
