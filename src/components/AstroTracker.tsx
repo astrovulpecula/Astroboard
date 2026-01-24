@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateJsonUpload } from "@/lib/json-validation";
 import { safeLocalStorageSave, checkStorageQuota, formatBytes } from "@/lib/storage-utils";
+import { useLanguage } from "@/hooks/use-language";
+import { Language } from "@/lib/i18n";
 import {
   Plus,
   FolderOpen,
@@ -3681,6 +3683,7 @@ const generatePDFReport = async (
 export default function AstroTracker() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { language, setLanguage, t } = useLanguage();
   // TODOS los useState deben ir juntos al principio
   const [objects, setObjects] = useState(sample);
   const [view, setView] = useState("objects");
@@ -8799,61 +8802,77 @@ export default function AstroTracker() {
           </form>
         </Modal>
 
-        <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración" wide>
+        <Modal open={showSettings} onClose={() => setShowSettings(false)} title={t('settingsTitle')} wide>
           <div className="grid gap-6">
+            {/* Idioma */}
+            <div className="grid gap-3">
+              <Label>{t('language')}</Label>
+              <select 
+                value={language} 
+                onChange={(e) => setLanguage(e.target.value as Language)} 
+                className={INPUT_CLS}
+              >
+                <option value="es">{t('spanish')}</option>
+                <option value="en">{t('english')}</option>
+              </select>
+              <div className="text-xs text-slate-600 dark:text-slate-400">
+                {t('languageDescription')}
+              </div>
+            </div>
+
             {/* Nombre de usuario */}
             <div className="grid gap-3">
               <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                 <User className="w-4 h-4" />
-                <span>Nombre de usuario</span>
+                <span>{t('userName')}</span>
               </div>
               <input
                 type="text"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
-                placeholder="Tu nombre"
+                placeholder={t('yourName')}
                 className={INPUT_CLS}
               />
             </div>
 
             {/* Formato de fechas */}
             <div className="grid gap-3">
-              <Label>Formato de fechas</Label>
+              <Label>{t('dateFormat')}</Label>
               <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} className={INPUT_CLS}>
-                <option value="DD/MM/YYYY">DD/MM/YYYY (Día/Mes/Año)</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY (Mes/Día/Año)</option>
-                <option value="YYYY/MM/DD">YYYY/MM/DD (Año/Mes/Día)</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY ({language === 'es' ? 'Día/Mes/Año' : 'Day/Month/Year'})</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY ({language === 'es' ? 'Mes/Día/Año' : 'Month/Day/Year'})</option>
+                <option value="YYYY/MM/DD">YYYY/MM/DD ({language === 'es' ? 'Año/Mes/Día' : 'Year/Month/Day'})</option>
               </select>
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                Elige cómo se mostrarán las fechas en toda la aplicación
+                {t('dateFormatDescription')}
               </div>
             </div>
 
             {/* Tema por defecto */}
             <div className="grid gap-3">
-              <Label>Tema de página by default</Label>
+              <Label>{t('defaultTheme')}</Label>
               <select value={defaultTheme} onChange={(e) => setDefaultTheme(e.target.value)} className={INPUT_CLS}>
-                <option value="light">Claro</option>
-                <option value="dark">Oscuro</option>
-                <option value="astro">Astro</option>
+                <option value="light">{t('themeLight')}</option>
+                <option value="dark">{t('themeDark')}</option>
+                <option value="astro">{t('themeAstro')}</option>
               </select>
             </div>
 
             {/* Localización del archivo JSON */}
             <div className="grid gap-3">
-              <Label>Localización del archivo JSON</Label>
+              <Label>{t('jsonLocation')}</Label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={jsonPath}
                   onChange={(e) => setJsonPath(e.target.value)}
-                  placeholder="Selecciona un archivo JSON"
+                  placeholder={t('selectJsonFile')}
                   className={INPUT_CLS + " flex-1"}
                   readOnly
                 />
                 <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 bg-white dark:bg-slate-800 transition-colors">
                   <FolderOpen className="w-4 h-4" />
-                  <span className="text-sm font-medium">Buscar</span>
+                  <span className="text-sm font-medium">{t('browse')}</span>
                   <input
                     type="file"
                     accept="application/json"
@@ -8931,17 +8950,17 @@ export default function AstroTracker() {
                 </label>
               </div>
               <div className="text-xs text-slate-600 dark:text-slate-400">
-                Selecciona el archivo JSON con tus datos. La aplicación lo cargará automáticamente al iniciar.
+                {t('jsonLocationDescription')}
               </div>
             </div>
 
             {/* Equipo astrofotográfico */}
             <div className="grid gap-3">
-              <Label>Equipo astrofotográfico</Label>
+              <Label>{t('astrophotographyEquipment')}</Label>
 
               {/* Cámaras */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Cámaras</span>
+                <span className="text-sm font-medium">{t('cameras')}</span>
                 {cameras.map((camera, index) => (
                   <div key={index} className="flex gap-2">
                     <input
@@ -8988,13 +9007,13 @@ export default function AstroTracker() {
                   </div>
                 ))}
                 <Btn outline onClick={() => setCameras([...cameras, ""])}>
-                  <Plus className="w-4 h-4" /> Añadir cámara
+                  <Plus className="w-4 h-4" /> {t('addCamera')}
                 </Btn>
               </div>
 
               {/* Telescopios */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Telescopios</span>
+                <span className="text-sm font-medium">{t('telescopes')}</span>
                 {telescopes.map((telescope, index) => (
                   <div key={index} className="grid gap-2">
                     <div className="flex gap-2">
@@ -9057,13 +9076,13 @@ export default function AstroTracker() {
                   </div>
                 ))}
                 <Btn outline onClick={() => setTelescopes([...telescopes, { name: "", focalLength: "" }])}>
-                  <Plus className="w-4 h-4" /> Añadir telescopio
+                  <Plus className="w-4 h-4" /> {t('addTelescope')}
                 </Btn>
               </div>
 
               {/* Telescopio guía */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Telescopio guía</span>
+                <span className="text-sm font-medium">{t('guideTelescope')}</span>
                 <div className="grid gap-2">
                   <input
                     type="text"
@@ -9088,7 +9107,7 @@ export default function AstroTracker() {
 
               {/* Cámara guía */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Cámara guía</span>
+                <span className="text-sm font-medium">{t('guideCamera')}</span>
                 <input
                   type="text"
                   value={guideCamera}
@@ -9100,7 +9119,7 @@ export default function AstroTracker() {
 
               {/* Montura */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Montura</span>
+                <span className="text-sm font-medium">{t('mount')}</span>
                 <input
                   type="text"
                   value={mount}
@@ -9112,7 +9131,7 @@ export default function AstroTracker() {
 
               {/* Localización principal */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Localización principal</span>
+                <span className="text-sm font-medium">{t('mainLocation')}</span>
                 <input
                   type="text"
                   value={mainLocation.name}
@@ -9135,7 +9154,7 @@ export default function AstroTracker() {
 
               {/* Otras localizaciones */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">Otras localizaciones</span>
+                <span className="text-sm font-medium">{t('otherLocations')}</span>
                 {locations.map((location, index) => (
                   <div key={index} className="grid gap-2">
                     <div className="flex gap-2">
@@ -9170,14 +9189,14 @@ export default function AstroTracker() {
                   </div>
                 ))}
                 <Btn outline onClick={() => setLocations([...locations, { name: "", coords: "" }])}>
-                  <Plus className="w-4 h-4" /> Añadir localización
+                  <Plus className="w-4 h-4" /> {t('addLocation')}
                 </Btn>
               </div>
             </div>
 
             {/* Configuración de highlights visibles */}
             <div className="grid gap-3">
-              <Label>Highlights visibles en el dashboard</Label>
+              <Label>{t('visibleHighlightsInDashboard')}</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9186,7 +9205,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalObjects: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Total de Objetos</span>
+                  <span className="text-sm">{t('highlightTotalObjects')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9195,7 +9214,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalProjects: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Total de Proyectos</span>
+                  <span className="text-sm">{t('highlightTotalProjects')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9204,7 +9223,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalHours: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Horas Totales</span>
+                  <span className="text-sm">{t('highlightTotalHours')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9213,7 +9232,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalLights: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Lights Totales</span>
+                  <span className="text-sm">{t('highlightTotalLights')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9222,7 +9241,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalNights: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Noches</span>
+                  <span className="text-sm">{t('highlightNights')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9231,7 +9250,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalSessions: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Sesiones</span>
+                  <span className="text-sm">{t('highlightSessions')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9240,7 +9259,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, onpSnp: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">ONP vs SNP</span>
+                  <span className="text-sm">{t('highlightOnpSnp')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9249,7 +9268,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, activeProjects: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Proyectos Activos</span>
+                  <span className="text-sm">{t('highlightActiveProjects')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9258,7 +9277,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, ratedPhotos: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Fotos Valoradas</span>
+                  <span className="text-sm">{t('highlightRatedPhotos')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9267,7 +9286,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, snrRecord: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">SNR (record)</span>
+                  <span className="text-sm">{t('highlightSnrRecord')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9276,7 +9295,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, hoursByYear: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Horas por Año</span>
+                  <span className="text-sm">{t('highlightHoursByYear')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9285,7 +9304,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedObject: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Objeto Más Fotografiado</span>
+                  <span className="text-sm">{t('highlightMostPhotographedObject')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9294,7 +9313,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedConstellation: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Constelación Más Fotografiada</span>
+                  <span className="text-sm">{t('highlightMostPhotographedConstellation')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9303,7 +9322,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, streaks: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Rachas Consecutivas</span>
+                  <span className="text-sm">{t('highlightStreaks')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9312,7 +9331,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, cameraUsage: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Uso de Cámaras</span>
+                  <span className="text-sm">{t('highlightCameraUsage')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -9321,7 +9340,7 @@ export default function AstroTracker() {
                     onChange={(e) => setVisibleHighlights({ ...visibleHighlights, telescopeUsage: e.target.checked })}
                     className="rounded"
                   />
-                  <span className="text-sm">Uso de Telescopios</span>
+                  <span className="text-sm">{t('highlightTelescopeUsage')}</span>
                 </label>
               </div>
             </div>
@@ -9329,9 +9348,9 @@ export default function AstroTracker() {
             {/* Botones */}
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn outline onClick={() => setShowSettings(false)}>
-                Cancelar
+                {t('cancel')}
               </Btn>
-              <Btn onClick={saveSettings}>Guardar configuración</Btn>
+              <Btn onClick={saveSettings}>{t('save')}</Btn>
             </div>
           </div>
         </Modal>
