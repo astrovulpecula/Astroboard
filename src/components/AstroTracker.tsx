@@ -6445,56 +6445,72 @@ export default function AstroTracker() {
                     )}
 
                     {/* Hours by Year */}
-                    {visibleHighlights.hoursByYear && (
-                      <Card className="p-5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-rose-500/10">
-                              <Calendar className="w-6 h-6 text-rose-600 dark:text-rose-400" />
-                            </div>
-                            <div>
-                              <div className="text-sm text-slate-600 dark:text-slate-400">Horas en {selectedYear}</div>
-                              <div className="text-2xl font-bold">
-                                {hh(
-                                  objects.reduce((acc, obj) => {
-                                    return (
-                                      acc +
-                                      obj.projects.reduce((pAcc, proj) => {
-                                        return (
-                                          pAcc +
-                                          proj.sessions.reduce((sAcc, session: any) => {
-                                            if (session.date && new Date(session.date).getFullYear() === selectedYear) {
-                                              return sAcc + (session.lights || 0) * (session.exposureSec || 0);
-                                            }
-                                            return sAcc;
-                                          }, 0)
-                                        );
-                                      }, 0)
-                                    );
-                                  }, 0)
+                    {visibleHighlights.hoursByYear && (() => {
+                      const currentYearSeconds = objects.reduce((acc, obj) => {
+                        return acc + obj.projects.reduce((pAcc, proj) => {
+                          return pAcc + proj.sessions.reduce((sAcc, session: any) => {
+                            if (session.date && new Date(session.date).getFullYear() === selectedYear) {
+                              return sAcc + (session.lights || 0) * (session.exposureSec || 0);
+                            }
+                            return sAcc;
+                          }, 0);
+                        }, 0);
+                      }, 0);
+                      
+                      const previousYearSeconds = objects.reduce((acc, obj) => {
+                        return acc + obj.projects.reduce((pAcc, proj) => {
+                          return pAcc + proj.sessions.reduce((sAcc, session: any) => {
+                            if (session.date && new Date(session.date).getFullYear() === selectedYear - 1) {
+                              return sAcc + (session.lights || 0) * (session.exposureSec || 0);
+                            }
+                            return sAcc;
+                          }, 0);
+                        }, 0);
+                      }, 0);
+                      
+                      const percentageChange = previousYearSeconds > 0 
+                        ? ((currentYearSeconds - previousYearSeconds) / previousYearSeconds) * 100 
+                        : null;
+                      
+                      return (
+                        <Card className="p-5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-3 rounded-xl bg-rose-500/10">
+                                <Calendar className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+                              </div>
+                              <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-400">
+                                  {language === 'en' ? `Hours in ${selectedYear}` : `Horas en ${selectedYear}`}
+                                </div>
+                                <div className="text-2xl font-bold">{hh(currentYearSeconds)}</div>
+                                {percentageChange !== null && (
+                                  <div className={`text-xs font-medium ${percentageChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}% vs {selectedYear - 1}
+                                  </div>
                                 )}
                               </div>
                             </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => setSelectedYear((prev) => Math.max(globalMetrics.minYear, prev - 1))}
+                                disabled={selectedYear <= globalMetrics.minYear}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                              >
+                                <ChevronLeft className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => setSelectedYear((prev) => Math.min(globalMetrics.currentYear, prev + 1))}
+                                disabled={selectedYear >= globalMetrics.currentYear}
+                                className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => setSelectedYear((prev) => Math.max(globalMetrics.minYear, prev - 1))}
-                              disabled={selectedYear <= globalMetrics.minYear}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => setSelectedYear((prev) => Math.min(globalMetrics.currentYear, prev + 1))}
-                              disabled={selectedYear >= globalMetrics.currentYear}
-                              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              <ChevronRight className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      </Card>
-                    )}
+                        </Card>
+                      );
+                    })()}
 
                     {/* Object with Most Exposure */}
                     {visibleHighlights.mostPhotographedObject && globalMetrics.maxExposureObj && (
