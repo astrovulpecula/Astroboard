@@ -5199,6 +5199,7 @@ export default function AstroTracker() {
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
                     if (!f) return;
+                    const importedFileName = f.name;
                     const text = await f.text();
                     let json;
                     try {
@@ -5306,6 +5307,7 @@ export default function AstroTracker() {
                         setTheme(settingsData.defaultTheme);
                       }
                       if (settingsData.jsonPath) setJsonPath(settingsData.jsonPath);
+                      else setJsonPath(importedFileName);
                       if (settingsData.visibleHighlights) setVisibleHighlights(settingsData.visibleHighlights);
                       if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
                         setLanguage(settingsData.language);
@@ -5313,7 +5315,7 @@ export default function AstroTracker() {
                       // Guardar settings en localStorage
                       const settings = {
                         defaultTheme: settingsData.defaultTheme || defaultTheme,
-                        jsonPath: settingsData.jsonPath || jsonPath,
+                        jsonPath: settingsData.jsonPath || importedFileName,
                         cameras: settingsData.cameras || cameras.filter((c) => c.trim() !== ""),
                         telescopes: settingsData.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
                         locations: settingsData.locations || locations.filter((l) => l.name.trim() !== ""),
@@ -5327,6 +5329,13 @@ export default function AstroTracker() {
                         language: settingsData.language || language,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                    } else {
+                      // Si no hay settingsData, igual guardar el nombre del archivo
+                      setJsonPath(importedFileName);
+                      const currentSettings = localStorage.getItem("astroTrackerSettings");
+                      const parsedSettings = currentSettings ? JSON.parse(currentSettings) : {};
+                      parsedSettings.jsonPath = importedFileName;
+                      localStorage.setItem("astroTrackerSettings", JSON.stringify(parsedSettings));
                     }
 
                     // Restaurar plannedProjects si existen
