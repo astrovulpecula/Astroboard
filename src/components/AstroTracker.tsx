@@ -54,6 +54,16 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -3816,6 +3826,10 @@ export default function AstroTracker() {
     theme: 'dark' as 'dark' | 'light',
   });
 
+  // Estado para el diálogo de salida
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [pendingExit, setPendingExit] = useState(false);
+
   const cycleTheme = () => {
     setTheme((prev) => {
       if (prev === "dark") return "astro";
@@ -4062,6 +4076,55 @@ export default function AstroTracker() {
       console.error("Error saving theme:", e);
     }
   }, [theme]);
+
+  // Función para exportar JSON (reutilizable)
+  const exportJsonData = useCallback(() => {
+    const exportData = {
+      objects,
+      plannedProjects,
+      settings: {
+        userName,
+        cameras: cameras.filter((c) => c.trim() !== ""),
+        telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+        locations: locations.filter((l) => l.name.trim() !== ""),
+        mainLocation,
+        guideTelescope,
+        guideCamera,
+        mount,
+        dateFormat,
+        defaultTheme,
+        jsonPath,
+        visibleHighlights,
+        language,
+      },
+    };
+    const data = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "astrotracker.json";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  }, [objects, plannedProjects, userName, cameras, telescopes, locations, mainLocation, guideTelescope, guideCamera, mount, dateFormat, defaultTheme, jsonPath, visibleHighlights, language]);
+
+  // Manejar cierre de página/app
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Solo mostrar aviso si hay datos
+      if (objects.length > 0 || plannedProjects.length > 0) {
+        e.preventDefault();
+        // Mostrar el diálogo personalizado
+        setShowExitDialog(true);
+        // El navegador mostrará su propio diálogo nativo además
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [objects.length, plannedProjects.length]);
 
   const filteredObjects = useMemo(() => {
     let filtered = objects;
@@ -5122,35 +5185,7 @@ export default function AstroTracker() {
               {/* Export button: icon only on mobile */}
               <IconBtn
                 title={t('export')}
-                onClick={() => {
-                  const exportData = {
-                    objects,
-                    plannedProjects,
-                    settings: {
-                      userName,
-                      cameras: cameras.filter((c) => c.trim() !== ""),
-                      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-                      locations: locations.filter((l) => l.name.trim() !== ""),
-                      mainLocation,
-                      guideTelescope,
-                      guideCamera,
-                      mount,
-                      dateFormat,
-                      defaultTheme,
-                      jsonPath,
-                      visibleHighlights,
-                      language,
-                    },
-                  };
-                  const data = JSON.stringify(exportData, null, 2),
-                    blob = new Blob([data], { type: "application/json" }),
-                    url = URL.createObjectURL(blob),
-                    a = document.createElement("a");
-                  a.href = url;
-                  a.download = "astrotracker.json";
-                  a.click();
-                  setTimeout(() => URL.revokeObjectURL(url), 0);
-                }}
+                onClick={exportJsonData}
               >
                 <Download className="w-4 h-4" />
               </IconBtn>
@@ -10403,6 +10438,32 @@ export default function AstroTracker() {
           </nav>
         )}
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('exitConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('exitConfirmDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setShowExitDialog(false);
+            }}>
+              {t('exitClose')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              exportJsonData();
+              setShowExitDialog(false);
+            }}>
+              <Download className="w-4 h-4 mr-2" />
+              {t('exitDownload')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

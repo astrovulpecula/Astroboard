@@ -286,6 +286,12 @@ export const translations = {
     createFirstPlanning: "Crear primera planificación",
     noPlannedProjectsYet: "No tienes proyectos planificados todavía",
     noMatchingProjects: "No se encontraron proyectos que coincidan con la búsqueda",
+    
+    // Exit dialog
+    exitConfirmTitle: "¿Descargar datos antes de salir?",
+    exitConfirmDescription: "Puedes descargar tu archivo JSON para guardar todos los cambios.",
+    exitDownload: "Descargar",
+    exitClose: "Cerrar sin descargar",
   },
   en: {
     // General
@@ -572,6 +578,12 @@ export const translations = {
     createFirstPlanning: "Create first planning",
     noPlannedProjectsYet: "You don't have any planned projects yet",
     noMatchingProjects: "No projects matching the search were found",
+    
+    // Exit dialog
+    exitConfirmTitle: "Download data before leaving?",
+    exitConfirmDescription: "You can download your JSON file to save all changes.",
+    exitDownload: "Download",
+    exitClose: "Close without downloading",
   }
 } as const;
 
