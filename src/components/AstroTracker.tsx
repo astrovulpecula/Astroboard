@@ -5048,11 +5048,6 @@ export default function AstroTracker() {
                 outline
                 onClick={() => {
                   // Incluir objects, plannedProjects y TODOS los settings en la exportación
-                  console.log("📦 Exportando datos:", { 
-                    objectsCount: objects.length, 
-                    plannedProjectsCount: plannedProjects.length,
-                    plannedProjects 
-                  });
                   const exportData = {
                     objects,
                     plannedProjects,
