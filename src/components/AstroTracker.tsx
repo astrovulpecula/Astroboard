@@ -32,6 +32,7 @@ import {
   CloudSun,
   BarChart3,
   ImageIcon,
+  TrendingUp,
 } from "lucide-react";
 import {
   LineChart,
@@ -7116,6 +7117,84 @@ export default function AstroTracker() {
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   />
+                );
+              })()}
+
+              {/* Evolution Comparison Block */}
+              {(() => {
+                // Get all projects with final images
+                const projectsWithFinalImages = obj.projects.filter((proj: any) => proj.images?.finalProject);
+                
+                // Need at least 2 projects with final images to show evolution
+                if (projectsWithFinalImages.length < 2) return null;
+                
+                const firstProject = projectsWithFinalImages[0];
+                const lastProject = projectsWithFinalImages[projectsWithFinalImages.length - 1];
+                
+                const firstFinalImage = (firstProject as any).images?.finalProject;
+                const lastFinalImage = (lastProject as any).images?.finalProject;
+                
+                // Only show if both images exist and are different
+                if (!firstFinalImage || !lastFinalImage || firstFinalImage === lastFinalImage) return null;
+                
+                return (
+                  <Card className="p-4 md:p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingUp className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold">
+                        {language === 'en' ? 'Your Evolution' : 'Tu Evolución'}
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* First Image */}
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
+                          {language === 'en' ? 'First' : 'Primera'}
+                        </div>
+                        <div 
+                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
+                          onClick={() => {
+                            setImageModalSrc(firstFinalImage);
+                            setImageModalOpen(true);
+                          }}
+                        >
+                          <img
+                            src={firstFinalImage}
+                            alt={`${obj.id} - ${firstProject.name}`}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        </div>
+                        <div className="text-xs text-muted-foreground text-center truncate">
+                          {firstProject.name}
+                        </div>
+                      </div>
+                      
+                      {/* Last Image */}
+                      <div className="space-y-2">
+                        <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
+                          {language === 'en' ? 'Latest' : 'Última'}
+                        </div>
+                        <div 
+                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
+                          onClick={() => {
+                            setImageModalSrc(lastFinalImage);
+                            setImageModalOpen(true);
+                          }}
+                        >
+                          <img
+                            src={lastFinalImage}
+                            alt={`${obj.id} - ${lastProject.name}`}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                        </div>
+                        <div className="text-xs text-muted-foreground text-center truncate">
+                          {lastProject.name}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 );
               })()}
 
