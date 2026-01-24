@@ -4050,6 +4050,17 @@ export default function AstroTracker() {
     } else {
       document.documentElement.classList.remove("dark");
     }
+    
+    // Persist theme to localStorage when it changes
+    try {
+      const savedSettings = localStorage.getItem("astroTrackerSettings");
+      const settings = savedSettings ? JSON.parse(savedSettings) : {};
+      settings.defaultTheme = theme;
+      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+      setDefaultTheme(theme);
+    } catch (e) {
+      console.error("Error saving theme:", e);
+    }
   }, [theme]);
 
   const filteredObjects = useMemo(() => {
