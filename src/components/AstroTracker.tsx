@@ -5371,20 +5371,20 @@ export default function AstroTracker() {
                 <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
                   >
                     <div className="flex items-start gap-4">
                       <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
                         <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1 truncate">
                           {t('nextEphemeris')}
                         </h3>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2">
+                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2 truncate">
                           {formatSpanishDate(nextEphemeris.date)}
                         </p>
-                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1">
+                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2">
                           {language === 'en' ? nextEphemeris.eventEN : nextEphemeris.eventES}
                         </p>
                         {nextEphemeris.notes && (
@@ -5425,8 +5425,8 @@ export default function AstroTracker() {
                 
                 if (visibleNow.length === 0) {
                   return (
-                    <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
+                      <p className="text-sm text-muted-foreground break-words">
                         {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
                       </p>
                     </div>
@@ -5434,8 +5434,8 @@ export default function AstroTracker() {
                 }
                 
                 return (
-                  <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
+                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
                       🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
                     </p>
                   </div>
