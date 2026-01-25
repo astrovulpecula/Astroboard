@@ -3773,6 +3773,11 @@ export default function AstroTracker() {
   const [editingPlannedId, setEditingPlannedId] = useState<string | null>(null);
   const [plannedSearchText, setPlannedSearchText] = useState("");
   const [showPlannedFilters, setShowPlannedFilters] = useState(false);
+  const [plannedFilterConstellation, setPlannedFilterConstellation] = useState("all");
+  const [plannedFilterSignal, setPlannedFilterSignal] = useState("all");
+  const [plannedFilterPriority, setPlannedFilterPriority] = useState("all");
+  const [plannedFilterCenit, setPlannedFilterCenit] = useState("all");
+  const [plannedSortMode, setPlannedSortMode] = useState<"alpha" | "chrono" | "priority">("chrono");
   const [plannedFromPlan, setPlannedFromPlan] = useState<any>(null);
   const [ephemerides, setEphemerides] = useState<Ephemeris[]>([]);
   const [weatherData, setWeatherData] = useState<any>(null);
@@ -5822,49 +5827,186 @@ export default function AstroTracker() {
                     </Card>
                   )}
 
-                  {/* Search */}
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={plannedSearchText}
-                        onChange={(e) => setPlannedSearchText(e.target.value)}
-                        placeholder="Buscar por objeto, nombre o descripción..."
-                        className={`${INPUT_CLS} w-full pl-10`}
-                      />
-                      <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      {plannedSearchText && (
-                        <button
-                          onClick={() => setPlannedSearchText("")}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                  {/* Search and Filters */}
+                  <div className="grid gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Sorting buttons */}
+                      {plannedProjects.length > 0 && (
+                        <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                          <button 
+                            onClick={() => setPlannedSortMode("alpha")}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                            title="Ordenar alfabéticamente (A-Z)"
+                          >
+                            A-Z
+                          </button>
+                          <button 
+                            onClick={() => setPlannedSortMode("chrono")}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "chrono" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                            title="Ordenar cronológicamente"
+                          >
+                            1-3
+                          </button>
+                          <button 
+                            onClick={() => setPlannedSortMode("priority")}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "priority" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                            title="Ordenar por prioridad"
+                          >
+                            ⚡
+                          </button>
+                        </div>
                       )}
+                      
+                      {/* Search input */}
+                      <div className="relative flex-1 min-w-[200px]">
+                        <input
+                          type="text"
+                          value={plannedSearchText}
+                          onChange={(e) => setPlannedSearchText(e.target.value)}
+                          placeholder="Buscar por objeto, nombre o descripción..."
+                          className={`${INPUT_CLS} w-full pl-10`}
+                        />
+                        <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        {plannedSearchText && (
+                          <button
+                            onClick={() => setPlannedSearchText("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      <Btn outline onClick={() => setShowPlannedFilters(!showPlannedFilters)}>
+                        {showPlannedFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                      </Btn>
                     </div>
+                    
+                    {/* Advanced Filters Panel */}
+                    {showPlannedFilters && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                        <label className="grid gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Constelación</span>
+                          <select
+                            value={plannedFilterConstellation}
+                            onChange={(e) => setPlannedFilterConstellation(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todas</option>
+                            {[...new Set(plannedProjects.map(p => p.constellation).filter(Boolean))].sort().map(c => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Señal</span>
+                          <select
+                            value={plannedFilterSignal}
+                            onChange={(e) => setPlannedFilterSignal(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todas</option>
+                            {[...new Set(plannedProjects.map(p => p.signal).filter(Boolean))].sort().map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Prioridad</span>
+                          <select
+                            value={plannedFilterPriority}
+                            onChange={(e) => setPlannedFilterPriority(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todas</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">Cenit</span>
+                          <select
+                            value={plannedFilterCenit}
+                            onChange={(e) => setPlannedFilterCenit(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todos</option>
+                            {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(m => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className="col-span-2 md:col-span-4 flex justify-end">
+                          <Btn 
+                            outline
+                            onClick={() => {
+                              setPlannedFilterConstellation("all");
+                              setPlannedFilterSignal("all");
+                              setPlannedFilterPriority("all");
+                              setPlannedFilterCenit("all");
+                              setPlannedSearchText("");
+                            }}
+                          >
+                            Limpiar filtros
+                          </Btn>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Planned Projects Grid */}
                   {(() => {
-                    const filteredPlanned = plannedProjects.filter((p) => {
+                    // Filter by search text
+                    let filteredPlanned = plannedProjects.filter((p) => {
                       if (!plannedSearchText.trim()) return true;
                       const search = plannedSearchText.toLowerCase();
                       return (
                         p.objectId?.toLowerCase().includes(search) ||
                         p.objectName?.toLowerCase().includes(search) ||
                         p.name?.toLowerCase().includes(search) ||
-                        p.description?.toLowerCase().includes(search)
+                        p.description?.toLowerCase().includes(search) ||
+                        p.constellation?.toLowerCase().includes(search)
                       );
                     });
+                    
+                    // Apply advanced filters
+                    if (plannedFilterConstellation !== "all") {
+                      filteredPlanned = filteredPlanned.filter(p => p.constellation === plannedFilterConstellation);
+                    }
+                    if (plannedFilterSignal !== "all") {
+                      filteredPlanned = filteredPlanned.filter(p => p.signal === plannedFilterSignal);
+                    }
+                    if (plannedFilterPriority !== "all") {
+                      filteredPlanned = filteredPlanned.filter(p => p.prioridad === plannedFilterPriority);
+                    }
+                    if (plannedFilterCenit !== "all") {
+                      filteredPlanned = filteredPlanned.filter(p => p.cenit === plannedFilterCenit);
+                    }
+                    
+                    // Apply sorting
+                    const sortedPlanned = [...filteredPlanned].sort((a, b) => {
+                      if (plannedSortMode === "alpha") {
+                        return (a.objectId || "").localeCompare(b.objectId || "");
+                      } else if (plannedSortMode === "priority") {
+                        const priorityOrder: Record<string, number> = { "Alta": 0, "Media": 1, "Baja": 2 };
+                        const aPriority = priorityOrder[a.prioridad] ?? 3;
+                        const bPriority = priorityOrder[b.prioridad] ?? 3;
+                        return aPriority - bPriority;
+                      } else {
+                        // chrono - most recent first
+                        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                      }
+                    });
 
-                    if (filteredPlanned.length === 0) {
+                    if (sortedPlanned.length === 0) {
                       return (
                         <Card className="p-8 text-center">
                           <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                           <p className="text-muted-foreground mb-4">
                             {plannedProjects.length === 0 
                               ? "No tienes proyectos planificados todavía"
-                              : "No se encontraron proyectos que coincidan con la búsqueda"
+                              : "No se encontraron proyectos que coincidan con los filtros"
                             }
                           </p>
                           {plannedProjects.length === 0 && (
@@ -5878,7 +6020,7 @@ export default function AstroTracker() {
 
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {filteredPlanned.map((planned) => {
+                        {sortedPlanned.map((planned) => {
                           // Check if object exists and get its image
                           const existingObj = objects.find(
                             (o) => o.id.toLowerCase() === planned.objectId.toLowerCase()
@@ -5922,9 +6064,6 @@ export default function AstroTracker() {
                                     {planned.cenit && <Badge className="border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
                                     {planned.prioridad && <Badge className={`${planned.prioridad === "Alta" ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700" : planned.prioridad === "Media" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700"}`}>Prioridad: {planned.prioridad}</Badge>}
                                   </div>
-                                  <p className="text-xs text-muted-foreground mt-2">
-                                    Creado: {formatDateDisplay(planned.createdAt, dateFormat)}
-                                  </p>
                                 </div>
                                 <IconBtn
                                   title="Eliminar"
