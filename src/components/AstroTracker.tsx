@@ -5847,13 +5847,6 @@ export default function AstroTracker() {
                           >
                             1-3
                           </button>
-                          <button 
-                            onClick={() => setPlannedSortMode("priority")}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "priority" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title="Ordenar por prioridad"
-                          >
-                            ⚡
-                          </button>
                         </div>
                       )}
                       
