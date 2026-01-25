@@ -6037,45 +6037,56 @@ export default function AstroTracker() {
                               className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                               onClick={() => setSelectedPlannedId(planned.id)}
                             >
-                              <div className="flex items-start gap-3">
-                                {/* Thumbnail - uses existing object image if available */}
-                                {thumbnailImage ? (
-                                  <img
-                                    src={thumbnailImage}
-                                    alt={planned.objectId}
-                                    className="w-48 h-28 rounded-xl object-cover border border-border flex-shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-48 h-28 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center flex-shrink-0">
-                                    <Telescope className="w-10 h-10 text-muted-foreground/50" />
-                                  </div>
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-lg font-bold truncate">{planned.objectId}</p>
-                                  {planned.objectName && (
-                                    <p className="text-sm text-muted-foreground truncate">{planned.objectName}</p>
+                              <div className="space-y-3">
+                                {/* Thumbnail - image on top */}
+                                <div className="relative">
+                                  {thumbnailImage ? (
+                                    <img
+                                      src={thumbnailImage}
+                                      alt={planned.objectId}
+                                      className="w-full h-40 rounded-xl object-cover border border-border"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-40 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                                      <Telescope className="w-10 h-10 text-muted-foreground/50" />
+                                    </div>
                                   )}
-                                  <p className="text-sm font-medium mt-1 truncate">{planned.name}</p>
-                                  <div className="flex flex-wrap gap-2 mt-2">
-                                    {planned.constellation && <Badge>{planned.constellation}</Badge>}
-                                    {planned.projectType && <Badge>{planned.projectType}</Badge>}
-                                    {planned.signal && <Badge className="bg-secondary text-secondary-foreground">{planned.signal}</Badge>}
-                                    {planned.teselas && <Badge className="border border-border bg-transparent">Teselas: {planned.teselas}</Badge>}
-                                    {planned.cenit && <Badge className="border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
-                                    {planned.prioridad && <Badge className={`${planned.prioridad === "Alta" ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700" : planned.prioridad === "Media" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700"}`}>Prioridad: {planned.prioridad}</Badge>}
+                                  {/* Delete button positioned on top right of image */}
+                                  <button
+                                    title="Eliminar"
+                                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm("¿Eliminar este proyecto planificado?")) {
+                                        setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                {/* Content - text below */}
+                                <div className="space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="text-lg font-bold truncate">{planned.objectId}</p>
+                                      {planned.objectName && (
+                                        <p className="text-sm text-muted-foreground truncate">{planned.objectName}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {planned.name && (
+                                    <p className="text-sm font-medium truncate">{planned.name}</p>
+                                  )}
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {planned.constellation && <Badge className="text-xs">{planned.constellation}</Badge>}
+                                    {planned.projectType && <Badge className="text-xs">{planned.projectType}</Badge>}
+                                    {planned.signal && <Badge className="text-xs bg-secondary text-secondary-foreground">{planned.signal}</Badge>}
+                                    {planned.teselas && <Badge className="text-xs border border-border bg-transparent">Teselas: {planned.teselas}</Badge>}
+                                    {planned.cenit && <Badge className="text-xs border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
+                                    {planned.prioridad && <Badge className={`text-xs ${planned.prioridad === "Alta" ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700" : planned.prioridad === "Media" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700"}`}>Prioridad: {planned.prioridad}</Badge>}
                                   </div>
                                 </div>
-                                <IconBtn
-                                  title="Eliminar"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (confirm("¿Eliminar este proyecto planificado?")) {
-                                      setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </IconBtn>
                               </div>
                             </Card>
                           );
