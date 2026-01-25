@@ -7199,8 +7199,15 @@ export default function AstroTracker() {
                 // Need at least 2 projects with final images to show evolution
                 if (projectsWithFinalImages.length < 2) return null;
                 
-                const firstProject = projectsWithFinalImages[0];
-                const lastProject = projectsWithFinalImages[projectsWithFinalImages.length - 1];
+                // Sort by createdAt date to ensure correct chronological order (oldest first)
+                const sortedProjects = [...projectsWithFinalImages].sort((a: any, b: any) => {
+                  const dateA = new Date(a.createdAt || 0).getTime();
+                  const dateB = new Date(b.createdAt || 0).getTime();
+                  return dateA - dateB;
+                });
+                
+                const firstProject = sortedProjects[0];
+                const lastProject = sortedProjects[sortedProjects.length - 1];
                 
                 const firstFinalImage = (firstProject as any).images?.finalProject;
                 const lastFinalImage = (lastProject as any).images?.finalProject;
