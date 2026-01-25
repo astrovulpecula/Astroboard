@@ -76,6 +76,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
+import FitsCharts from "@/components/FitsCharts";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -8371,24 +8372,70 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title="Comentarios"
+                                      title={s.fitsAnalysis ? "Detalles y análisis FITS" : "Comentarios"}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                      {s.notes && s.notes.trim() !== "" && (
-                                        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                                      )}
+                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis ? (
+                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                      ) : null}
                                     </button>
                                   </DialogTrigger>
-                                  <DialogContent>
+                                  <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
-                                      <DialogTitle>Comentarios de sesión</DialogTitle>
+                                      <DialogTitle>Detalles de sesión</DialogTitle>
                                       <DialogDescription>
                                         Fecha: {formatDateDisplay(s.date, dateFormat)} - Filtro: {s.filter}
                                       </DialogDescription>
                                     </DialogHeader>
-                                    <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 min-h-[100px]">
-                                      {s.notes || ""}
-                                    </div>
+                                    
+                                    {/* Notes section */}
+                                    {s.notes && s.notes.trim() !== "" && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-2">Comentarios</h4>
+                                        <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
+                                          {s.notes}
+                                        </div>
+                                      </div>
+                                    )}
+                                    
+                                    {/* FITS Analysis Charts */}
+                                    {s.fitsAnalysis && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-3">Análisis FITS</h4>
+                                        
+                                        {/* Averages summary */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                                          {s.fitsAnalysis.averages.mpsas !== undefined && (
+                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                              <div className="text-xs text-slate-500">MPSAS</div>
+                                              <div className="font-semibold">{s.fitsAnalysis.averages.mpsas.toFixed(2)}</div>
+                                            </div>
+                                          )}
+                                          {s.fitsAnalysis.averages.ambientTemp !== undefined && (
+                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                              <div className="text-xs text-slate-500">Temp. Ambiente</div>
+                                              <div className="font-semibold">{s.fitsAnalysis.averages.ambientTemp.toFixed(1)}°C</div>
+                                            </div>
+                                          )}
+                                          {s.fitsAnalysis.averages.humidity !== undefined && (
+                                            <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                              <div className="text-xs text-slate-500">Humedad</div>
+                                              <div className="font-semibold">{s.fitsAnalysis.averages.humidity.toFixed(1)}%</div>
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Charts */}
+                                        <FitsCharts data={s.fitsAnalysis} />
+                                      </div>
+                                    )}
+                                    
+                                    {/* Empty state if no notes and no FITS */}
+                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && (
+                                      <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
+                                        Sin comentarios ni análisis FITS
+                                      </div>
+                                    )}
                                   </DialogContent>
                                 </Dialog>
                                 <IconBtn title="Editar" onClick={() => setEditSes(s)}>
