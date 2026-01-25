@@ -33,6 +33,10 @@ import {
   BarChart3,
   ImageIcon,
   TrendingUp,
+  Gauge,
+  Thermometer,
+  Droplets,
+  Wind,
 } from "lucide-react";
 import {
   LineChart,
@@ -2858,6 +2862,233 @@ const ExposureChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[
           />
           <Bar dataKey="horas" fill="#3b82f6" />
         </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// FITS MPSAS Chart - Sky Quality per Session
+const FitsMpsasChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.mpsas !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        mpsas: s.fitsAnalysis.averages.mpsas,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgMpsas = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.mpsas, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Gauge} title="Calidad del cielo (MPSAS) por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        MPSAS medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgMpsas.toFixed(2)}</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={['auto', 'auto']} tickMargin={8} stroke="#ffffff" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(2)} mag/arcsec²`, "MPSAS"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="mpsas"
+            stroke="#8b5cf6"
+            strokeWidth={3}
+            dot={{ fill: "#8b5cf6", r: 4 }}
+            name="MPSAS"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// FITS Temperature Chart - Ambient & Sky Temperature per Session
+const FitsTemperatureChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.ambientTemp !== undefined || s.fitsAnalysis?.averages?.skyTemp !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        ambientTemp: s.fitsAnalysis?.averages?.ambientTemp,
+        skyTemp: s.fitsAnalysis?.averages?.skyTemp,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgAmbient = useMemo(() => {
+    const filtered = data.filter((d) => d.ambientTemp !== undefined);
+    if (!filtered.length) return null;
+    return filtered.reduce((a, b) => a + (b.ambientTemp || 0), 0) / filtered.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Thermometer} title="Temperatura por sesión" />
+      {avgAmbient !== null && (
+        <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+          Temp. ambiente media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgAmbient.toFixed(1)}°C</span>
+        </div>
+      )}
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}°C`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(1)}°C`]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="ambientTemp"
+            stroke="#f59e0b"
+            strokeWidth={3}
+            dot={{ fill: "#f59e0b", r: 4 }}
+            name="Ambiente"
+          />
+          <Line
+            type="monotone"
+            dataKey="skyTemp"
+            stroke="#3b82f6"
+            strokeWidth={3}
+            dot={{ fill: "#3b82f6", r: 4 }}
+            name="Cielo"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// FITS Humidity Chart - Humidity per Session
+const FitsHumidityChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.humidity !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        humidity: s.fitsAnalysis.averages.humidity,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgHumidity = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.humidity, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Droplets} title="Humedad por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        Humedad media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgHumidity.toFixed(1)}%</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 100]} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}%`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(1)}%`, "Humedad"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="humidity"
+            stroke="#06b6d4"
+            strokeWidth={3}
+            dot={{ fill: "#06b6d4", r: 4 }}
+            name="Humedad"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// FITS Wind Chart - Wind Speed per Session
+const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.wind !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        wind: s.fitsAnalysis.averages.wind,
+        windGust: s.fitsAnalysis?.averages?.windGust,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgWind = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.wind, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Wind} title="Viento por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        Viento medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgWind.toFixed(1)} m/s</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value} m/s`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(1)} m/s`]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="wind"
+            stroke="#22c55e"
+            strokeWidth={3}
+            dot={{ fill: "#22c55e", r: 4 }}
+            name="Viento"
+          />
+          <Line
+            type="monotone"
+            dataKey="windGust"
+            stroke="#ef4444"
+            strokeWidth={3}
+            dot={{ fill: "#ef4444", r: 4 }}
+            name="Racha"
+          />
+        </LineChart>
       </ResponsiveContainer>
     </Card>
   );
@@ -8457,6 +8688,10 @@ export default function AstroTracker() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <ExposureChart sessions={filtered} dateFormat={dateFormat} />
                 <MoonIlluminationChart sessions={filtered} />
+                <FitsMpsasChart sessions={filtered} />
+                <FitsTemperatureChart sessions={filtered} />
+                <FitsHumidityChart sessions={filtered} />
+                <FitsWindChart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
                 <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />
