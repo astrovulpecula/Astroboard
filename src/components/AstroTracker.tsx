@@ -75,6 +75,7 @@ import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } fr
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -2293,7 +2294,7 @@ function FSession({
   const [acceptedLights, setAcceptedLights] = useState(init.acceptedLights ?? "");
   const [rejectedLights, setRejectedLights] = useState(init.rejectedLights ?? "");
   const [notes, setNotes] = useState(init.notes ?? "");
-
+  const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(init.fitsAnalysis || null);
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
@@ -2330,6 +2331,7 @@ function FSession({
           rejectedLights: rejectedLights !== "" ? parseInt(rejectedLights) : undefined,
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
+          fitsAnalysis: fitsAnalysis || undefined,
         };
 
         onSubmit(sessionData);
@@ -2525,6 +2527,9 @@ function FSession({
           />
         </label>
       </div>
+
+      {/* FITS Analyzer - before notes */}
+      <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
 
       <label className="grid gap-1">
         <Label>Notas</Label>
