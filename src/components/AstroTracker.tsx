@@ -7199,12 +7199,24 @@ export default function AstroTracker() {
                 // Need at least 2 projects with final images to show evolution
                 if (projectsWithFinalImages.length < 2) return null;
                 
-                // Sort by createdAt date to ensure correct chronological order (oldest first)
+                // Debug: log project dates
+                console.log('Evolution Comparison - Projects with final images:', projectsWithFinalImages.map((p: any) => ({
+                  name: p.name,
+                  createdAt: p.createdAt,
+                  date: p.date,
+                  parsedCreatedAt: new Date(p.createdAt || 0).getTime(),
+                  parsedDate: p.date ? new Date(p.date).getTime() : null
+                })));
+                
+                // Sort by date field first, then createdAt as fallback (oldest first)
                 const sortedProjects = [...projectsWithFinalImages].sort((a: any, b: any) => {
-                  const dateA = new Date(a.createdAt || 0).getTime();
-                  const dateB = new Date(b.createdAt || 0).getTime();
+                  // Try to use 'date' field first (session date), then 'createdAt'
+                  const dateA = a.date ? new Date(a.date).getTime() : new Date(a.createdAt || 0).getTime();
+                  const dateB = b.date ? new Date(b.date).getTime() : new Date(b.createdAt || 0).getTime();
                   return dateA - dateB;
                 });
+                
+                console.log('Evolution Comparison - Sorted projects:', sortedProjects.map((p: any) => p.name));
                 
                 const firstProject = sortedProjects[0];
                 const lastProject = sortedProjects[sortedProjects.length - 1];
