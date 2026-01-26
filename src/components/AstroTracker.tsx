@@ -37,7 +37,9 @@ import {
   Thermometer,
   Droplets,
   Wind,
+  ChevronDownIcon,
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   LineChart,
   Line,
@@ -6595,83 +6597,139 @@ export default function AstroTracker() {
                     )}
                   </div>
 
-                  {/* Objects Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {filteredObjects
-                      .slice()
-                      .sort((a, b) => {
-                        if (sortObjects === "alpha") return a.id.localeCompare(b.id);
-                        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-                      })
-                      .map((o) => {
-                        const all = o.projects.flatMap((p: any) => p.sessions);
-                        const seconds = totalExposureSec(all);
-                        const nights = new Set(all.map((s: any) => s.date)).size;
-                        return (
-                          <Card
-                            key={o.id}
-                            className="p-4"
-                            onClick={() => {
-                              setSelectedObjectId(o.id);
-                              setView("projects");
-                            }}
-                          >
-                            <div className="flex items-start gap-3">
-                              <ObjectThumbnail
-                                objectId={o.id}
-                                displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
-                                onUpload={upObjImg}
-                                onDelete={(id) => upObjImg(id, null)}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditObjectOriginalId(o.id);
-                                      setEditObjectData({
-                                        id: o.id,
-                                        commonName: o.commonName || "",
-                                        constellation: o.constellation || "",
-                                        type: o.type || "",
-                                      });
-                                      setShowEditObjectModal(true);
-                                    }}
-                                    className="text-lg md:text-xl font-bold truncate hover:underline text-left"
-                                    title="Clic para editar"
-                                  >
-                                    {o.id}
-                                  </button>
-                                </div>
-                                {o.commonName && (
-                                  <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">
-                                    {o.commonName}
-                                  </p>
-                                )}
-                                <div className="flex flex-wrap gap-2 mt-2">
-                                  {o.constellation && <Badge>{o.constellation}</Badge>}
-                                  {o.type && <Badge>{o.type}</Badge>}
-                                </div>
-                                <p className="text-xs md:text-sm text-slate-500 mt-2">
-                                  {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <IconBtn
-                                  title="Eliminar"
+                  {/* Separar objetos con proyectos activos y archivados */}
+                  {(() => {
+                    const sortedObjects = filteredObjects.slice().sort((a, b) => {
+                      if (sortObjects === "alpha") return a.id.localeCompare(b.id);
+                      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+                    });
+                    
+                    // Objetos con al menos un proyecto activo o pausado
+                    const activeObjects = sortedObjects.filter((o) => 
+                      o.projects.some((p: any) => p.status === "active" || p.status === "paused")
+                    );
+                    
+                    // Objetos donde todos los proyectos están cerrados/terminados
+                    const archivedObjects = sortedObjects.filter((o) => 
+                      o.projects.every((p: any) => p.status === "closed" || p.status === "completed")
+                    );
+
+                    const renderObjectCard = (o: any) => {
+                      const all = o.projects.flatMap((p: any) => p.sessions);
+                      const seconds = totalExposureSec(all);
+                      const nights = new Set(all.map((s: any) => s.date)).size;
+                      return (
+                        <Card
+                          key={o.id}
+                          className="p-4"
+                          onClick={() => {
+                            setSelectedObjectId(o.id);
+                            setView("projects");
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <ObjectThumbnail
+                              objectId={o.id}
+                              displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
+                              onUpload={upObjImg}
+                              onDelete={(id) => upObjImg(id, null)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    delObj(o.id);
+                                    setEditObjectOriginalId(o.id);
+                                    setEditObjectData({
+                                      id: o.id,
+                                      commonName: o.commonName || "",
+                                      constellation: o.constellation || "",
+                                      type: o.type || "",
+                                    });
+                                    setShowEditObjectModal(true);
                                   }}
+                                  className="text-lg md:text-xl font-bold truncate hover:underline text-left"
+                                  title="Clic para editar"
                                 >
-                                  <Trash2 className="w-4 h-4" />
-                                </IconBtn>
+                                  {o.id}
+                                </button>
                               </div>
+                              {o.commonName && (
+                                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">
+                                  {o.commonName}
+                                </p>
+                              )}
+                              <div className="flex flex-wrap gap-2 mt-2">
+                                {o.constellation && <Badge>{o.constellation}</Badge>}
+                                {o.type && <Badge>{o.type}</Badge>}
+                              </div>
+                              <p className="text-xs md:text-sm text-slate-500 mt-2">
+                                {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
+                              </p>
                             </div>
+                            <div className="flex items-center gap-1">
+                              <IconBtn
+                                title="Eliminar"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  delObj(o.id);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </IconBtn>
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    };
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Sección de Proyectos Activos */}
+                        {activeObjects.length > 0 && (
+                          <div>
+                            <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                              <Flame className="w-5 h-5 text-orange-500" />
+                              {language === 'en' ? 'Active Projects' : 'Proyectos Activos'}
+                              <span className="text-sm font-normal text-muted-foreground">({activeObjects.length})</span>
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              {activeObjects.map(renderObjectCard)}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Sección de Archivo - Colapsable */}
+                        {archivedObjects.length > 0 && (
+                          <Collapsible defaultOpen={activeObjects.length === 0}>
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                              <ChevronDownIcon className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              <h4 className="text-lg font-semibold flex items-center gap-2">
+                                <FolderOpen className="w-5 h-5 text-slate-500" />
+                                {language === 'en' ? 'Archive' : 'Archivo'}
+                                <span className="text-sm font-normal text-muted-foreground">({archivedObjects.length})</span>
+                              </h4>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {archivedObjects.map(renderObjectCard)}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+
+                        {/* Si no hay objetos activos ni archivados (solo por si acaso) */}
+                        {activeObjects.length === 0 && archivedObjects.length === 0 && (
+                          <Card className="p-8 text-center">
+                            <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                            <p className="text-muted-foreground">
+                              {language === 'en' ? 'No objects match your filters.' : 'No hay objetos que coincidan con los filtros.'}
+                            </p>
                           </Card>
-                        );
-                      })}
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   </>
                   )}
                 </>
