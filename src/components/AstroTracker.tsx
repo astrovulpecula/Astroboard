@@ -6685,18 +6685,23 @@ export default function AstroTracker() {
 
                     return (
                       <div className="space-y-6">
-                        {/* Sección de Proyectos Activos */}
+                        {/* Sección de Proyectos Activos - Colapsable */}
                         {activeObjects.length > 0 && (
-                          <div>
-                            <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                              <Flame className="w-5 h-5 text-orange-500" />
-                              {language === 'en' ? 'Active Projects' : 'Proyectos Activos'}
-                              <span className="text-sm font-normal text-muted-foreground">({activeObjects.length})</span>
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                              {activeObjects.map(renderObjectCard)}
-                            </div>
-                          </div>
+                          <Collapsible defaultOpen={true}>
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                              <ChevronDownIcon className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              <h4 className="text-lg font-semibold flex items-center gap-2">
+                                <Flame className="w-5 h-5 text-orange-500" />
+                                {language === 'en' ? 'Active Projects' : 'Proyectos Activos'}
+                                <span className="text-sm font-normal text-muted-foreground">({activeObjects.length})</span>
+                              </h4>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {activeObjects.map(renderObjectCard)}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
                         )}
 
                         {/* Sección de Archivo - Colapsable */}
