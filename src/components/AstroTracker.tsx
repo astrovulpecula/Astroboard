@@ -2562,6 +2562,355 @@ function FSession({
   );
 }
 
+// Automated session form - auto-fills from FITS metadata
+function FSessionAutomated({
+  onSubmit,
+  availableFilters,
+  cameras,
+  projectEquipment,
+  telescopes,
+}: {
+  onSubmit: (session: any) => void;
+  availableFilters: string[];
+  cameras: string[];
+  projectEquipment?: any;
+  telescopes?: { name: string; focalLength: string }[];
+}) {
+  // State for FITS and PHD2 analysis (at the top)
+  const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
+  const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
+  
+  // State for form fields
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [lights, setLights] = useState(0);
+  const [exposureSec, setExposureSec] = useState(180);
+  const [filter, setFilter] = useState(availableFilters[0] || "RGB");
+  const [fitsFilter, setFitsFilter] = useState<string | null>(null);
+  const [useAppFilter, setUseAppFilter] = useState(true);
+  const [camera, setCamera] = useState(projectEquipment?.camera || "");
+  const [telescope, setTelescope] = useState("");
+  const [customTelescope, setCustomTelescope] = useState("");
+  const [showCustomTelescope, setShowCustomTelescope] = useState(false);
+  const [snrR, setSnrR] = useState("");
+  const [snrG, setSnrG] = useState("");
+  const [snrB, setSnrB] = useState("");
+  const [acceptedLights, setAcceptedLights] = useState("");
+  const [rejectedLights, setRejectedLights] = useState("");
+  const [notes, setNotes] = useState("");
+  
+  const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
+
+  // Auto-fill form when FITS analysis changes
+  useEffect(() => {
+    if (fitsAnalysis?.extractedInfo) {
+      const info = fitsAnalysis.extractedInfo;
+      
+      // Auto-fill lights count
+      if (info.totalLights > 0) {
+        setLights(info.totalLights);
+      }
+      
+      // Auto-fill exposure
+      if (info.exposure) {
+        setExposureSec(Math.round(info.exposure));
+      }
+      
+      // Store FITS filter for user choice
+      if (info.filters.length > 0) {
+        setFitsFilter(info.filters[0]);
+      }
+    }
+  }, [fitsAnalysis]);
+
+  // Pre-select telescope from project equipment
+  useEffect(() => {
+    if (projectEquipment?.telescope) {
+      setTelescope(projectEquipment.telescope);
+    }
+  }, [projectEquipment?.telescope]);
+
+  // Calculate moon phase
+  const moonPhase = useMemo(() => {
+    if (!date) return null;
+    return calculateMoonPhase(date);
+  }, [date]);
+
+  // Get available dates from FITS
+  const availableDates = fitsAnalysis?.extractedInfo?.dates || [];
+
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+
+        const sessionData = {
+          date,
+          lights: num(lights),
+          exposureSec: num(exposureSec, 1),
+          filter: useAppFilter ? filter : fitsFilter || filter,
+          camera,
+          telescope,
+          snrR: snrR !== "" ? parseFloat(snrR) : undefined,
+          snrG: snrG !== "" ? parseFloat(snrG) : undefined,
+          snrB: snrB !== "" ? parseFloat(snrB) : undefined,
+          acceptedLights: acceptedLights !== "" ? parseInt(acceptedLights) : undefined,
+          rejectedLights: rejectedLights !== "" ? parseInt(rejectedLights) : undefined,
+          notes,
+          moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
+          fitsAnalysis: fitsAnalysis || undefined,
+          phd2Analysis: phd2Analysis || undefined,
+        };
+
+        onSubmit(sessionData);
+      }}
+    >
+      {/* FITS and PHD2 Analyzers at the top */}
+      <div className="space-y-4 pb-4 border-b border-border">
+        <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
+        <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+      </div>
+
+      {/* Auto-filled fields notification */}
+      {fitsAnalysis?.extractedInfo && (
+        <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
+          <p className="text-sm text-green-700 dark:text-green-300">
+            ✓ Datos extraídos automáticamente: {fitsAnalysis.extractedInfo.totalLights} lights
+            {fitsAnalysis.extractedInfo.exposure && `, ${fitsAnalysis.extractedInfo.exposure}s exposición`}
+            {fitsAnalysis.extractedInfo.filters.length > 0 && `, filtro: ${fitsAnalysis.extractedInfo.filters.join(", ")}`}
+          </p>
+        </div>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        {/* Date selector with FITS dates */}
+        <label className="grid gap-1">
+          <Label>Fecha</Label>
+          {availableDates.length > 1 ? (
+            <div className="space-y-2">
+              <select
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className={INPUT_CLS}
+              >
+                {availableDates.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Sesión nocturna: selecciona la fecha que prefieras
+              </p>
+            </div>
+          ) : (
+            <input 
+              type="date" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+              className={INPUT_CLS} 
+            />
+          )}
+        </label>
+
+        {/* Filter selector with FITS option */}
+        <label className="grid gap-1">
+          <Label>Filtro</Label>
+          <div className="grid gap-2">
+            {fitsFilter && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-muted-foreground">Filtro del FITS:</span>
+                <span className="text-sm font-medium">{fitsFilter}</span>
+                <label className="flex items-center gap-1 ml-auto text-xs">
+                  <input
+                    type="checkbox"
+                    checked={!useAppFilter}
+                    onChange={(e) => setUseAppFilter(!e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  Usar este
+                </label>
+              </div>
+            )}
+            
+            {useAppFilter && (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {predefinedFilters.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setFilter(f)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition ${
+                        filter === f
+                          ? "bg-primary text-primary-foreground"
+                          : "border border-input hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+                <select
+                  value={!predefinedFilters.includes(filter) ? filter : ""}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setFilter(e.target.value);
+                    }
+                  }}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Seleccionar otro filtro...</option>
+                  {availableFilters
+                    .filter((f) => !predefinedFilters.includes(f))
+                    .map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                </select>
+              </>
+            )}
+          </div>
+        </label>
+
+        <label className="grid gap-1">
+          <Label>Lights</Label>
+          <input
+            type="number"
+            value={lights}
+            min={0}
+            onChange={(e) => setLights(parseInt(e.target.value || "0", 10))}
+            className={INPUT_CLS}
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Exposición por light (s)</Label>
+          <input
+            type="number"
+            value={exposureSec}
+            min={1}
+            onChange={(e) => setExposureSec(parseInt(e.target.value || "0", 10))}
+            className={INPUT_CLS}
+          />
+        </label>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Cámara</Label>
+          <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
+            <option value="">Seleccionar cámara</option>
+            {cameras
+              .filter((c) => c.trim() !== "")
+              .map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+          </select>
+        </label>
+
+        <label className="grid gap-1">
+          <Label>Telescopio</Label>
+          <select
+            value={telescope}
+            onChange={(e) => {
+              setTelescope(e.target.value);
+              setShowCustomTelescope(e.target.value === "Otro");
+            }}
+            className={INPUT_CLS}
+          >
+            <option value="">Seleccionar telescopio...</option>
+            {telescopes
+              ?.filter((t) => t.name.trim())
+              .map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
+                </option>
+              ))}
+            <option value="Otro">+ Añadir nuevo telescopio</option>
+          </select>
+          {showCustomTelescope && (
+            <input
+              value={customTelescope}
+              onChange={(e) => {
+                setCustomTelescope(e.target.value);
+                setTelescope(e.target.value);
+              }}
+              className={`${INPUT_CLS} mt-2`}
+              placeholder="Nombre del nuevo telescopio..."
+            />
+          )}
+        </label>
+      </div>
+
+      {moonPhase && (
+        <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-sm">
+            <Moon className="w-4 h-4 text-muted-foreground" />
+            <span className="text-muted-foreground">Fase lunar:</span>
+            <span className="font-medium">
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* SNR fields - left blank for manual entry */}
+      <div className="grid grid-cols-3 gap-2 md:gap-3">
+        <label className="grid gap-1">
+          <Label>SNR - R</Label>
+          <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+        </label>
+        <label className="grid gap-1">
+          <Label>SNR - G</Label>
+          <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+        </label>
+        <label className="grid gap-1">
+          <Label>SNR - B</Label>
+          <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+        </label>
+      </div>
+
+      {/* Accepted/Rejected lights - left blank */}
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="grid gap-1">
+          <Label>Lights aceptados</Label>
+          <input
+            type="number"
+            value={acceptedLights}
+            min={0}
+            onChange={(e) => setAcceptedLights(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Opcional"
+          />
+        </label>
+        <label className="grid gap-1">
+          <Label>Lights rechazados</Label>
+          <input
+            type="number"
+            value={rejectedLights}
+            min={0}
+            onChange={(e) => setRejectedLights(e.target.value)}
+            className={INPUT_CLS}
+            placeholder="Opcional"
+          />
+        </label>
+      </div>
+
+      {/* Notes - left blank */}
+      <label className="grid gap-1">
+        <Label>Notas</Label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} placeholder="Opcional..." />
+      </label>
+
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
+        <div className="text-xs sm:text-sm text-muted-foreground">
+          Tiempo total: <b>{hh(lights * exposureSec)}</b>
+        </div>
+        <Btn type="submit">
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar
+        </Btn>
+      </div>
+    </form>
+  );
+}
+
 const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -4053,6 +4402,7 @@ export default function AstroTracker() {
   const [mObj, setMObj] = useState(false);
   const [mProj, setMProj] = useState(false);
   const [mSes, setMSes] = useState(false);
+  const [mSesAuto, setMSesAuto] = useState(false);
   const [editSes, setEditSes] = useState<any>(null);
   const [sortObjects, setSortObjects] = useState("recent");
   const [searchText, setSearchText] = useState("");
@@ -8710,6 +9060,9 @@ export default function AstroTracker() {
                 <Btn onClick={() => setMSes(true)}>
                   <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión
                 </Btn>
+                <Btn outline onClick={() => setMSesAuto(true)}>
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión (Automatizada)
+                </Btn>
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
@@ -9597,6 +9950,15 @@ export default function AstroTracker() {
         </Modal>
         <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
           <FSession
+            onSubmit={addSes}
+            availableFilters={availableFilters}
+            cameras={cameras}
+            telescopes={telescopes}
+            projectEquipment={(proj as any)?.equipment}
+          />
+        </Modal>
+        <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title="Nueva sesión (Automatizada)" wide>
+          <FSessionAutomated
             onSubmit={addSes}
             availableFilters={availableFilters}
             cameras={cameras}
