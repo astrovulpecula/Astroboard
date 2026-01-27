@@ -9095,7 +9095,7 @@ export default function AstroTracker() {
 
               <SectionTitle icon={Database} title="Sesiones" />
 
-              <div className="flex items-center gap-1 md:gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+              <div className="flex items-center gap-1 md:gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                 {tabs.map((t) => (
                   <div
                     key={t.id}
