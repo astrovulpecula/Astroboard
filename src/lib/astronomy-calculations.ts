@@ -308,7 +308,14 @@ export function getVisibilityDescription(result: VisibilityResult, language: 'es
   if (result.isCircumpolar) {
     return language === 'en' ? 'Circumpolar - always visible' : 'Circumpolar - siempre visible';
   }
-  if (result.transitAltitude < 20) {
+  
+  // Calculate percentage of time above 20 degrees
+  const totalPoints = result.data.length;
+  const pointsAbove20 = result.data.filter(d => d.altitude >= 20).length;
+  const percentageAbove20 = totalPoints > 0 ? (pointsAbove20 / totalPoints) * 100 : 0;
+  
+  // If most time (>50%) is below 20°, it's bad visibility
+  if (percentageAbove20 < 50) {
     return language === 'en' ? 'Bad visibility' : 'Mala visibilidad';
   }
   return language === 'en' ? 'Good visibility' : 'Buena visibilidad';

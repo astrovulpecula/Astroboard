@@ -233,17 +233,23 @@ export default function VisibilityChart({
 
           {/* Descripción de visibilidad */}
           <div className="text-sm text-center">
-            <span
-              className={`px-3 py-1 rounded-full ${
-                visibility.isCircumpolar
-                  ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  : visibility.transitAltitude >= 20
-                  ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  : 'bg-red-500/20 text-red-700 dark:text-red-400'
-              }`}
-            >
-              {getVisibilityDescription(visibility, language)}
-            </span>
+            {(() => {
+              const totalPoints = visibility.data.length;
+              const pointsAbove20 = visibility.data.filter(d => d.altitude >= 20).length;
+              const isGoodVisibility = visibility.isCircumpolar || (totalPoints > 0 && (pointsAbove20 / totalPoints) >= 0.5);
+              
+              return (
+                <span
+                  className={`px-3 py-1 rounded-full ${
+                    isGoodVisibility
+                      ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                      : 'bg-red-500/20 text-red-700 dark:text-red-400'
+                  }`}
+                >
+                  {getVisibilityDescription(visibility, language)}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Gráfico */}
