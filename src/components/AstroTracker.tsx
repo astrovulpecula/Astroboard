@@ -7494,7 +7494,7 @@ export default function AstroTracker() {
                     {/* ONP vs SNP Projects */}
                     {visibleHighlights.onpSnp && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
                         onClick={() => setView("onp-snp")}
                       >
                         <div className="flex items-center gap-3">
@@ -7535,7 +7535,7 @@ export default function AstroTracker() {
                     {/* Fotos Valoradas - navigates to gallery section */}
                     {visibleHighlights.ratedPhotos && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50" 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow ring-2 ring-emerald-500/70 dark:ring-emerald-400/70" 
                         onClick={() => setMainSection("galeria")}
                       >
                         <div className="flex items-center gap-3">
@@ -7588,7 +7588,7 @@ export default function AstroTracker() {
                     {/* RMS P50 Record (Lowest) */}
                     {globalMetrics.minP50Rms > 0 && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
                         onClick={() => {
                           const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP50RmsProjectId));
                           if (obj) {
@@ -7619,7 +7619,7 @@ export default function AstroTracker() {
                     {/* RMS P68 Record (Lowest) */}
                     {globalMetrics.minP68Rms > 0 && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
                         onClick={() => {
                           const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP68RmsProjectId));
                           if (obj) {
@@ -7743,7 +7743,7 @@ export default function AstroTracker() {
                     {/* Most Photographed Constellation */}
                     {visibleHighlights.mostPhotographedConstellation && globalMetrics.mostPhotographedConstellation && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
                         onClick={() => {
                           setSelectedConstellation(globalMetrics.mostPhotographedConstellation![0]);
                           setView("constellationDetail");
@@ -7801,7 +7801,7 @@ export default function AstroTracker() {
                         <Popover>
                           <PopoverTrigger asChild>
                             <div className="cursor-pointer">
-                              <Card className="p-5 hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all border-2 border-emerald-400/50 dark:border-emerald-500/50">
+                              <Card className="p-5 hover:shadow-md transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70">
                                 <div className="flex items-center gap-3">
                                   <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
                                     <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
