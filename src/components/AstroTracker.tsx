@@ -5864,6 +5864,42 @@ export default function AstroTracker() {
       });
     });
 
+    // RMS records (lowest P50 and P68)
+    let minP50Rms = Infinity;
+    let minP50RmsObject = "";
+    let minP50RmsProject = "";
+    let minP50RmsProjectId = "";
+    let minP68Rms = Infinity;
+    let minP68RmsObject = "";
+    let minP68RmsProject = "";
+    let minP68RmsProjectId = "";
+    
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        proj.sessions.forEach((session: any) => {
+          if (session.phd2Analysis) {
+            const analysis = session.phd2Analysis;
+            if (analysis.medianRms !== undefined && analysis.medianRms > 0 && analysis.medianRms < minP50Rms) {
+              minP50Rms = analysis.medianRms;
+              minP50RmsObject = obj.id;
+              minP50RmsProject = proj.name;
+              minP50RmsProjectId = proj.id;
+            }
+            if (analysis.p68Rms !== undefined && analysis.p68Rms > 0 && analysis.p68Rms < minP68Rms) {
+              minP68Rms = analysis.p68Rms;
+              minP68RmsObject = obj.id;
+              minP68RmsProject = proj.name;
+              minP68RmsProjectId = proj.id;
+            }
+          }
+        });
+      });
+    });
+    
+    // Convert Infinity to 0 if no data found
+    if (minP50Rms === Infinity) minP50Rms = 0;
+    if (minP68Rms === Infinity) minP68Rms = 0;
+
     // Hours by year
     const currentYear = new Date().getFullYear();
     const years: number[] = [];
@@ -5910,6 +5946,14 @@ export default function AstroTracker() {
       currentYear,
       minYear,
       years,
+      minP50Rms,
+      minP50RmsObject,
+      minP50RmsProject,
+      minP50RmsProjectId,
+      minP68Rms,
+      minP68RmsObject,
+      minP68RmsProject,
+      minP68RmsProjectId,
     };
   }, [objects]);
 
@@ -7450,7 +7494,7 @@ export default function AstroTracker() {
                     {/* ONP vs SNP Projects */}
                     {visibleHighlights.onpSnp && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
                         onClick={() => setView("onp-snp")}
                       >
                         <div className="flex items-center gap-3">
@@ -7491,7 +7535,7 @@ export default function AstroTracker() {
                     {/* Fotos Valoradas - navigates to gallery section */}
                     {visibleHighlights.ratedPhotos && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow" 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50" 
                         onClick={() => setMainSection("galeria")}
                       >
                         <div className="flex items-center gap-3">
@@ -7535,6 +7579,68 @@ export default function AstroTracker() {
                             <div className="text-2xl font-bold">{globalMetrics.maxSNR.toFixed(2)}</div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                               {globalMetrics.maxSNRObject} · {globalMetrics.maxSNRProject}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* RMS P50 Record (Lowest) */}
+                    {globalMetrics.minP50Rms > 0 && (
+                      <Card 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        onClick={() => {
+                          const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP50RmsProjectId));
+                          if (obj) {
+                            const proj = obj.projects.find((p: any) => p.id === globalMetrics.minP50RmsProjectId);
+                            if (proj) {
+                              setSelectedObjectId(obj.id);
+                              setSelectedProjectId(proj.id);
+                              setView("project");
+                            }
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-sky-500/10">
+                            <Target className="w-6 h-6 text-sky-600 dark:text-sky-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">RMS P50 Récord</div>
+                            <div className="text-2xl font-bold">{globalMetrics.minP50Rms.toFixed(2)}"</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.minP50RmsObject} · {globalMetrics.minP50RmsProject}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* RMS P68 Record (Lowest) */}
+                    {globalMetrics.minP68Rms > 0 && (
+                      <Card 
+                        className="p-5 cursor-pointer hover:shadow-lg transition-shadow border-2 border-emerald-400/50 dark:border-emerald-500/50"
+                        onClick={() => {
+                          const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP68RmsProjectId));
+                          if (obj) {
+                            const proj = obj.projects.find((p: any) => p.id === globalMetrics.minP68RmsProjectId);
+                            if (proj) {
+                              setSelectedObjectId(obj.id);
+                              setSelectedProjectId(proj.id);
+                              setView("project");
+                            }
+                          }
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-violet-500/10">
+                            <Target className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                          </div>
+                          <div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">RMS P68 Récord</div>
+                            <div className="text-2xl font-bold">{globalMetrics.minP68Rms.toFixed(2)}"</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.minP68RmsObject} · {globalMetrics.minP68RmsProject}
                             </div>
                           </div>
                         </div>
@@ -7637,7 +7743,7 @@ export default function AstroTracker() {
                     {/* Most Photographed Constellation */}
                     {visibleHighlights.mostPhotographedConstellation && globalMetrics.mostPhotographedConstellation && (
                       <Card 
-                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all"
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all border-2 border-emerald-400/50 dark:border-emerald-500/50"
                         onClick={() => {
                           setSelectedConstellation(globalMetrics.mostPhotographedConstellation![0]);
                           setView("constellationDetail");
@@ -7695,7 +7801,7 @@ export default function AstroTracker() {
                         <Popover>
                           <PopoverTrigger asChild>
                             <div className="cursor-pointer">
-                              <Card className="p-5 hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all">
+                              <Card className="p-5 hover:shadow-md hover:border-green-400 dark:hover:border-green-500 transition-all border-2 border-emerald-400/50 dark:border-emerald-500/50">
                                 <div className="flex items-center gap-3">
                                   <div className="p-3 rounded-xl bg-green-500/10 flex-shrink-0">
                                     <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
