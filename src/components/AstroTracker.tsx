@@ -2599,7 +2599,11 @@ function FSessionAutomated({
   const [fitsFilter, setFitsFilter] = useState<string | null>(null);
   const [useAppFilter, setUseAppFilter] = useState(true);
   const [camera, setCamera] = useState(projectEquipment?.camera || "");
+  const [fitsCamera, setFitsCamera] = useState<string | null>(null);
+  const [useAppCamera, setUseAppCamera] = useState(true);
   const [telescope, setTelescope] = useState("");
+  const [fitsTelescope, setFitsTelescope] = useState<string | null>(null);
+  const [useAppTelescope, setUseAppTelescope] = useState(true);
   const [customTelescope, setCustomTelescope] = useState("");
   const [showCustomTelescope, setShowCustomTelescope] = useState(false);
   const [snrR, setSnrR] = useState("");
@@ -2635,6 +2639,16 @@ function FSessionAutomated({
       if (info.dates.length > 0) {
         setDate(info.dates[0]);
       }
+      
+      // Store FITS telescope for user choice
+      if (info.telescopes && info.telescopes.length > 0) {
+        setFitsTelescope(info.telescopes[0]);
+      }
+      
+      // Store FITS camera for user choice
+      if (info.cameras && info.cameras.length > 0) {
+        setFitsCamera(info.cameras[0]);
+      }
     }
   }, [fitsAnalysis]);
 
@@ -2665,8 +2679,8 @@ function FSessionAutomated({
           lights: num(lights),
           exposureSec: num(exposureSec, 1),
           filter: useAppFilter ? filter : fitsFilter || filter,
-          camera,
-          telescope,
+          camera: useAppCamera ? camera : fitsCamera || camera,
+          telescope: useAppTelescope ? telescope : fitsTelescope || telescope,
           snrR: snrR !== "" ? parseFloat(snrR) : undefined,
           snrG: snrG !== "" ? parseFloat(snrG) : undefined,
           snrB: snrB !== "" ? parseFloat(snrB) : undefined,
@@ -2811,47 +2825,87 @@ function FSessionAutomated({
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
           <Label>Cámara</Label>
-          <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-            <option value="">Seleccionar cámara</option>
-            {cameras
-              .filter((c) => c.trim() !== "")
-              .map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-          </select>
+          <div className="grid gap-2">
+            {fitsCamera && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-muted-foreground">Cámara del FITS:</span>
+                <span className="text-sm font-medium truncate">{fitsCamera}</span>
+                <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={!useAppCamera}
+                    onChange={(e) => setUseAppCamera(!e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  Usar este
+                </label>
+              </div>
+            )}
+            {useAppCamera && (
+              <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
+                <option value="">Seleccionar cámara</option>
+                {cameras
+                  .filter((c) => c.trim() !== "")
+                  .map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+              </select>
+            )}
+          </div>
         </label>
 
         <label className="grid gap-1">
           <Label>Telescopio</Label>
-          <select
-            value={telescope}
-            onChange={(e) => {
-              setTelescope(e.target.value);
-              setShowCustomTelescope(e.target.value === "Otro");
-            }}
-            className={INPUT_CLS}
-          >
-            <option value="">Seleccionar telescopio...</option>
-            {telescopes
-              ?.filter((t) => t.name.trim())
-              .map((t) => (
-                <option key={t.name} value={t.name}>
-                  {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
-                </option>
-              ))}
-            <option value="Otro">+ Añadir nuevo telescopio</option>
-          </select>
-          {showCustomTelescope && (
-            <input
-              value={customTelescope}
-              onChange={(e) => {
-                setCustomTelescope(e.target.value);
-                setTelescope(e.target.value);
-              }}
-              className={`${INPUT_CLS} mt-2`}
-              placeholder="Nombre del nuevo telescopio..."
-            />
-          )}
+          <div className="grid gap-2">
+            {fitsTelescope && (
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-muted-foreground">Telescopio del FITS:</span>
+                <span className="text-sm font-medium truncate">{fitsTelescope}</span>
+                <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
+                  <input
+                    type="checkbox"
+                    checked={!useAppTelescope}
+                    onChange={(e) => setUseAppTelescope(!e.target.checked)}
+                    className="rounded border-slate-300"
+                  />
+                  Usar este
+                </label>
+              </div>
+            )}
+            {useAppTelescope && (
+              <>
+                <select
+                  value={telescope}
+                  onChange={(e) => {
+                    setTelescope(e.target.value);
+                    setShowCustomTelescope(e.target.value === "Otro");
+                  }}
+                  className={INPUT_CLS}
+                >
+                  <option value="">Seleccionar telescopio...</option>
+                  {telescopes
+                    ?.filter((t) => t.name.trim())
+                    .map((t) => (
+                      <option key={t.name} value={t.name}>
+                        {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
+                      </option>
+                    ))}
+                  <option value="Otro">+ Añadir nuevo telescopio</option>
+                </select>
+                {showCustomTelescope && (
+                  <input
+                    value={customTelescope}
+                    onChange={(e) => {
+                      setCustomTelescope(e.target.value);
+                      setTelescope(e.target.value);
+                    }}
+                    className={`${INPUT_CLS} mt-2`}
+                    placeholder="Nombre del nuevo telescopio..."
+                  />
+                )}
+              </>
+            )}
+          </div>
         </label>
       </div>
 
@@ -3462,6 +3516,57 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
             strokeWidth={3}
             dot={{ fill: "#ef4444", r: 4 }}
             name="Racha"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// FITS Focus Position Chart - Focus Position per Session
+const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.focusPos !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        focusPos: s.fitsAnalysis.averages.focusPos,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgFocus = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.focusPos, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Target} title="Posición de enfoque por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        Enfoque medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgFocus.toFixed(0)}</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={['auto', 'auto']} tickMargin={8} stroke="#ffffff" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [v.toFixed(0), "Posición"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="focusPos"
+            stroke="#ec4899"
+            strokeWidth={3}
+            dot={{ fill: "#ec4899", r: 4 }}
+            name="Enfoque"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -9276,6 +9381,7 @@ export default function AstroTracker() {
                 <FitsTemperatureChart sessions={filtered} />
                 <FitsHumidityChart sessions={filtered} />
                 <FitsWindChart sessions={filtered} />
+                <FitsFocusChart sessions={filtered} />
                 <PHD2P50Chart sessions={filtered} />
                 <PHD2P68Chart sessions={filtered} />
                 <SNRChart sessions={filtered} />
