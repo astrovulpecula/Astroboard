@@ -6807,6 +6807,7 @@ export default function AstroTracker() {
                             className={INPUT_CLS}
                           >
                             <option value="all">Todos</option>
+                            <option value="proximo">Próximo</option>
                             {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(m => (
                               <option key={m} value={m}>{m}</option>
                             ))}
@@ -6855,12 +6856,31 @@ export default function AstroTracker() {
                     if (plannedFilterPriority !== "all") {
                       filteredPlanned = filteredPlanned.filter(p => p.prioridad === plannedFilterPriority);
                     }
-                    if (plannedFilterCenit !== "all") {
+                    if (plannedFilterCenit !== "all" && plannedFilterCenit !== "proximo") {
                       filteredPlanned = filteredPlanned.filter(p => p.cenit === plannedFilterCenit);
                     }
                     
                     // Apply sorting
+                    const MONTH_NAMES_SORT = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                    const currentMonthIdx = new Date().getMonth(); // 0-11
+                    
+                    const getMonthDistance = (cenitMonth: string | undefined): number => {
+                      if (!cenitMonth) return 12; // No cenit = max distance
+                      const cenitIdx = MONTH_NAMES_SORT.indexOf(cenitMonth);
+                      if (cenitIdx === -1) return 12;
+                      // Calculate circular distance (shortest path around the year)
+                      const diff = cenitIdx - currentMonthIdx;
+                      // We want future months first, so positive diff is preferred
+                      if (diff >= 0) return diff;
+                      return diff + 12; // Wrap around to next year
+                    };
+                    
                     const sortedPlanned = [...filteredPlanned].sort((a, b) => {
+                      // If "proximo" filter is selected, always sort by proximity
+                      if (plannedFilterCenit === "proximo") {
+                        return getMonthDistance(a.cenit) - getMonthDistance(b.cenit);
+                      }
+                      
                       if (plannedSortMode === "alpha") {
                         return (a.objectId || "").localeCompare(b.objectId || "");
                       } else if (plannedSortMode === "priority") {
