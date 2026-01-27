@@ -18,6 +18,10 @@ export interface FitsMetadata {
   exposure?: number;        // Exposure time in seconds
   filter?: string;          // Filter name
   dateObs?: string;         // Observation date
+  telescope?: string;       // Telescope model
+  camera?: string;          // Camera/instrument model
+  focusPos?: number;        // Focus position
+  ccdTemp?: number;         // CCD/Sensor temperature °C
 }
 
 export interface FitsAnalysisResult {
@@ -32,6 +36,8 @@ export interface FitsAnalysisResult {
     pressure?: number;
     wind?: number;
     windGust?: number;
+    focusPos?: number;
+    ccdTemp?: number;
   };
   // Extracted session info for automated form
   extractedInfo?: {
@@ -39,6 +45,8 @@ export interface FitsAnalysisResult {
     exposure?: number;
     filters: string[];
     dates: string[];
+    telescopes: string[];
+    cameras: string[];
   };
 }
 
@@ -90,6 +98,21 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
           "FILTER": "filter",
           "FILTER1": "filter",
           "FILTER2": "filter",
+          // Equipment
+          "TELESCOP": "telescope",
+          "INSTRUME": "camera",
+          "CAMERA": "camera",
+          // Focus
+          "FOCUSPOS": "focusPos",
+          "FOCUSER": "focusPos",
+          "FOCUS": "focusPos",
+          "FOCUSERP": "focusPos",
+          // Sensor temperature
+          "CCD-TEMP": "ccdTemp",
+          "CCDTEMP": "ccdTemp",
+          "SET-TEMP": "ccdTemp",
+          "TEMPERAT": "ccdTemp",
+          "SENSORTE": "ccdTemp",
         };
         
         for (const line of lines) {
@@ -109,10 +132,24 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
                 metadata.timestamp = value;
               } else if (metaKey === "filter") {
                 metadata.filter = value;
+              } else if (metaKey === "telescope") {
+                metadata.telescope = value;
+              } else if (metaKey === "camera") {
+                metadata.camera = value;
               } else if (metaKey === "exposure") {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
                   metadata.exposure = numValue;
+                }
+              } else if (metaKey === "focusPos") {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  metadata.focusPos = numValue;
+                }
+              } else if (metaKey === "ccdTemp") {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  metadata.ccdTemp = numValue;
                 }
               } else {
                 const numValue = parseFloat(value);
@@ -138,7 +175,8 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
 function calculateAverages(files: FitsMetadata[]): FitsAnalysisResult["averages"] {
   const keys: (keyof FitsMetadata)[] = [
     "mpsas", "cloudCover", "ambientTemp", "skyTemp", 
-    "humidity", "dewPoint", "pressure", "wind", "windGust"
+    "humidity", "dewPoint", "pressure", "wind", "windGust",
+    "focusPos", "ccdTemp"
   ];
   
   const averages: FitsAnalysisResult["averages"] = {};
@@ -217,11 +255,17 @@ export default function FitsAnalyzer({ value, onChange }: FitsAnalyzerProps) {
           )[0]
         : undefined;
       
+      // Extract unique telescopes and cameras
+      const telescopes = [...new Set(metadataList.map(f => f.telescope).filter((t): t is string => !!t))];
+      const cameras = [...new Set(metadataList.map(f => f.camera).filter((c): c is string => !!c))];
+      
       const extractedInfo = {
         totalLights: metadataList.length,
         exposure: exposureMode,
         filters,
         dates,
+        telescopes,
+        cameras,
       };
       
       onChange({ files: metadataList, averages, extractedInfo });

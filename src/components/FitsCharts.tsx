@@ -1,5 +1,5 @@
 import React from "react";
-import { Thermometer, Gauge, Droplets } from "lucide-react";
+import { Thermometer, Gauge, Droplets, Focus, Cpu } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { FitsAnalysisResult } from "./FitsAnalyzer";
 
@@ -19,10 +19,12 @@ export default function FitsCharts({ data }: FitsChartsProps) {
       skyTemp: f.skyTemp,
       humidity: f.humidity,
       wind: f.wind,
+      focusPos: f.focusPos,
+      ccdTemp: f.ccdTemp,
     }));
 
   const hasChartData = chartData.length > 0 && chartData.some(d => 
-    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined
+    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined || d.focusPos !== undefined || d.ccdTemp !== undefined
   );
 
   if (!hasChartData) {
@@ -107,6 +109,60 @@ export default function FitsCharts({ data }: FitsChartsProps) {
                 <Legend />
                 <Line type="monotone" dataKey="humidity" stroke="#06b6d4" name="Humedad %" dot={false} strokeWidth={2} />
                 <Line type="monotone" dataKey="wind" stroke="#22c55e" name="Viento m/s" dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Focus Position chart */}
+      {chartData.some(d => d.focusPos !== undefined) && (
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Focus className="w-4 h-4" /> Posición del enfocador
+          </h4>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                <XAxis dataKey="index" tick={{ fontSize: 12 }} className="text-slate-500" />
+                <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12 }} className="text-slate-500" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem'
+                  }} 
+                  formatter={(value: number) => [value.toFixed(0), "Posición"]}
+                />
+                <Line type="monotone" dataKey="focusPos" stroke="#ec4899" name="Enfoque" dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* CCD/Sensor Temperature chart */}
+      {chartData.some(d => d.ccdTemp !== undefined) && (
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Cpu className="w-4 h-4" /> Temperatura del sensor
+          </h4>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                <XAxis dataKey="index" tick={{ fontSize: 12 }} className="text-slate-500" />
+                <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12 }} className="text-slate-500" tickFormatter={(v) => `${v}°C`} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem'
+                  }} 
+                  formatter={(value: number) => [`${value.toFixed(1)}°C`, "Temp. Sensor"]}
+                />
+                <Line type="monotone" dataKey="ccdTemp" stroke="#14b8a6" name="Temp. Sensor" dot={false} strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
