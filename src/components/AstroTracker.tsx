@@ -6800,7 +6800,7 @@ export default function AstroTracker() {
                         {activeObjects.length > 0 && (
                           <Collapsible defaultOpen={true}>
                             <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
-                              <ChevronDownIcon className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                               <h4 className="text-lg font-semibold flex items-center gap-2">
                                 <Flame className="w-5 h-5 text-orange-500" />
                                 {language === 'en' ? 'Active Projects' : 'Proyectos Activos'}
@@ -6817,9 +6817,9 @@ export default function AstroTracker() {
 
                         {/* Sección de Archivo - Colapsable */}
                         {archivedObjects.length > 0 && (
-                          <Collapsible defaultOpen={activeObjects.length === 0}>
+                          <Collapsible defaultOpen={true}>
                             <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
-                              <ChevronDownIcon className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                              <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                               <h4 className="text-lg font-semibold flex items-center gap-2">
                                 <FolderOpen className="w-5 h-5 text-slate-500" />
                                 {language === 'en' ? 'Archive' : 'Archivo'}
