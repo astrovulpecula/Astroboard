@@ -8,8 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  BarChart,
-  Bar,
 } from 'recharts';
 import { getObjectCoordinates } from '@/lib/celestial-coordinates';
 import {
@@ -269,7 +267,10 @@ export default function VisibilityChart({
                 />
                 <YAxis
                   domain={[-10, 90]}
-                  ticks={[0, 30, 60, 90]}
+                  ticks={altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
+                    ? [0, altitudeLimit, 30, 60, 90].filter((v, i, arr) => arr.indexOf(v) === i).sort((a, b) => a - b)
+                    : [0, 30, 60, 90]
+                  }
                   tick={{ fontSize: 10 }}
                   tickLine={false}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
@@ -301,12 +302,6 @@ export default function VisibilityChart({
                     stroke="hsl(45 93% 47%)"
                     strokeWidth={2}
                     strokeDasharray="6 3"
-                    label={{
-                      value: `${altitudeLimit}°`,
-                      position: 'left',
-                      fontSize: 10,
-                      fill: 'hsl(45 93% 47%)',
-                    }}
                   />
                 )}
                 <ReferenceLine
@@ -367,10 +362,16 @@ export default function VisibilityChart({
                 )}
               </div>
 
-              {/* Gráfico Anual */}
+              {/* Gráfico Anual - Lineal */}
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={annualVisibility.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={annualVisibility.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id={`colorAltAnnual-${objectCode}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                     <XAxis
                       dataKey="monthLabel"
@@ -380,7 +381,10 @@ export default function VisibilityChart({
                     />
                     <YAxis
                       domain={[0, 90]}
-                      ticks={[0, 30, 60, 90]}
+                      ticks={altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
+                        ? [0, altitudeLimit, 30, 60, 90].filter((v, i, arr) => arr.indexOf(v) === i).sort((a, b) => a - b)
+                        : [0, 30, 60, 90]
+                      }
                       tick={{ fontSize: 10 }}
                       tickLine={false}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
@@ -404,26 +408,16 @@ export default function VisibilityChart({
                         stroke="hsl(45 93% 47%)"
                         strokeWidth={2}
                         strokeDasharray="6 3"
-                        label={{
-                          value: `${altitudeLimit}°`,
-                          position: 'left',
-                          fontSize: 10,
-                          fill: 'hsl(45 93% 47%)',
-                        }}
                       />
                     )}
-                    <ReferenceLine
-                      y={30}
-                      stroke="hsl(var(--primary))"
-                      strokeDasharray="2 2"
-                      strokeOpacity={0.5}
-                    />
-                    <Bar
+                    <Area
+                      type="monotone"
                       dataKey="maxAltitude"
-                      fill="hsl(var(--primary))"
-                      radius={[4, 4, 0, 0]}
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      fill={`url(#colorAltAnnual-${objectCode})`}
                     />
-                  </BarChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               </div>
 

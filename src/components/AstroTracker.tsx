@@ -1401,6 +1401,16 @@ function FPlanned({
     );
   }, [objectId, existingObjects]);
 
+  // Auto-fill fields from existing object when it's found
+  useEffect(() => {
+    if (existingObject) {
+      // Auto-fill common name, constellation, and type from existing object
+      if (existingObject.commonName) setObjectName(existingObject.commonName);
+      if (existingObject.constellation) setConstellation(existingObject.constellation);
+      if (existingObject.type) setObjectType(existingObject.type);
+    }
+  }, [existingObject]);
+
   // Get the image from the existing object (if any)
   const existingObjectImage = useMemo(() => {
     if (!existingObject) return null;
