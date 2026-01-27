@@ -4595,6 +4595,7 @@ export default function AstroTracker() {
   const [galleryFilterConstellation, setGalleryFilterConstellation] = useState("all");
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
+  const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
@@ -8740,12 +8741,15 @@ export default function AstroTracker() {
                 
                 return (
                   <Card className="p-4 md:p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <TrendingUp className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold">
-                        {language === 'en' ? 'Your Evolution' : 'Tu Evolución'}
-                      </h3>
-                    </div>
+                    <Collapsible open={evolutionSectionExpanded} onOpenChange={setEvolutionSectionExpanded}>
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg font-semibold">
+                          {language === 'en' ? 'Your Evolution' : 'Tu Evolución'}
+                        </h3>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
                     <div className="grid grid-cols-2 gap-4">
                       {/* First Image */}
                       <div className="space-y-2">
@@ -8794,7 +8798,9 @@ export default function AstroTracker() {
                           {lastProject.name}
                         </div>
                       </div>
-                    </div>
+                      </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </Card>
                 );
               })()}
