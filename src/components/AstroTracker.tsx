@@ -4624,6 +4624,7 @@ export default function AstroTracker() {
     cameraUsage: true,
     telescopeUsage: true,
   });
+  const [showStatsConfig, setShowStatsConfig] = useState(false);
   
   // Estados para configuración de reporte
   const [showReportConfig, setShowReportConfig] = useState(false);
@@ -7388,9 +7389,204 @@ export default function AstroTracker() {
               {mainSection === "estadisticas" && (
                 <>
                   {/* Título de Highlights */}
-                  <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
-                    <BarChart3 className="w-6 h-6" /> Estadísticas
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <BarChart3 className="w-6 h-6" /> Estadísticas
+                    </h2>
+                    <button
+                      onClick={() => setShowStatsConfig(true)}
+                      className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                      title="Configurar estadísticas visibles"
+                    >
+                      <Settings className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+
+                  {/* Modal de configuración de estadísticas */}
+                  <Modal open={showStatsConfig} onClose={() => setShowStatsConfig(false)} title="Configurar Estadísticas">
+                    <div className="space-y-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                        Selecciona qué estadísticas quieres mostrar en el dashboard.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalObjects}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalObjects: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Total de Objetos</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalProjects}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalProjects: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Total de Proyectos</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalHours}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalHours: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Horas Totales</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalLights}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalLights: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Lights Totales</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalNights}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalNights: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Noches</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.totalSessions}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalSessions: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Sesiones</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.onpSnp}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, onpSnp: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">ONP vs SNP</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.activeProjects}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, activeProjects: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Proyectos Activos</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.ratedPhotos}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, ratedPhotos: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Fotos Valoradas</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.snrRecord}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, snrRecord: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">SNR Récord</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.hoursByYear}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, hoursByYear: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Horas por Año</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.mostPhotographedObject}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedObject: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Objeto con Mayor Exposición</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.mostPhotographedConstellation}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedConstellation: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Constelación Más Fotografiada</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.streaks}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, streaks: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Rachas Consecutivas</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.cameraUsage}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, cameraUsage: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Uso de Cámaras</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.telescopeUsage}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, telescopeUsage: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Uso de Telescopios</span>
+                        </label>
+                      </div>
+                      <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <button
+                          onClick={() => setVisibleHighlights({
+                            totalObjects: true,
+                            totalProjects: true,
+                            totalHours: true,
+                            totalLights: true,
+                            totalNights: true,
+                            totalSessions: true,
+                            onpSnp: true,
+                            activeProjects: true,
+                            ratedPhotos: true,
+                            snrRecord: true,
+                            hoursByYear: true,
+                            mostPhotographedObject: true,
+                            mostPhotographedConstellation: true,
+                            streaks: true,
+                            cameraUsage: true,
+                            telescopeUsage: true,
+                          })}
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Activar todas
+                        </button>
+                        <button
+                          onClick={() => setShowStatsConfig(false)}
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition"
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
+                  </Modal>
 
                   {!hasImportedData ? (
                     <Card className="p-8 text-center">
