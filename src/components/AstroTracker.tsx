@@ -8166,9 +8166,6 @@ export default function AstroTracker() {
                                 </button>
                               </div>
                             )}
-                            <div className="mt-1 text-xs text-slate-500">
-                              Inicio: {formatDateDisplay(p.startDate, dateFormat)}
-                            </div>
                             <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                               {p.sessions.length} sesión(es)
                             </div>
