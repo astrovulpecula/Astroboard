@@ -4596,6 +4596,7 @@ export default function AstroTracker() {
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
+  const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
   const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
@@ -8701,110 +8702,6 @@ export default function AstroTracker() {
                 );
               })()}
 
-              {/* Evolution Comparison Block */}
-              {(() => {
-                // Get all projects with final images
-                const projectsWithFinalImages = obj.projects.filter((proj: any) => proj.images?.finalProject);
-                
-                // Need at least 2 projects with final images to show evolution
-                if (projectsWithFinalImages.length < 2) return null;
-                
-                // Helper function to get the earliest session date from a project
-                const getEarliestSessionDate = (project: any): number => {
-                  if (project.sessions && project.sessions.length > 0) {
-                    const sessionDates = project.sessions
-                      .map((s: any) => s.date ? new Date(s.date).getTime() : Infinity)
-                      .filter((d: number) => d !== Infinity && !isNaN(d));
-                    if (sessionDates.length > 0) {
-                      return Math.min(...sessionDates);
-                    }
-                  }
-                  // Fallback to createdAt if no valid session dates
-                  return new Date(project.createdAt || 0).getTime();
-                };
-                
-                // Sort by earliest session date (oldest first)
-                const sortedProjects = [...projectsWithFinalImages].sort((a: any, b: any) => {
-                  const dateA = getEarliestSessionDate(a);
-                  const dateB = getEarliestSessionDate(b);
-                  return dateA - dateB;
-                });
-                
-                const firstProject = sortedProjects[0];
-                const lastProject = sortedProjects[sortedProjects.length - 1];
-                
-                const firstFinalImage = (firstProject as any).images?.finalProject;
-                const lastFinalImage = (lastProject as any).images?.finalProject;
-                
-                // Only show if both images exist and are different
-                if (!firstFinalImage || !lastFinalImage || firstFinalImage === lastFinalImage) return null;
-                
-                return (
-                  <Card className="p-4 md:p-6">
-                    <Collapsible open={evolutionSectionExpanded} onOpenChange={setEvolutionSectionExpanded}>
-                      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
-                        <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-                        <TrendingUp className="w-5 h-5 text-primary" />
-                        <h3 className="text-lg font-semibold">
-                          {language === 'en' ? 'Your Evolution' : 'Tu Evolución'}
-                        </h3>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="mt-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* First Image */}
-                      <div className="space-y-2">
-                        <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
-                          {language === 'en' ? 'First' : 'Primera'}
-                        </div>
-                        <div 
-                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
-                          onClick={() => {
-                            setImageModalSrc(firstFinalImage);
-                            setImageModalOpen(true);
-                          }}
-                        >
-                          <img
-                            src={firstFinalImage}
-                            alt={`${obj.id} - ${firstProject.name}`}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center truncate">
-                          {firstProject.name}
-                        </div>
-                      </div>
-                      
-                      {/* Last Image */}
-                      <div className="space-y-2">
-                        <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
-                          {language === 'en' ? 'Latest' : 'Última'}
-                        </div>
-                        <div 
-                          className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
-                          onClick={() => {
-                            setImageModalSrc(lastFinalImage);
-                            setImageModalOpen(true);
-                          }}
-                        >
-                          <img
-                            src={lastFinalImage}
-                            alt={`${obj.id} - ${lastProject.name}`}
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                        </div>
-                        <div className="text-xs text-muted-foreground text-center truncate">
-                          {lastProject.name}
-                        </div>
-                      </div>
-                      </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </Card>
-                );
-              })()}
-
               {/* Highlights/Statistics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {(() => {
@@ -8978,6 +8875,210 @@ export default function AstroTracker() {
                   );
                 })()}
               </div>
+
+              {/* Evolution Comparison Block */}
+              {(() => {
+                // Get all projects with final images
+                const projectsWithFinalImages = obj.projects.filter((proj: any) => proj.images?.finalProject);
+                
+                // Need at least 2 projects with final images to show evolution
+                if (projectsWithFinalImages.length < 2) return null;
+                
+                // Helper function to get the earliest session date from a project
+                const getEarliestSessionDate = (project: any): number => {
+                  if (project.sessions && project.sessions.length > 0) {
+                    const sessionDates = project.sessions
+                      .map((s: any) => s.date ? new Date(s.date).getTime() : Infinity)
+                      .filter((d: number) => d !== Infinity && !isNaN(d));
+                    if (sessionDates.length > 0) {
+                      return Math.min(...sessionDates);
+                    }
+                  }
+                  // Fallback to createdAt if no valid session dates
+                  return new Date(project.createdAt || 0).getTime();
+                };
+                
+                // Sort by earliest session date (oldest first)
+                const sortedProjects = [...projectsWithFinalImages].sort((a: any, b: any) => {
+                  const dateA = getEarliestSessionDate(a);
+                  const dateB = getEarliestSessionDate(b);
+                  return dateA - dateB;
+                });
+                
+                const firstProject = sortedProjects[0];
+                const lastProject = sortedProjects[sortedProjects.length - 1];
+                
+                const firstFinalImage = (firstProject as any).images?.finalProject;
+                const lastFinalImage = (lastProject as any).images?.finalProject;
+                
+                // Only show if both images exist and are different
+                if (!firstFinalImage || !lastFinalImage || firstFinalImage === lastFinalImage) return null;
+                
+                return (
+                  <Card className="p-4 md:p-6">
+                    <Collapsible open={evolutionSectionExpanded} onOpenChange={setEvolutionSectionExpanded}>
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg font-semibold">
+                          {language === 'en' ? 'Your Evolution' : 'Tu Evolución'}
+                        </h3>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* First Image */}
+                          <div className="space-y-2">
+                            <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
+                              {language === 'en' ? 'First' : 'Primera'}
+                            </div>
+                            <div 
+                              className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
+                              onClick={() => {
+                                setImageModalSrc(firstFinalImage);
+                                setImageModalOpen(true);
+                              }}
+                            >
+                              <img
+                                src={firstFinalImage}
+                                alt={`${obj.id} - ${firstProject.name}`}
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                            </div>
+                            <div className="text-xs text-muted-foreground text-center truncate">
+                              {firstProject.name}
+                            </div>
+                          </div>
+                          
+                          {/* Last Image */}
+                          <div className="space-y-2">
+                            <div className="text-xs text-muted-foreground text-center font-medium uppercase tracking-wide">
+                              {language === 'en' ? 'Latest' : 'Última'}
+                            </div>
+                            <div 
+                              className="relative aspect-square rounded-lg overflow-hidden cursor-pointer group border border-border"
+                              onClick={() => {
+                                setImageModalSrc(lastFinalImage);
+                                setImageModalOpen(true);
+                              }}
+                            >
+                              <img
+                                src={lastFinalImage}
+                                alt={`${obj.id} - ${lastProject.name}`}
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                            </div>
+                            <div className="text-xs text-muted-foreground text-center truncate">
+                              {lastProject.name}
+                            </div>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                );
+              })()}
+
+              {/* Timeline Block */}
+              {(() => {
+                // Get all projects with final images and their earliest session dates
+                const projectsWithFinalImages = obj.projects
+                  .filter((proj: any) => proj.images?.finalProject)
+                  .map((proj: any) => {
+                    // Get the earliest session date
+                    let earliestDate: Date | null = null;
+                    if (proj.sessions && proj.sessions.length > 0) {
+                      const validDates = proj.sessions
+                        .map((s: any) => s.date ? new Date(s.date) : null)
+                        .filter((d: Date | null) => d && !isNaN(d.getTime()));
+                      if (validDates.length > 0) {
+                        earliestDate = validDates.reduce((min: Date, d: Date) => d < min ? d : min, validDates[0]);
+                      }
+                    }
+                    // Fallback to createdAt
+                    if (!earliestDate) {
+                      earliestDate = new Date(proj.createdAt || 0);
+                    }
+                    return {
+                      ...proj,
+                      earliestDate,
+                    };
+                  })
+                  .sort((a: any, b: any) => a.earliestDate.getTime() - b.earliestDate.getTime());
+                
+                // Need at least 1 project with final image
+                if (projectsWithFinalImages.length === 0) return null;
+                
+                return (
+                  <Card className="p-4 md:p-6">
+                    <Collapsible open={timelineSectionExpanded} onOpenChange={setTimelineSectionExpanded}>
+                      <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                        <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                        <Clock className="w-5 h-5 text-primary" />
+                        <h3 className="text-lg font-semibold">
+                          {language === 'en' ? 'Timeline' : 'Línea temporal'}
+                        </h3>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <div className="relative">
+                          {/* Timeline line */}
+                          <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-700 -translate-y-1/2 z-0" />
+                          
+                          {/* Timeline items */}
+                          <div 
+                            className="relative z-10 flex"
+                            style={{ 
+                              justifyContent: projectsWithFinalImages.length === 1 
+                                ? 'center' 
+                                : 'space-between' 
+                            }}
+                          >
+                            {projectsWithFinalImages.map((proj: any, idx: number) => (
+                              <div 
+                                key={proj.id} 
+                                className="flex flex-col items-center"
+                                style={{ 
+                                  maxWidth: `${100 / Math.max(projectsWithFinalImages.length, 2)}%`,
+                                  minWidth: '80px'
+                                }}
+                              >
+                                {/* Image */}
+                                <div 
+                                  className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden cursor-pointer group border-2 border-primary bg-background shadow-md"
+                                  onClick={() => {
+                                    setImageModalSrc(proj.images.finalProject);
+                                    setImageModalOpen(true);
+                                  }}
+                                >
+                                  <img
+                                    src={proj.images.finalProject}
+                                    alt={proj.name}
+                                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                  />
+                                </div>
+                                
+                                {/* Dot on timeline */}
+                                <div className="w-3 h-3 rounded-full bg-primary mt-2 mb-1 shadow-sm" />
+                                
+                                {/* Date */}
+                                <div className="text-xs text-muted-foreground text-center font-medium">
+                                  {formatDateDisplay(proj.earliestDate.toISOString().slice(0, 10), dateFormat)}
+                                </div>
+                                
+                                {/* Project name */}
+                                <div className="text-xs text-center text-slate-600 dark:text-slate-400 truncate w-full mt-0.5">
+                                  {proj.name}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </Card>
+                );
+              })()}
 
               {/* Projects Header with Filters */}
               <div className="mb-6">
