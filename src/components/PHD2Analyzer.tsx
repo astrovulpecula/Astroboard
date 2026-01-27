@@ -12,7 +12,8 @@ export interface PHD2DataPoint {
 // PHD2 Analysis Result interface
 export interface PHD2AnalysisResult {
   dataPoints: PHD2DataPoint[];
-  averageRms: number;
+  medianRms: number;      // P50 - typical guiding
+  p68Rms: number;         // P68 (≈1σ) - stability metric
   minRms: number;
   maxRms: number;
   totalDuration: number;  // Total duration in seconds
@@ -87,9 +88,18 @@ function parseGuideLog(content: string): PHD2AnalysisResult | null {
     return null;
   }
 
-  // Calculate statistics
+  // Calculate statistics with percentiles
   const rmsValues = allDataPoints.map(p => p.rmsTotal);
-  const averageRms = rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length;
+  const sortedRms = [...rmsValues].sort((a, b) => a - b);
+  
+  // Calculate percentiles
+  const getPercentile = (arr: number[], p: number) => {
+    const index = Math.ceil((p / 100) * arr.length) - 1;
+    return arr[Math.max(0, index)];
+  };
+  
+  const medianRms = getPercentile(sortedRms, 50);  // P50
+  const p68Rms = getPercentile(sortedRms, 68);     // P68 (≈1σ)
   const minRms = Math.min(...rmsValues);
   const maxRms = Math.max(...rmsValues);
   const totalDuration = allDataPoints.length > 0 ? 
@@ -97,7 +107,8 @@ function parseGuideLog(content: string): PHD2AnalysisResult | null {
 
   return {
     dataPoints: allDataPoints,
-    averageRms,
+    medianRms,
+    p68Rms,
     minRms,
     maxRms,
     totalDuration,
@@ -319,8 +330,14 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <MetricCard 
               icon={<Target className="w-4 h-4" />} 
-              label="RMS Medio" 
-              value={value.averageRms.toFixed(2)} 
+              label="RMS Mediana (P50)" 
+              value={value.medianRms.toFixed(2)} 
+              unit="arcsec" 
+            />
+            <MetricCard 
+              icon={<Target className="w-4 h-4" />} 
+              label="RMS P68 (≈1σ)" 
+              value={value.p68Rms.toFixed(2)} 
               unit="arcsec" 
             />
             <MetricCard 
@@ -334,12 +351,6 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
               label="RMS Máx" 
               value={value.maxRms.toFixed(2)} 
               unit="arcsec" 
-            />
-            <MetricCard 
-              icon={<Target className="w-4 h-4" />} 
-              label="Puntos" 
-              value={value.dataPoints.length.toString()} 
-              unit="" 
             />
           </div>
         </div>

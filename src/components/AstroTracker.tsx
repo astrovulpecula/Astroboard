@@ -3105,31 +3105,32 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 // PHD2 RMS Chart - Average RMS per Session
-const PHD2RmsChart = ({ sessions }: { sessions: any[] }) => {
+// PHD2 P50 Chart (Median RMS per session)
+const PHD2P50Chart = ({ sessions }: { sessions: any[] }) => {
   const data = useMemo(() => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .filter((s) => s.phd2Analysis?.averageRms !== undefined)
+      .filter((s) => s.phd2Analysis?.medianRms !== undefined)
       .map((s, i) => ({
         session: i + 1,
-        rmsTotal: s.phd2Analysis.averageRms,
+        p50: s.phd2Analysis.medianRms,
         date: s.date,
       }));
   }, [sessions]);
 
-  const avgRms = useMemo(() => {
+  const avgP50 = useMemo(() => {
     if (!data.length) return 0;
-    return data.reduce((a, b) => a + b.rmsTotal, 0) / data.length;
+    return data.reduce((a, b) => a + b.p50, 0) / data.length;
   }, [data]);
 
   if (!data.length) return null;
 
   return (
     <Card className="p-4 h-80">
-      <SectionTitle icon={Target} title="Error de guiado RMS por sesión" />
+      <SectionTitle icon={Target} title="RMS típico (P50) por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-        RMS medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgRms.toFixed(2)} arcsec</span>
+        Promedio P50: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP50.toFixed(2)} arcsec</span>
       </div>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
@@ -3138,16 +3139,67 @@ const PHD2RmsChart = ({ sessions }: { sessions: any[] }) => {
           <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}"`} />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
-            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "RMS Total"]}
+            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "P50 (Mediana)"]}
             labelFormatter={(value) => `Sesión ${value}`}
           />
           <Line
             type="monotone"
-            dataKey="rmsTotal"
-            stroke="#ef4444"
+            dataKey="p50"
+            stroke="#22c55e"
             strokeWidth={3}
-            dot={{ fill: "#ef4444", r: 4 }}
-            name="RMS Total"
+            dot={{ fill: "#22c55e", r: 4 }}
+            name="P50"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// PHD2 P68 Chart (≈1σ stability per session)
+const PHD2P68Chart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.phd2Analysis?.p68Rms !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        p68: s.phd2Analysis.p68Rms,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgP68 = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.p68, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Target} title="P68 (≈1σ) por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        Promedio P68: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP68.toFixed(2)} arcsec</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}"`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "P68 (≈1σ)"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="p68"
+            stroke="#3b82f6"
+            strokeWidth={3}
+            dot={{ fill: "#3b82f6", r: 4 }}
+            name="P68"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -8791,8 +8843,12 @@ export default function AstroTracker() {
                                         {/* PHD2 Summary */}
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Medio</div>
-                                            <div className="font-semibold">{s.phd2Analysis.averageRms.toFixed(2)}"</div>
+                                            <div className="text-xs text-slate-500">RMS Mediana (P50)</div>
+                                            <div className="font-semibold">{s.phd2Analysis.medianRms.toFixed(2)}"</div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                            <div className="text-xs text-slate-500">RMS P68 (≈1σ)</div>
+                                            <div className="font-semibold">{s.phd2Analysis.p68Rms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
                                             <div className="text-xs text-slate-500">RMS Mín</div>
@@ -8801,10 +8857,6 @@ export default function AstroTracker() {
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
                                             <div className="text-xs text-slate-500">RMS Máx</div>
                                             <div className="font-semibold">{s.phd2Analysis.maxRms.toFixed(2)}"</div>
-                                          </div>
-                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">Bloques</div>
-                                            <div className="font-semibold">{s.phd2Analysis.blockCount}</div>
                                           </div>
                                         </div>
                                         
@@ -8844,7 +8896,8 @@ export default function AstroTracker() {
                 <FitsTemperatureChart sessions={filtered} />
                 <FitsHumidityChart sessions={filtered} />
                 <FitsWindChart sessions={filtered} />
-                <PHD2RmsChart sessions={filtered} />
+                <PHD2P50Chart sessions={filtered} />
+                <PHD2P68Chart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
                 <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />

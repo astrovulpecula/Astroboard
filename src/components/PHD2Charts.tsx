@@ -78,40 +78,6 @@ export default function PHD2Charts({ data }: PHD2ChartsProps) {
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* Limited view chart - Y axis 0-5 arcsec */}
-      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-          <Target className="w-4 h-4" /> Error de guiado RMS Total (Vista 0-5 arcsec)
-        </h4>
-        <div className="h-48">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis 
-                dataKey="index" 
-                tick={{ fontSize: 12 }} 
-                className="text-slate-500"
-                tickFormatter={(v) => `${v}`}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }} 
-                className="text-slate-500"
-                tickFormatter={(v) => `${v.toFixed(1)}"`}
-                domain={[0, 5]}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="rmsTotal" 
-                stroke="#3b82f6" 
-                name="RMS Total" 
-                dot={false} 
-                strokeWidth={1.5} 
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
     </div>
   );
 }
