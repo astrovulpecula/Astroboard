@@ -15,6 +15,9 @@ export interface FitsMetadata {
   windGust?: number;        // Wind gust m/s
   timestamp?: string;       // Capture time
   filename?: string;        // Original filename
+  exposure?: number;        // Exposure time in seconds
+  filter?: string;          // Filter name
+  dateObs?: string;         // Observation date
 }
 
 export interface FitsAnalysisResult {
@@ -29,6 +32,13 @@ export interface FitsAnalysisResult {
     pressure?: number;
     wind?: number;
     windGust?: number;
+  };
+  // Extracted session info for automated form
+  extractedInfo?: {
+    totalLights: number;
+    exposure?: number;
+    filters: string[];
+    dates: string[];
   };
 }
 
@@ -75,6 +85,11 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
           "WINDGUST": "windGust",
           "WIND-GST": "windGust",
           "DATE-OBS": "timestamp",
+          "EXPTIME": "exposure",
+          "EXPOSURE": "exposure",
+          "FILTER": "filter",
+          "FILTER1": "filter",
+          "FILTER2": "filter",
         };
         
         for (const line of lines) {
@@ -92,6 +107,13 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
               
               if (metaKey === "timestamp") {
                 metadata.timestamp = value;
+              } else if (metaKey === "filter") {
+                metadata.filter = value;
+              } else if (metaKey === "exposure") {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                  metadata.exposure = numValue;
+                }
               } else {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
@@ -175,7 +197,34 @@ export default function FitsAnalyzer({ value, onChange }: FitsAnalyzerProps) {
       }
       
       const averages = calculateAverages(metadataList);
-      onChange({ files: metadataList, averages });
+      
+      // Extract session info for automated form
+      const filters = [...new Set(metadataList.map(f => f.filter).filter((f): f is string => !!f))];
+      const dates = [...new Set(metadataList.map(f => {
+        if (f.timestamp) {
+          // Extract date part from timestamp (YYYY-MM-DD)
+          const match = f.timestamp.match(/(\d{4}[-/]\d{2}[-/]\d{2})/);
+          return match ? match[1].replace(/\//g, '-') : null;
+        }
+        return null;
+      }).filter((d): d is string => !!d))].sort();
+      
+      // Get most common exposure
+      const exposures = metadataList.map(f => f.exposure).filter((e): e is number => e !== undefined);
+      const exposureMode = exposures.length > 0 
+        ? exposures.sort((a, b) => 
+            exposures.filter(v => v === b).length - exposures.filter(v => v === a).length
+          )[0]
+        : undefined;
+      
+      const extractedInfo = {
+        totalLights: metadataList.length,
+        exposure: exposureMode,
+        filters,
+        dates,
+      };
+      
+      onChange({ files: metadataList, averages, extractedInfo });
     } catch (e) {
       setError("Error al procesar los archivos");
       console.error(e);
