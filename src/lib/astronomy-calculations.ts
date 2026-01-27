@@ -319,3 +319,71 @@ export function getVisibilityDescription(result: VisibilityResult, language: 'es
   }
   return language === 'en' ? 'Excellent visibility' : 'Excelente visibilidad';
 }
+
+export interface AnnualVisibilityDataPoint {
+  month: number;
+  monthLabel: string;
+  maxAltitude: number;
+  visibleHours: number;
+  transitTime: string;
+}
+
+export interface AnnualVisibilityResult {
+  data: AnnualVisibilityDataPoint[];
+  bestMonth: number;
+  bestMonthName: string;
+  isCircumpolar: boolean;
+  neverRises: boolean;
+}
+
+/**
+ * Calcular visibilidad anual - máxima altitud nocturna para cada mes
+ */
+export function calculateAnnualVisibility(
+  ra: number,
+  dec: number,
+  observer: ObserverLocation,
+  year: number = new Date().getFullYear()
+): AnnualVisibilityResult {
+  const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  const data: AnnualVisibilityDataPoint[] = [];
+  let bestMonth = 0;
+  let bestAltitude = -90;
+  
+  // Determinar si es circumpolar o nunca sale
+  const isCircumpolar = Math.abs(dec) > (90 - Math.abs(observer.latitude)) && 
+                        Math.sign(dec) === Math.sign(observer.latitude);
+  const neverRises = Math.abs(dec) > (90 - Math.abs(observer.latitude)) && 
+                     Math.sign(dec) !== Math.sign(observer.latitude);
+  
+  for (let month = 0; month < 12; month++) {
+    // Usar el día 15 de cada mes como representativo
+    const date = new Date(year, month, 15);
+    const visibility = calculateNightVisibility(ra, dec, observer, date);
+    
+    // Contar horas visibles (altitud > 0)
+    const visiblePoints = visibility.data.filter(d => d.altitude > 0);
+    const visibleHours = (visiblePoints.length * 15) / 60; // 15 min por punto
+    
+    data.push({
+      month: month + 1,
+      monthLabel: monthLabels[month],
+      maxAltitude: visibility.transitAltitude,
+      visibleHours,
+      transitTime: formatTransitTime(visibility.transitTime)
+    });
+    
+    if (visibility.transitAltitude > bestAltitude) {
+      bestAltitude = visibility.transitAltitude;
+      bestMonth = month + 1;
+    }
+  }
+  
+  return {
+    data,
+    bestMonth,
+    bestMonthName: monthLabels[bestMonth - 1] || '',
+    isCircumpolar,
+    neverRises
+  };
+}

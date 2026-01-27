@@ -4575,6 +4575,7 @@ export default function AstroTracker() {
   const [guideTelescope, setGuideTelescope] = useState<{ name: string; focalLength: string }>({ name: "", focalLength: "" });
   const [guideCamera, setGuideCamera] = useState<string>("");
   const [mount, setMount] = useState<string>("");
+  const [minAltitudeLimit, setMinAltitudeLimit] = useState<number>(0);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
@@ -4702,6 +4703,7 @@ export default function AstroTracker() {
         if (settings.guideTelescope) setGuideTelescope(settings.guideTelescope);
         if (settings.guideCamera) setGuideCamera(settings.guideCamera);
         if (settings.mount) setMount(settings.mount);
+        if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       } catch (e) {
         console.error("Error loading settings:", e);
@@ -4875,6 +4877,7 @@ export default function AstroTracker() {
       mount,
       userName,
       dateFormat,
+      minAltitudeLimit,
     };
     
     const saved = await safeLocalStorageSave(
@@ -4898,7 +4901,7 @@ export default function AstroTracker() {
         variant: "destructive",
       });
     }
-  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, toast]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, toast]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -4939,6 +4942,7 @@ export default function AstroTracker() {
         jsonPath,
         visibleHighlights,
         language,
+        minAltitudeLimit,
       },
     };
     const data = JSON.stringify(exportData, null, 2);
@@ -6194,6 +6198,7 @@ export default function AstroTracker() {
                       if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                       if (settingsData.mount) setMount(settingsData.mount);
                       if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                      if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                       if (settingsData.defaultTheme) {
                         setDefaultTheme(settingsData.defaultTheme);
                         setTheme(settingsData.defaultTheme);
@@ -6219,6 +6224,7 @@ export default function AstroTracker() {
                         userName: settingsData.userName || userName,
                         visibleHighlights: settingsData.visibleHighlights || visibleHighlights,
                         language: settingsData.language || language,
+                        minAltitudeLimit: settingsData.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
                       };
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                     } else {
@@ -6996,6 +7002,8 @@ export default function AstroTracker() {
                                         date={new Date()}
                                         compact={true}
                                         language={language}
+                                        altitudeLimit={minAltitudeLimit}
+                                        showToggle={false}
                                       />
                                     </div>
                                   )}
@@ -7079,6 +7087,25 @@ export default function AstroTracker() {
                                   {planned.isCircumpolar ? "Circumpolar (12 meses)" : planned.visibleMonths ? `${planned.visibleMonths} meses` : "—"}
                                 </p>
                               </div>
+                            </div>
+                          )}
+
+                          {/* Detailed Visibility Chart */}
+                          {mainLocation?.coords && (
+                            <div className="pt-4 border-t border-border">
+                              <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                                <Eye className="w-4 h-4" />
+                                {language === 'en' ? 'Visibility Chart' : 'Gráfico de Visibilidad'}
+                              </h4>
+                              <VisibilityChart
+                                objectCode={planned.objectId}
+                                coordinates={mainLocation.coords}
+                                date={new Date()}
+                                compact={false}
+                                language={language}
+                                altitudeLimit={minAltitudeLimit}
+                                showToggle={true}
+                              />
                             </div>
                           )}
 
@@ -9162,6 +9189,8 @@ export default function AstroTracker() {
                         date={new Date()}
                         compact={false}
                         language={language}
+                        altitudeLimit={minAltitudeLimit}
+                        showToggle={true}
                       />
                     </CollapsibleContent>
                   </Collapsible>
@@ -11162,6 +11191,30 @@ export default function AstroTracker() {
                 />
               </div>
 
+              {/* Límite mínimo de altitud */}
+              <div className="grid gap-2">
+                <span className="text-sm font-medium">
+                  {language === 'en' ? 'Minimum Altitude Limit' : 'Límite mínimo de altitud'}
+                </span>
+                <p className="text-xs text-muted-foreground">
+                  {language === 'en' 
+                    ? 'Objects below this altitude may have poor visibility. Set to 0 to disable.' 
+                    : 'Objetos bajo esta altitud pueden tener mala visibilidad. Pon 0 para desactivar.'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={90}
+                    value={minAltitudeLimit}
+                    onChange={(e) => setMinAltitudeLimit(Math.max(0, Math.min(90, parseInt(e.target.value) || 0)))}
+                    placeholder="30"
+                    className={INPUT_CLS + " w-24"}
+                  />
+                  <span className="text-sm text-muted-foreground">°</span>
+                </div>
+              </div>
+
               {/* Localización principal */}
               <div className="grid gap-2">
                 <span className="text-sm font-medium">{t('mainLocation')}</span>
@@ -11826,6 +11879,7 @@ export default function AstroTracker() {
                     if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                     if (settingsData.mount) setMount(settingsData.mount);
                     if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
+                    if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                     if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
                       setLanguage(settingsData.language);
                     }
@@ -11843,6 +11897,7 @@ export default function AstroTracker() {
                       dateFormat: settingsData.dateFormat || dateFormat,
                       userName: settingsData.userName || userName,
                       language: settingsData.language || language,
+                      minAltitudeLimit: settingsData.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
                     };
                     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
                   }
