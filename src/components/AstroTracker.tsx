@@ -535,14 +535,25 @@ const Modal = ({
   children: React.ReactNode;
   wide?: boolean;
 }) => {
+  // Lock body scroll when modal is open
+  React.useEffect(() => {
+    if (open) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-2 md:p-4"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-2 md:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"} max-h-[90vh] overflow-y-auto`}
+        className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"} max-h-[90vh] overflow-y-auto my-4`}
         onClick={(e) => e.stopPropagation()}
       >
         <Card className="p-4 md:p-5">
@@ -5148,6 +5159,7 @@ export default function AstroTracker() {
         ),
       );
       setMSes(false);
+      setMSesAuto(false);
       console.log("Session added successfully");
     },
     [objects, obj, proj, selectedPanel],
