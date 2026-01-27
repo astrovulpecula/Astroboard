@@ -38,6 +38,7 @@ import {
   Droplets,
   Wind,
   ChevronDownIcon,
+  Target,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -83,6 +84,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
 import FitsCharts from "@/components/FitsCharts";
+import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
+import PHD2Charts from "@/components/PHD2Charts";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -2302,6 +2305,7 @@ function FSession({
   const [rejectedLights, setRejectedLights] = useState(init.rejectedLights ?? "");
   const [notes, setNotes] = useState(init.notes ?? "");
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(init.fitsAnalysis || null);
+  const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(init.phd2Analysis || null);
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
@@ -2339,6 +2343,7 @@ function FSession({
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: fitsAnalysis || undefined,
+          phd2Analysis: phd2Analysis || undefined,
         };
 
         onSubmit(sessionData);
@@ -2537,6 +2542,9 @@ function FSession({
 
       {/* FITS Analyzer - before notes */}
       <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
+
+      {/* PHD2 Analyzer - after FITS */}
+      <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
 
       <label className="grid gap-1">
         <Label>Notas</Label>
@@ -3089,6 +3097,57 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
             strokeWidth={3}
             dot={{ fill: "#ef4444", r: 4 }}
             name="Racha"
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+};
+
+// PHD2 RMS Chart - Average RMS per Session
+const PHD2RmsChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.phd2Analysis?.averageRms !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        rmsTotal: s.phd2Analysis.averageRms,
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgRms = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.rmsTotal, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className="p-4 h-80">
+      <SectionTitle icon={Target} title="Error de guiado RMS por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        RMS medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgRms.toFixed(2)} arcsec</span>
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}"`} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "RMS Total"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="rmsTotal"
+            stroke="#ef4444"
+            strokeWidth={3}
+            dot={{ fill: "#ef4444", r: 4 }}
+            name="RMS Total"
           />
         </LineChart>
       </ResponsiveContainer>
@@ -8666,11 +8725,11 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title={s.fitsAnalysis ? "Detalles y análisis FITS" : "Comentarios"}
+                                      title={s.fitsAnalysis || s.phd2Analysis ? "Detalles y análisis" : "Comentarios"}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis ? (
-                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis ? (
+                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis || s.phd2Analysis ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                                       ) : null}
                                     </button>
                                   </DialogTrigger>
@@ -8724,10 +8783,40 @@ export default function AstroTracker() {
                                       </div>
                                     )}
                                     
-                                    {/* Empty state if no notes and no FITS */}
-                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && (
+                                    {/* PHD2 Analysis Charts */}
+                                    {s.phd2Analysis && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-3">Análisis PHD2 GuideLog</h4>
+                                        
+                                        {/* PHD2 Summary */}
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                            <div className="text-xs text-slate-500">RMS Medio</div>
+                                            <div className="font-semibold">{s.phd2Analysis.averageRms.toFixed(2)}"</div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                            <div className="text-xs text-slate-500">RMS Mín</div>
+                                            <div className="font-semibold">{s.phd2Analysis.minRms.toFixed(2)}"</div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                            <div className="text-xs text-slate-500">RMS Máx</div>
+                                            <div className="font-semibold">{s.phd2Analysis.maxRms.toFixed(2)}"</div>
+                                          </div>
+                                          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
+                                            <div className="text-xs text-slate-500">Bloques</div>
+                                            <div className="font-semibold">{s.phd2Analysis.blockCount}</div>
+                                          </div>
+                                        </div>
+                                        
+                                        {/* PHD2 Charts */}
+                                        <PHD2Charts data={s.phd2Analysis} />
+                                      </div>
+                                    )}
+                                    
+                                    {/* Empty state if no notes and no FITS and no PHD2 */}
+                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && (
                                       <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
-                                        Sin comentarios ni análisis FITS
+                                        Sin comentarios ni análisis
                                       </div>
                                     )}
                                   </DialogContent>
@@ -8755,6 +8844,7 @@ export default function AstroTracker() {
                 <FitsTemperatureChart sessions={filtered} />
                 <FitsHumidityChart sessions={filtered} />
                 <FitsWindChart sessions={filtered} />
+                <PHD2RmsChart sessions={filtered} />
                 <SNRChart sessions={filtered} />
                 <SNRRGBChart sessions={filtered} />
                 <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />
