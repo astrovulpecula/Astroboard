@@ -75,6 +75,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Check } from "lucide-react";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
@@ -8444,16 +8446,40 @@ export default function AstroTracker() {
                               </label>
                               <label className="grid gap-1">
                                 <span className="text-xs font-medium text-muted-foreground">Valoración</span>
-                                <select
-                                  value={filterRating}
-                                  onChange={(e) => setFilterRating(e.target.value as any)}
-                                  className={INPUT_CLS}
-                                >
-                                  <option value="all">Todas</option>
-                                  <option value="3">⭐⭐⭐ 3 Estrellas</option>
-                                  <option value="2">⭐⭐ 2 Estrellas</option>
-                                  <option value="1">⭐ 1 Estrella</option>
-                                </select>
+                                <Select value={filterRating} onValueChange={(v) => setFilterRating(v as any)}>
+                                  <SelectTrigger className="bg-background">
+                                    <SelectValue placeholder="Todas" />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-popover">
+                                    <SelectItem value="all">
+                                      <span className="flex items-center gap-2">
+                                        <Check className="w-4 h-4 opacity-0" />
+                                        Todas
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="3">
+                                      <span className="flex items-center gap-2">
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        3 Estrellas
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="2">
+                                      <span className="flex items-center gap-2">
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        2 Estrellas
+                                      </span>
+                                    </SelectItem>
+                                    <SelectItem value="1">
+                                      <span className="flex items-center gap-2">
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        1 Estrella
+                                      </span>
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </label>
                               <div className="flex items-end">
                                 <button
@@ -8540,29 +8566,38 @@ export default function AstroTracker() {
                                     </button>
                                   </div>
                                   
-                                  <div className="flex items-center justify-between mb-2">
-                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
-                                      {img.title}
-                                    </h3>
-                                    {/* Interactive rating stars */}
-                                    <div className="flex gap-0.5">
-                                      {Array.from({ length: 3 }).map((_, i) => (
-                                        <Star
-                                          key={i}
-                                          className={`w-4 h-4 cursor-pointer transition-transform hover:scale-110 ${
-                                            i < img.rating
-                                              ? "fill-yellow-400 text-yellow-400"
-                                              : "text-slate-300 dark:text-slate-600"
-                                          }`}
-                                          onClick={() => updateImageRating(img.objectId, img.projectId, img.keyName, i + 1 === img.rating ? 0 : i + 1)}
-                                        />
-                                      ))}
-                                    </div>
+                                  {/* Interactive rating stars */}
+                                  <div className="flex justify-end gap-0.5 mb-2">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`w-4 h-4 cursor-pointer transition-transform hover:scale-110 ${
+                                          i < img.rating
+                                            ? "fill-yellow-400 text-yellow-400"
+                                            : "text-slate-300 dark:text-slate-600"
+                                        }`}
+                                        onClick={() => updateImageRating(img.objectId, img.projectId, img.keyName, i + 1 === img.rating ? 0 : i + 1)}
+                                      />
+                                    ))}
                                   </div>
                                   
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                                    {img.objectName} · {img.projectName}
-                                  </p>
+                                  {/* Clickable info section - navigates to project */}
+                                  <div 
+                                    className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 -mx-4 -mb-4 px-4 py-3 rounded-b-xl transition-colors border-t border-slate-100 dark:border-slate-800"
+                                    onClick={() => {
+                                      setSelectedObjectId(img.objectId);
+                                      setSelectedProjectId(img.projectId);
+                                      setView("project");
+                                      window.scrollTo({ top: 0, behavior: "smooth" });
+                                    }}
+                                  >
+                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                                      {img.objectName}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                      {img.constellation && <span>{img.constellation} · </span>}{img.projectName}
+                                    </p>
+                                  </div>
                                 </Card>
                               ))}
                             </div>
