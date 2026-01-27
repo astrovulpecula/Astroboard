@@ -2630,6 +2630,11 @@ function FSessionAutomated({
       if (info.filters.length > 0) {
         setFitsFilter(info.filters[0]);
       }
+      
+      // Auto-fill date from FITS (use first available date)
+      if (info.dates.length > 0) {
+        setDate(info.dates[0]);
+      }
     }
   }, [fitsAnalysis]);
 
