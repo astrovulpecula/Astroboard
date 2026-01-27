@@ -39,6 +39,7 @@ import {
   Wind,
   ChevronDownIcon,
   Target,
+  Search,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -4586,6 +4587,10 @@ export default function AstroTracker() {
   const [projectSearchText, setProjectSearchText] = useState("");
   const [showProjectFilters, setShowProjectFilters] = useState(false);
   const [filterRating, setFilterRating] = useState<"all" | "3" | "2" | "1">("all");
+  const [gallerySearchText, setGallerySearchText] = useState("");
+  const [gallerySortMode, setGallerySortMode] = useState<"alpha" | "rating">("rating");
+  const [showGalleryFilters, setShowGalleryFilters] = useState(false);
+  const [galleryFilterConstellation, setGalleryFilterConstellation] = useState("all");
   const [highlightsSectionExpanded, setHighlightsSectionExpanded] = useState(true);
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
@@ -8252,10 +8257,6 @@ export default function AstroTracker() {
                     </Card>
                   ) : (
                   <>
-                  <p className="text-muted-foreground">
-                    Todas tus fotos organizadas por valoración
-                  </p>
-
                   {(() => {
                     // Collect all rated images
                     const allRatedImages: Array<{
@@ -8267,6 +8268,7 @@ export default function AstroTracker() {
                       projectId: string;
                       projectName: string;
                       keyName: string;
+                      constellation: string;
                     }> = [];
                     
                     objects.forEach((obj) => {
@@ -8300,11 +8302,15 @@ export default function AstroTracker() {
                               projectId: proj.id,
                               projectName: proj.name,
                               keyName,
+                              constellation: obj.constellation || "",
                             });
                           }
                         });
                       });
                     });
+
+                    // Get unique constellations for filter
+                    const uniqueConstellations = [...new Set(allRatedImages.map(img => img.constellation).filter(Boolean))].sort();
 
                     // Count images by rating
                     const rating3Count = allRatedImages.filter((img) => img.rating === 3).length;
@@ -8314,22 +8320,22 @@ export default function AstroTracker() {
                     return (
                       <>
                         {/* Statistics Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <Card className="p-5">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <Card className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-purple-500/10">
-                                <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                              <div className="p-2 rounded-xl bg-purple-500/10">
+                                <Star className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                               </div>
                               <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">Total Valoradas</div>
-                                <div className="text-2xl font-bold">{allRatedImages.length}</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
+                                <div className="text-xl font-bold">{allRatedImages.length}</div>
                               </div>
                             </div>
                           </Card>
                           
-                          <Card className="p-5">
+                          <Card className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-yellow-500/10">
+                              <div className="p-2 rounded-xl bg-yellow-500/10">
                                 <div className="flex gap-0.5">
                                   {[1, 2, 3].map((i) => (
                                     <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
@@ -8337,15 +8343,15 @@ export default function AstroTracker() {
                                 </div>
                               </div>
                               <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">3 Estrellas</div>
-                                <div className="text-2xl font-bold">{rating3Count}</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">3 Estrellas</div>
+                                <div className="text-xl font-bold">{rating3Count}</div>
                               </div>
                             </div>
                           </Card>
                           
-                          <Card className="p-5">
+                          <Card className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-blue-500/10">
+                              <div className="p-2 rounded-xl bg-blue-500/10">
                                 <div className="flex gap-0.5">
                                   {[1, 2].map((i) => (
                                     <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
@@ -8353,82 +8359,148 @@ export default function AstroTracker() {
                                 </div>
                               </div>
                               <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">2 Estrellas</div>
-                                <div className="text-2xl font-bold">{rating2Count}</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">2 Estrellas</div>
+                                <div className="text-xl font-bold">{rating2Count}</div>
                               </div>
                             </div>
                           </Card>
                           
-                          <Card className="p-5">
+                          <Card className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="p-3 rounded-xl bg-slate-500/10">
+                              <div className="p-2 rounded-xl bg-slate-500/10">
                                 <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
                               </div>
                               <div>
-                                <div className="text-sm text-slate-600 dark:text-slate-400">1 Estrella</div>
-                                <div className="text-2xl font-bold">{rating1Count}</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">1 Estrella</div>
+                                <div className="text-xl font-bold">{rating1Count}</div>
                               </div>
                             </div>
                           </Card>
                         </div>
 
-                        {/* Filter */}
-                        <Card className="p-5">
-                          <label className="mb-3 block text-base font-semibold">Filtrar por valoración</label>
-                          <RadioGroup
-                            value={filterRating}
-                            onValueChange={(value: any) => setFilterRating(value)}
-                            className="flex flex-wrap gap-4"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="all" id="gallery-all" />
-                              <label htmlFor="gallery-all" className="cursor-pointer font-normal">
-                                Todas ({allRatedImages.length})
-                              </label>
+                        {/* Advanced Search Panel */}
+                        <div className="grid gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Sorting buttons */}
+                            {allRatedImages.length > 0 && (
+                              <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                                <button 
+                                  onClick={() => setGallerySortMode("alpha")}
+                                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${gallerySortMode === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                                  title="Ordenar alfabéticamente (A-Z)"
+                                >
+                                  A-Z
+                                </button>
+                                <button 
+                                  onClick={() => setGallerySortMode("rating")}
+                                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${gallerySortMode === "rating" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
+                                  title="Ordenar por valoración"
+                                >
+                                  <Star className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                            
+                            {/* Search input */}
+                            <div className="relative flex-1 min-w-[200px]">
+                              <input
+                                type="text"
+                                value={gallerySearchText}
+                                onChange={(e) => setGallerySearchText(e.target.value)}
+                                placeholder="Buscar por objeto o proyecto..."
+                                className={`${INPUT_CLS} w-full pl-10`}
+                              />
+                              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                              {gallerySearchText && (
+                                <button
+                                  onClick={() => setGallerySearchText("")}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="3" id="gallery-3stars" />
-                              <label htmlFor="gallery-3stars" className="cursor-pointer font-normal flex items-center gap-1">
-                                3 Estrellas
-                                <div className="flex gap-0.5 ml-1">
-                                  {[1, 2, 3].map((i) => (
-                                    <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            
+                            <Btn outline onClick={() => setShowGalleryFilters(!showGalleryFilters)}>
+                              {showGalleryFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                            </Btn>
+                          </div>
+                          
+                          {/* Advanced Filters Panel */}
+                          {showGalleryFilters && (
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
+                              <label className="grid gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">Constelación</span>
+                                <select
+                                  value={galleryFilterConstellation}
+                                  onChange={(e) => setGalleryFilterConstellation(e.target.value)}
+                                  className={INPUT_CLS}
+                                >
+                                  <option value="all">Todas</option>
+                                  {uniqueConstellations.map(c => (
+                                    <option key={c} value={c}>{c}</option>
                                   ))}
-                                </div>
-                                ({rating3Count})
+                                </select>
                               </label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="2" id="gallery-2stars" />
-                              <label htmlFor="gallery-2stars" className="cursor-pointer font-normal flex items-center gap-1">
-                                2 Estrellas
-                                <div className="flex gap-0.5 ml-1">
-                                  {[1, 2].map((i) => (
-                                    <Star key={i} className="w-3 h-3 fill-blue-400 text-blue-400" />
-                                  ))}
-                                </div>
-                                ({rating2Count})
+                              <label className="grid gap-1">
+                                <span className="text-xs font-medium text-muted-foreground">Valoración</span>
+                                <select
+                                  value={filterRating}
+                                  onChange={(e) => setFilterRating(e.target.value as any)}
+                                  className={INPUT_CLS}
+                                >
+                                  <option value="all">Todas</option>
+                                  <option value="3">⭐⭐⭐ 3 Estrellas</option>
+                                  <option value="2">⭐⭐ 2 Estrellas</option>
+                                  <option value="1">⭐ 1 Estrella</option>
+                                </select>
                               </label>
+                              <div className="flex items-end">
+                                <button
+                                  onClick={() => {
+                                    setGallerySearchText("");
+                                    setGalleryFilterConstellation("all");
+                                    setFilterRating("all");
+                                  }}
+                                  className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                >
+                                  Limpiar filtros
+                                </button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="1" id="gallery-1star" />
-                              <label htmlFor="gallery-1star" className="cursor-pointer font-normal flex items-center gap-1">
-                                1 Estrella
-                                <Star className="w-3 h-3 fill-slate-400 text-slate-400 ml-1" />
-                                ({rating1Count})
-                              </label>
-                            </div>
-                          </RadioGroup>
-                        </Card>
+                          )}
+
+                        </div>
 
                         {/* Gallery */}
                         {(() => {
                           const filteredImages = allRatedImages
                             .filter((img) => {
-                              if (filterRating === "all") return true;
-                              return img.rating === parseInt(filterRating);
+                              // Apply search filter
+                              if (gallerySearchText) {
+                                const searchLower = gallerySearchText.toLowerCase();
+                                if (!img.objectName.toLowerCase().includes(searchLower) && 
+                                    !img.projectName.toLowerCase().includes(searchLower) &&
+                                    !img.objectId.toLowerCase().includes(searchLower)) {
+                                  return false;
+                                }
+                              }
+                              // Apply constellation filter
+                              if (galleryFilterConstellation !== "all" && img.constellation !== galleryFilterConstellation) {
+                                return false;
+                              }
+                              // Apply rating filter
+                              if (filterRating !== "all" && img.rating !== parseInt(filterRating)) {
+                                return false;
+                              }
+                              return true;
                             })
-                            .sort((a, b) => b.rating - a.rating);
+                            .sort((a, b) => {
+                              if (gallerySortMode === "alpha") {
+                                return a.objectName.localeCompare(b.objectName);
+                              }
+                              return b.rating - a.rating;
+                            });
 
                           if (filteredImages.length === 0) {
                             return (
