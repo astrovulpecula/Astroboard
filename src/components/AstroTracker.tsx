@@ -3039,20 +3039,26 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
   const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
-  const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(
-    () =>
-      s.map((x, i, a) => ({
-        lightTotal: cumulativeLights(a, i),
-        hoursTotal: cumulativeHours(a, i),
-        snr: mean(x),
-      })),
-    [s],
-  );
+  // Sort chronologically (oldest first = left side of chart)
+  const sortedSessions = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
+  // Build data with cumulative values calculated from ALL sessions, but only include points with valid SNR
+  const data = useMemo(() => {
+    const result: { lightTotal: number; hoursTotal: number; snr: number }[] = [];
+    sortedSessions.forEach((x, i, a) => {
+      const snrValue = mean(x);
+      if (Number.isFinite(snrValue)) {
+        result.push({
+          lightTotal: cumulativeLights(a, i),
+          hoursTotal: cumulativeHours(a, i),
+          snr: snrValue,
+        });
+      }
+    });
+    return result;
+  }, [sortedSessions]);
   const first = useMemo(() => {
-    const m = mean(s[0]);
-    return Number.isFinite(m) ? m : 0;
-  }, [s]);
+    return data.length > 0 ? data[0].snr : 0;
+  }, [data]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
@@ -3097,23 +3103,31 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
 
 const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
-  const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(
-    () =>
-      s.map((x, i, a) => ({
-        lightTotal: cumulativeLights(a, i),
-        hoursTotal: cumulativeHours(a, i),
-        r: Number.isFinite(x.snrR) ? x.snrR : null,
-        g: Number.isFinite(x.snrG) ? x.snrG : null,
-        b: Number.isFinite(x.snrB) ? x.snrB : null,
-      })),
-    [s],
-  );
+  // Sort chronologically (oldest first = left side of chart)
+  const sortedSessions = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
+  // Build data with cumulative values, only include points with at least one valid RGB SNR
+  const data = useMemo(() => {
+    const result: { lightTotal: number; hoursTotal: number; r: number | null; g: number | null; b: number | null }[] = [];
+    sortedSessions.forEach((x, i, a) => {
+      const hasAnyRGB = Number.isFinite(x.snrR) || Number.isFinite(x.snrG) || Number.isFinite(x.snrB);
+      if (hasAnyRGB) {
+        result.push({
+          lightTotal: cumulativeLights(a, i),
+          hoursTotal: cumulativeHours(a, i),
+          r: Number.isFinite(x.snrR) ? x.snrR : null,
+          g: Number.isFinite(x.snrG) ? x.snrG : null,
+          b: Number.isFinite(x.snrB) ? x.snrB : null,
+        });
+      }
+    });
+    return result;
+  }, [sortedSessions]);
   const firstMin = useMemo(() => {
-    const t = s[0],
-      v = [t?.snrR, t?.snrG, t?.snrB].filter((x) => Number.isFinite(x));
+    if (data.length === 0) return 0;
+    const first = data[0];
+    const v = [first.r, first.g, first.b].filter((x): x is number => Number.isFinite(x));
     return v.length ? Math.min(...v) : 0;
-  }, [s]);
+  }, [data]);
   if (!data.length) return null;
   return (
     <Card className="p-4 h-80">
