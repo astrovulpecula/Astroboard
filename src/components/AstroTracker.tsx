@@ -9027,51 +9027,99 @@ export default function AstroTracker() {
                           
                           {/* Timeline items */}
                           <div 
-                            className="relative z-10 flex"
+                            className="relative z-10 flex items-start"
                             style={{ 
                               justifyContent: projectsWithFinalImages.length === 1 
                                 ? 'center' 
                                 : 'space-between' 
                             }}
                           >
-                            {projectsWithFinalImages.map((proj: any, idx: number) => (
-                              <div 
-                                key={proj.id} 
-                                className="flex flex-col items-center"
-                                style={{ 
-                                  maxWidth: `${100 / Math.max(projectsWithFinalImages.length, 2)}%`,
-                                  minWidth: '80px'
-                                }}
-                              >
-                                {/* Image */}
-                                <div 
-                                  className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden cursor-pointer group border-2 border-primary bg-background shadow-md"
-                                  onClick={() => {
-                                    setImageModalSrc(proj.images.finalProject);
-                                    setImageModalOpen(true);
-                                  }}
-                                >
-                                  <img
-                                    src={proj.images.finalProject}
-                                    alt={proj.name}
-                                    className="w-full h-full object-cover transition-transform group-hover:scale-110"
-                                  />
-                                </div>
+                            {projectsWithFinalImages.map((proj: any, idx: number) => {
+                              // Calculate time difference with previous project
+                              let timeDiffLabel = '';
+                              if (idx > 0) {
+                                const prevDate = projectsWithFinalImages[idx - 1].earliestDate;
+                                const currDate = proj.earliestDate;
+                                const diffMs = currDate.getTime() - prevDate.getTime();
+                                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
                                 
-                                {/* Dot on timeline */}
-                                <div className="w-3 h-3 rounded-full bg-primary mt-2 mb-1 shadow-sm" />
-                                
-                                {/* Date */}
-                                <div className="text-xs text-muted-foreground text-center font-medium">
-                                  {formatDateDisplay(proj.earliestDate.toISOString().slice(0, 10), dateFormat)}
-                                </div>
-                                
-                                {/* Project name */}
-                                <div className="text-xs text-center text-slate-600 dark:text-slate-400 truncate w-full mt-0.5">
-                                  {proj.name}
-                                </div>
-                              </div>
-                            ))}
+                                if (diffDays >= 365) {
+                                  const years = Math.floor(diffDays / 365);
+                                  const remainingDays = diffDays % 365;
+                                  const months = Math.floor(remainingDays / 30);
+                                  const days = remainingDays % 30;
+                                  
+                                  if (months > 0 && days > 0) {
+                                    timeDiffLabel = `${years}a ${months}m ${days}d`;
+                                  } else if (months > 0) {
+                                    timeDiffLabel = `${years}a ${months}m`;
+                                  } else if (days > 0) {
+                                    timeDiffLabel = `${years}a ${days}d`;
+                                  } else {
+                                    timeDiffLabel = `${years}a`;
+                                  }
+                                } else if (diffDays >= 30) {
+                                  const months = Math.floor(diffDays / 30);
+                                  const days = diffDays % 30;
+                                  if (days > 0) {
+                                    timeDiffLabel = `${months}m ${days}d`;
+                                  } else {
+                                    timeDiffLabel = `${months}m`;
+                                  }
+                                } else {
+                                  timeDiffLabel = `${diffDays}d`;
+                                }
+                              }
+                              
+                              return (
+                                <React.Fragment key={proj.id}>
+                                  {/* Time difference label between projects */}
+                                  {idx > 0 && (
+                                    <div className="flex-1 flex items-center justify-center self-center -mx-2">
+                                      <div className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                                        {timeDiffLabel}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  <div 
+                                    className="flex flex-col items-center flex-shrink-0"
+                                    style={{ 
+                                      maxWidth: projectsWithFinalImages.length === 1 ? '100%' : '120px',
+                                      minWidth: '80px'
+                                    }}
+                                  >
+                                    {/* Image */}
+                                    <div 
+                                      className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden cursor-pointer group border-2 border-primary bg-background shadow-md"
+                                      onClick={() => {
+                                        setImageModalSrc(proj.images.finalProject);
+                                        setImageModalOpen(true);
+                                      }}
+                                    >
+                                      <img
+                                        src={proj.images.finalProject}
+                                        alt={proj.name}
+                                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                      />
+                                    </div>
+                                    
+                                    {/* Dot on timeline */}
+                                    <div className="w-3 h-3 rounded-full bg-primary mt-2 mb-1 shadow-sm" />
+                                    
+                                    {/* Date */}
+                                    <div className="text-xs text-muted-foreground text-center font-medium">
+                                      {formatDateDisplay(proj.earliestDate.toISOString().slice(0, 10), dateFormat)}
+                                    </div>
+                                    
+                                    {/* Project name */}
+                                    <div className="text-xs text-center text-slate-600 dark:text-slate-400 truncate w-full mt-0.5">
+                                      {proj.name}
+                                    </div>
+                                  </div>
+                                </React.Fragment>
+                              );
+                            })}
                           </div>
                         </div>
                       </CollapsibleContent>
