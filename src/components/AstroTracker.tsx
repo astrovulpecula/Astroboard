@@ -9378,18 +9378,18 @@ export default function AstroTracker() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <ExposureChart sessions={filtered} dateFormat={dateFormat} />
-                <MoonIlluminationChart sessions={filtered} />
-                <FitsMpsasChart sessions={filtered} />
-                <FitsTemperatureChart sessions={filtered} />
-                <FitsHumidityChart sessions={filtered} />
-                <FitsWindChart sessions={filtered} />
-                <FitsFocusChart sessions={filtered} />
-                <PHD2P50Chart sessions={filtered} />
-                <PHD2P68Chart sessions={filtered} />
-                <SNRChart sessions={filtered} />
-                <SNRRGBChart sessions={filtered} />
-                <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />
+                {((proj as any)?.chartVisibility?.exposureChart !== false) && <ExposureChart sessions={filtered} dateFormat={dateFormat} />}
+                {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.mpsasChart !== false) && <FitsMpsasChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.temperatureChart !== false) && <FitsTemperatureChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.windChart !== false) && <FitsWindChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2P50Chart !== false) && <PHD2P50Chart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2P68Chart !== false) && <PHD2P68Chart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
               </div>
             </div>
           )}
@@ -10998,6 +10998,64 @@ export default function AstroTracker() {
               </select>
             </div>
 
+            {/* Chart visibility settings */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-xl border bg-slate-50/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Gráficas visibles
+                </span>
+                <ChevronDownIcon className="w-4 h-4" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 p-3 rounded-xl border bg-slate-50/30 dark:bg-slate-900/30 border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-500 mb-3">
+                  Selecciona qué gráficas mostrar en la vista del proyecto
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { key: "exposureChart", label: "Exposición por filtro" },
+                    { key: "moonChart", label: "Iluminación lunar" },
+                    { key: "mpsasChart", label: "MPSAS (calidad del cielo)" },
+                    { key: "temperatureChart", label: "Temperatura ambiente" },
+                    { key: "humidityChart", label: "Humedad" },
+                    { key: "windChart", label: "Viento" },
+                    { key: "focusChart", label: "Posición de enfoque" },
+                    { key: "phd2P50Chart", label: "PHD2 RMS P50" },
+                    { key: "phd2P68Chart", label: "PHD2 RMS P68" },
+                    { key: "snrChart", label: "SNR (media)" },
+                    { key: "snrRGBChart", label: "SNR por canal (R/G/B)" },
+                    { key: "acceptedRejectedChart", label: "Lights aceptados/rechazados" },
+                  ].map((chart) => {
+                    const currentVisibility = projectSettingsData.chartVisibility !== undefined
+                      ? projectSettingsData.chartVisibility
+                      : (proj as any)?.chartVisibility || {};
+                    const isVisible = currentVisibility[chart.key] !== false; // Default true
+                    return (
+                      <label
+                        key={chart.key}
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+                      >
+                        <Checkbox
+                          checked={isVisible}
+                          onCheckedChange={(checked) => {
+                            const newVisibility = {
+                              ...currentVisibility,
+                              [chart.key]: checked,
+                            };
+                            setProjectSettingsData({
+                              ...projectSettingsData,
+                              chartVisibility: newVisibility,
+                            });
+                          }}
+                        />
+                        <span className="text-sm">{chart.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn
                 outline
@@ -11039,6 +11097,11 @@ export default function AstroTracker() {
                           : projectSettingsData.goalHours
                         : (proj as any).goalHours,
                   };
+
+                  // Actualizar visibilidad de gráficas si se modificó
+                  if (projectSettingsData.chartVisibility !== undefined) {
+                    updates.chartVisibility = projectSettingsData.chartVisibility;
+                  }
 
                   // Actualizar equipo si se modificó
                   if (projectSettingsData.camera !== undefined || projectSettingsData.telescope !== undefined) {
