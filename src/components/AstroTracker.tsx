@@ -549,7 +549,7 @@ const Modal = ({
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg md:text-xl font-semibold">{title}</h3>
             <IconBtn title="Cerrar" onClick={onClose}>
-              <Trash2 className="w-4 h-4 rotate-45" />
+              <X className="w-4 h-4" />
             </IconBtn>
           </div>
           {children}
@@ -6632,9 +6632,9 @@ export default function AstroTracker() {
                         {searchText && (
                           <button
                             onClick={() => setSearchText("")}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <X className="w-4 h-4" />
                           </button>
                         )}
                       </div>
