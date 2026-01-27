@@ -9188,8 +9188,8 @@ export default function AstroTracker() {
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
-                <Card className="p-2 md:p-4">
-                  <table className="text-xs md:text-sm w-full">
+                <Card className="p-2 md:p-4 min-w-fit">
+                  <table className="text-xs md:text-sm w-full min-w-max">
                     <thead>
                       <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
                         <th className="p-2 md:p-3 whitespace-nowrap">#</th>
