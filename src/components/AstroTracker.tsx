@@ -9210,7 +9210,7 @@ export default function AstroTracker() {
                         <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">
+                        <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 z-10">
                           Acciones
                         </th>
                       </tr>
@@ -9259,7 +9259,7 @@ export default function AstroTracker() {
                               {Number.isFinite(s.snrB) ? s.snrB : "–"}
                             </td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                            <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-700">
                               <div className="inline-flex gap-1 md:gap-2">
                                 <Dialog>
                                   <DialogTrigger asChild>
