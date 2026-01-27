@@ -89,6 +89,8 @@ import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
 import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
+import VisibilityChart from "@/components/VisibilityChart";
+import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -4597,6 +4599,7 @@ export default function AstroTracker() {
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
+  const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
   const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
@@ -6983,6 +6986,19 @@ export default function AstroTracker() {
                                     {planned.cenit && <Badge className="text-xs border border-border bg-transparent">Cenit: {planned.cenit}</Badge>}
                                     {planned.prioridad && <Badge className={`text-xs ${planned.prioridad === "Alta" ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700" : planned.prioridad === "Media" ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : "bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700"}`}>Prioridad: {planned.prioridad}</Badge>}
                                   </div>
+                                  
+                                  {/* Compact Visibility Chart */}
+                                  {mainLocation?.coords && (
+                                    <div className="mt-3 pt-3 border-t border-border">
+                                      <VisibilityChart
+                                        objectCode={planned.objectId}
+                                        coordinates={mainLocation.coords}
+                                        date={new Date()}
+                                        compact={true}
+                                        language={language}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </Card>
@@ -9127,6 +9143,30 @@ export default function AstroTracker() {
                   </Card>
                 );
               })()}
+
+              {/* Visibility Chart Block */}
+              {mainLocation?.coords && (
+                <Card className="p-4 md:p-6">
+                  <Collapsible open={visibilitySectionExpanded} onOpenChange={setVisibilitySectionExpanded}>
+                    <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                      <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                      <Eye className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold">
+                        {language === 'en' ? 'Night Visibility' : 'Visibilidad Nocturna'}
+                      </h3>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-4">
+                      <VisibilityChart
+                        objectCode={obj.id}
+                        coordinates={mainLocation.coords}
+                        date={new Date()}
+                        compact={false}
+                        language={language}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+                </Card>
+              )}
 
               {/* Projects Header with Filters */}
               <div className="mb-6">
