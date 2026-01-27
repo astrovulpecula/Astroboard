@@ -4941,7 +4941,11 @@ export default function AstroTracker() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "astrotracker.json";
+    // Generate filename with date and time: astroboard_YYYY-MM-DD_HH-MM-SS.json
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "-"); // HH-MM-SS
+    a.download = `astroboard_${dateStr}_${timeStr}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [objects, plannedProjects, userName, cameras, telescopes, locations, mainLocation, guideTelescope, guideCamera, mount, dateFormat, defaultTheme, jsonPath, visibleHighlights, language]);
