@@ -6729,65 +6729,78 @@ export default function AstroTracker() {
                       const all = o.projects.flatMap((p: any) => p.sessions);
                       const seconds = totalExposureSec(all);
                       const nights = new Set(all.map((s: any) => s.date)).size;
+                      const displayImage = o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null;
+                      
                       return (
                         <Card
                           key={o.id}
-                          className="p-4"
+                          className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                           onClick={() => {
                             setSelectedObjectId(o.id);
                             setView("projects");
                           }}
                         >
-                          <div className="flex items-start gap-3">
-                            <ObjectThumbnail
-                              objectId={o.id}
-                              displayImage={o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null}
-                              onUpload={upObjImg}
-                              onDelete={(id) => upObjImg(id, null)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditObjectOriginalId(o.id);
-                                    setEditObjectData({
-                                      id: o.id,
-                                      commonName: o.commonName || "",
-                                      constellation: o.constellation || "",
-                                      type: o.type || "",
-                                    });
-                                    setShowEditObjectModal(true);
-                                  }}
-                                  className="text-lg md:text-xl font-bold truncate hover:underline text-left"
-                                  title="Clic para editar"
-                                >
-                                  {o.id}
-                                </button>
-                              </div>
-                              {o.commonName && (
-                                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">
-                                  {o.commonName}
-                                </p>
+                          <div className="space-y-3">
+                            {/* Thumbnail - image on top */}
+                            <div className="relative">
+                              {displayImage ? (
+                                <img
+                                  src={displayImage}
+                                  alt={o.id}
+                                  className="w-full h-40 rounded-xl object-cover border border-border"
+                                />
+                              ) : (
+                                <div className="w-full h-40 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                                  <Telescope className="w-10 h-10 text-muted-foreground/50" />
+                                </div>
                               )}
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {o.constellation && <Badge>{o.constellation}</Badge>}
-                                {o.type && <Badge>{o.type}</Badge>}
-                              </div>
-                              <p className="text-xs md:text-sm text-slate-500 mt-2">
-                                {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <IconBtn
+                              {/* Delete button positioned on top right of image */}
+                              <button
                                 title="Eliminar"
+                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   delObj(o.id);
                                 }}
                               >
                                 <Trash2 className="w-4 h-4" />
-                              </IconBtn>
+                              </button>
+                            </div>
+                            {/* Content - text below */}
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditObjectOriginalId(o.id);
+                                      setEditObjectData({
+                                        id: o.id,
+                                        commonName: o.commonName || "",
+                                        constellation: o.constellation || "",
+                                        type: o.type || "",
+                                      });
+                                      setShowEditObjectModal(true);
+                                    }}
+                                    className="text-lg font-bold truncate hover:underline text-left"
+                                    title="Clic para editar"
+                                  >
+                                    {o.id}
+                                  </button>
+                                  {o.commonName && (
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {o.commonName}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {o.constellation && <Badge>{o.constellation}</Badge>}
+                                {o.type && <Badge>{o.type}</Badge>}
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
+                              </p>
                             </div>
                           </div>
                         </Card>
