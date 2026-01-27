@@ -308,16 +308,10 @@ export function getVisibilityDescription(result: VisibilityResult, language: 'es
   if (result.isCircumpolar) {
     return language === 'en' ? 'Circumpolar - always visible' : 'Circumpolar - siempre visible';
   }
-  if (result.transitAltitude < 10) {
-    return language === 'en' ? 'Very low visibility' : 'Visibilidad muy baja';
+  if (result.transitAltitude < 20) {
+    return language === 'en' ? 'Bad visibility' : 'Mala visibilidad';
   }
-  if (result.transitAltitude < 30) {
-    return language === 'en' ? 'Low visibility' : 'Visibilidad baja';
-  }
-  if (result.transitAltitude < 60) {
-    return language === 'en' ? 'Good visibility' : 'Buena visibilidad';
-  }
-  return language === 'en' ? 'Excellent visibility' : 'Excelente visibilidad';
+  return language === 'en' ? 'Good visibility' : 'Buena visibilidad';
 }
 
 export interface AnnualVisibilityDataPoint {

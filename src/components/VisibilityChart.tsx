@@ -237,10 +237,8 @@ export default function VisibilityChart({
               className={`px-3 py-1 rounded-full ${
                 visibility.isCircumpolar
                   ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  : visibility.transitAltitude >= 60
+                  : visibility.transitAltitude >= 20
                   ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                  : visibility.transitAltitude >= 30
-                  ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
                   : 'bg-red-500/20 text-red-700 dark:text-red-400'
               }`}
             >
