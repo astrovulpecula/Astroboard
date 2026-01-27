@@ -3041,20 +3041,16 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
   // Sort chronologically (oldest first = left side of chart)
   const sortedSessions = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  // Build data with cumulative values calculated from ALL sessions, but only include points with valid SNR
+  // Build data with cumulative values for ALL sessions
   const data = useMemo(() => {
-    const result: { lightTotal: number; hoursTotal: number; snr: number }[] = [];
-    sortedSessions.forEach((x, i, a) => {
+    return sortedSessions.map((x, i, a) => {
       const snrValue = mean(x);
-      if (Number.isFinite(snrValue)) {
-        result.push({
-          lightTotal: cumulativeLights(a, i),
-          hoursTotal: cumulativeHours(a, i),
-          snr: snrValue,
-        });
-      }
+      return {
+        lightTotal: cumulativeLights(a, i),
+        hoursTotal: cumulativeHours(a, i),
+        snr: Number.isFinite(snrValue) ? snrValue : null,
+      };
     });
-    return result;
   }, [sortedSessions]);
   const first = useMemo(() => {
     return data.length > 0 ? data[0].snr : 0;
@@ -3105,22 +3101,15 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
   // Sort chronologically (oldest first = left side of chart)
   const sortedSessions = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  // Build data with cumulative values, only include points with at least one valid RGB SNR
+  // Build data with cumulative values for ALL sessions
   const data = useMemo(() => {
-    const result: { lightTotal: number; hoursTotal: number; r: number | null; g: number | null; b: number | null }[] = [];
-    sortedSessions.forEach((x, i, a) => {
-      const hasAnyRGB = Number.isFinite(x.snrR) || Number.isFinite(x.snrG) || Number.isFinite(x.snrB);
-      if (hasAnyRGB) {
-        result.push({
-          lightTotal: cumulativeLights(a, i),
-          hoursTotal: cumulativeHours(a, i),
-          r: Number.isFinite(x.snrR) ? x.snrR : null,
-          g: Number.isFinite(x.snrG) ? x.snrG : null,
-          b: Number.isFinite(x.snrB) ? x.snrB : null,
-        });
-      }
-    });
-    return result;
+    return sortedSessions.map((x, i, a) => ({
+      lightTotal: cumulativeLights(a, i),
+      hoursTotal: cumulativeHours(a, i),
+      r: Number.isFinite(x.snrR) ? x.snrR : null,
+      g: Number.isFinite(x.snrG) ? x.snrG : null,
+      b: Number.isFinite(x.snrB) ? x.snrB : null,
+    }));
   }, [sortedSessions]);
   const firstMin = useMemo(() => {
     if (data.length === 0) return 0;
