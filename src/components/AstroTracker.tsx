@@ -12267,6 +12267,11 @@ export default function AstroTracker() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Footer */}
+      <footer className="w-full py-4 text-center text-xs text-muted-foreground border-t border-border/50 mt-auto">
+        Astroboard es creado por Álvaro Queizán © 2026
+      </footer>
     </div>
   );
 }
