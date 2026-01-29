@@ -6453,7 +6453,7 @@ export default function AstroTracker() {
                 }
                 
                 const moonTimes = calculateMoonTimes(now, latitude, longitude);
-                const displayName = hasImportedData && userName ? userName : '';
+                const displayName = userName || '';
 
                 const formatTime = (date: Date) => {
                   return date.toLocaleTimeString(language === 'en' ? "en-US" : "es-ES", { hour: "2-digit", minute: "2-digit" });
@@ -6464,7 +6464,7 @@ export default function AstroTracker() {
                     <h2 className="text-3xl md:text-4xl font-bold mb-2">
                       {greeting}{displayName ? `, ${displayName}` : ''}
                     </h2>
-                    {hasImportedData && (
+                    {(objects.length > 0 || plannedProjects.length > 0) && (
                       <div className="space-y-1">
                         <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
                           {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
@@ -6480,7 +6480,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Next Ephemeris Card */}
-              {hasImportedData && nextEphemeris && (
+              {nextEphemeris && (
                 <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
@@ -6515,7 +6515,7 @@ export default function AstroTracker() {
               )}
 
               {/* Currently visible objects indicator - shows right after ephemeris */}
-              {hasImportedData && plannedProjects.length > 0 && (() => {
+              {plannedProjects.length > 0 && (() => {
                 const currentMonth = new Date().getMonth() + 1; // 1-12
                 const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
                 const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -6556,7 +6556,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Image Carousel - Before Navigation Buttons */}
-              {hasImportedData && dashboardCarouselImages.length > 0 && (
+              {dashboardCarouselImages.length > 0 && (
                 <div className="mb-6">
                   <ImageCarousel
                     images={dashboardCarouselImages}
@@ -6731,7 +6731,7 @@ export default function AstroTracker() {
                     </Btn>
                   </div>
                   
-                  {!hasImportedData ? (
+                  {plannedProjects.length === 0 ? (
                     <Card className="p-8 text-center">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
@@ -7329,7 +7329,7 @@ export default function AstroTracker() {
                       <h3 className="text-xl md:text-2xl font-bold">{t('astronomicalObjects')}</h3>
                     </div>
                     <div className="flex items-center gap-2">
-                      {hasImportedData && (
+                      {objects.length > 0 && (
                         <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
                           <button 
                             onClick={() => setSortObjects("alpha")}
@@ -7353,7 +7353,7 @@ export default function AstroTracker() {
                     </div>
                   </div>
 
-                  {!hasImportedData ? (
+                  {objects.length === 0 ? (
                     <Card className="p-8 text-center">
                       <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
@@ -7813,7 +7813,7 @@ export default function AstroTracker() {
                     </div>
                   </Modal>
 
-                  {!hasImportedData ? (
+                  {objects.length === 0 ? (
                     <Card className="p-8 text-center">
                       <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
@@ -8468,7 +8468,7 @@ export default function AstroTracker() {
                   <h2 className="text-2xl font-bold flex items-center gap-2">
                     <ImageIcon className="w-6 h-6" /> Galería de Valoraciones
                   </h2>
-                  {!hasImportedData ? (
+                  {objects.length === 0 ? (
                     <Card className="p-8 text-center">
                       <ImageIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
