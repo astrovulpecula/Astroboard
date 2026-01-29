@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface VerifyInvitationRequest {
   invitation_code: string;
-  email: string;
+  email: string; // Email del usuario que se registra (para actualizar la invitación)
 }
 
 interface VerifyInvitationResponse {
@@ -49,7 +49,7 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Query the invitation using exact match - no table enumeration possible
+    // Query the invitation using exact match - code only (no email match required)
     const { data: invitation, error } = await supabaseAdmin
       .from('beta_invitations')
       .select('id, email, role, status, expires_at')
@@ -68,15 +68,7 @@ serve(async (req) => {
     // Check if invitation exists
     if (!invitation) {
       return new Response(
-        JSON.stringify({ valid: false, error: 'Código de invitación inválido o expirado' } as VerifyInvitationResponse),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check email match (case-insensitive)
-    if (invitation.email.toLowerCase() !== email.toLowerCase()) {
-      return new Response(
-        JSON.stringify({ valid: false, error: 'El email no coincide con la invitación' } as VerifyInvitationResponse),
+        JSON.stringify({ valid: false, error: 'Código de invitación inválido o ya usado' } as VerifyInvitationResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -87,6 +79,16 @@ serve(async (req) => {
         JSON.stringify({ valid: false, error: 'La invitación ha expirado' } as VerifyInvitationResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Update invitation with the registering user's email
+    const { error: updateError } = await supabaseAdmin
+      .from('beta_invitations')
+      .update({ email: email.toLowerCase() })
+      .eq('id', invitation.id);
+
+    if (updateError) {
+      console.error('Error updating invitation email:', updateError);
     }
 
     // Invitation is valid

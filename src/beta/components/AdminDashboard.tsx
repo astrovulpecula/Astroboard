@@ -85,8 +85,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const [metrics, setMetrics] = useState<MetricSummary | null>(null);
   const [appUsage, setAppUsage] = useState<AppUsageMetrics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sendingInvite, setSendingInvite] = useState(false);
-  const [newInviteEmail, setNewInviteEmail] = useState('');
+  const [generatingCode, setGeneratingCode] = useState(false);
   const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
 
   const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
@@ -268,24 +267,23 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     }
   };
 
-  const sendInvitation = async () => {
-    if (!newInviteEmail.trim()) return;
-    setSendingInvite(true);
+  const generateInvitationCode = async () => {
+    setGeneratingCode(true);
 
     try {
+      // Insert with placeholder email (will be filled when user registers)
       const { error } = await supabase.from('beta_invitations').insert([{
-        email: newInviteEmail.toLowerCase().trim(),
+        email: `pending_${Date.now()}@placeholder.local`,
         role: 'tester',
       }]);
 
       if (error) throw error;
 
-      setNewInviteEmail('');
       loadData();
     } catch (err) {
-      console.error('Error sending invitation:', err);
+      console.error('Error generating invitation code:', err);
     } finally {
-      setSendingInvite(false);
+      setGeneratingCode(false);
     }
   };
 
@@ -410,54 +408,62 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             {/* Invitations Tab */}
             {activeTab === 'invitations' && (
               <div className="space-y-4">
-                {/* New Invitation Form */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 flex gap-3">
-                  <input
-                    type="email"
-                    value={newInviteEmail}
-                    onChange={(e) => setNewInviteEmail(e.target.value)}
-                    placeholder="email@ejemplo.com"
-                    className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
-                  />
+                {/* Generate Code Button */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {invitations.length} / {BETA_CONFIG.MAX_TESTERS} códigos generados
+                    </p>
+                  </div>
                   <button
-                    onClick={sendInvitation}
-                    disabled={sendingInvite || !newInviteEmail.trim() || invitations.length >= BETA_CONFIG.MAX_TESTERS}
+                    onClick={generateInvitationCode}
+                    disabled={generatingCode || invitations.length >= BETA_CONFIG.MAX_TESTERS}
                     className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium disabled:opacity-50 flex items-center gap-2"
                   >
-                    {sendingInvite ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    Enviar invitación
+                    {generatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    Generar código
                   </button>
                 </div>
-
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {invitations.length} / {BETA_CONFIG.MAX_TESTERS} invitaciones enviadas
-                </p>
 
                 {/* Invitations List */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-slate-200 dark:border-slate-700">
-                        <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Email</th>
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Código</th>
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Estado</th>
+                        <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Usuario</th>
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Fecha</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {invitations.map((inv) => (
-                        <tr key={inv.id} className="border-b border-slate-100 dark:border-slate-700/50 last:border-0">
-                          <td className="p-3 text-slate-900 dark:text-white">{inv.email}</td>
-                          <td className="p-3 font-mono text-sm text-slate-600 dark:text-slate-400">{inv.invitation_code}</td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(inv.status)}
-                              <span className="capitalize text-sm">{inv.status}</span>
-                            </div>
-                          </td>
-                          <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(inv.created_at)}</td>
-                        </tr>
-                      ))}
+                      {invitations.map((inv) => {
+                        const isUsed = inv.status === 'accepted';
+                        const isPending = inv.status === 'pending';
+                        const userEmail = isUsed && !inv.email.includes('@placeholder.local') ? inv.email : null;
+                        
+                        return (
+                          <tr key={inv.id} className="border-b border-slate-100 dark:border-slate-700/50 last:border-0">
+                            <td className="p-3">
+                              <code className={`font-mono text-sm px-2 py-1 rounded ${isUsed ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 line-through' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'}`}>
+                                {inv.invitation_code}
+                              </code>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-2">
+                                {getStatusIcon(inv.status)}
+                                <span className={`text-sm ${isUsed ? 'text-green-600 dark:text-green-400 font-medium' : isPending ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                                  {isUsed ? 'Usado' : isPending ? 'Disponible' : 'Expirado'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="p-3 text-sm text-slate-600 dark:text-slate-400">
+                              {userEmail || (isUsed ? '—' : '—')}
+                            </td>
+                            <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(inv.created_at)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
