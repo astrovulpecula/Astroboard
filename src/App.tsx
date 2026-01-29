@@ -14,7 +14,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename={import.meta.env.PROD ? "/Astroboard" : "/"}>
+      <BrowserRouter>
         <BetaGate>
           <Routes>
             <Route path="/" element={<Index />} />
