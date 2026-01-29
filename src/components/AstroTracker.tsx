@@ -4721,8 +4721,14 @@ export default function AstroTracker() {
   const lastSyncedPlannedRef = useRef<string>("");
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
 
+  // Ref to track if initialization is complete - prevents race conditions
+  const initializationCompleteRef = useRef(false);
+
   // Load settings and data from localStorage or cloud on mount
   useEffect(() => {
+    // Prevent double initialization in Strict Mode
+    if (initializationCompleteRef.current) return;
+    
     const loadData = async () => {
       // Helper to apply settings
       const applySettings = (settings: any) => {
@@ -4745,9 +4751,10 @@ export default function AstroTracker() {
       };
 
       // Try to load from cloud first if enabled
-      if (cloudSync.isCloudEnabled && !cloudDataLoaded) {
+      if (cloudSyncRef.current.isCloudEnabled) {
         try {
-          const cloudData = await cloudSync.loadFromCloud();
+          console.log('[Init] Loading from cloud...');
+          const cloudData = await cloudSyncRef.current.loadFromCloud();
           
           // For cloud users, ONLY use cloud data - never fall back to localStorage
           // This ensures data isolation between users on the same browser
@@ -4758,24 +4765,28 @@ export default function AstroTracker() {
             ? cloudData.planned 
             : [];
           
+          console.log('[Init] Loaded from cloud:', { objectsCount: loadedObjects.length, plannedCount: loadedPlanned.length });
+          
+          // CRITICAL: Set refs BEFORE setting state to prevent auto-save from triggering
+          lastSyncedObjectsRef.current = JSON.stringify(loadedObjects);
+          lastSyncedPlannedRef.current = JSON.stringify(loadedPlanned);
+          
           setObjects(loadedObjects);
           setHasImportedData(loadedObjects.length > 0);
           setPlannedProjects(loadedPlanned);
-          
-          // CRITICAL: Initialize sync refs with loaded data to prevent immediate re-sync
-          lastSyncedObjectsRef.current = JSON.stringify(loadedObjects);
-          lastSyncedPlannedRef.current = JSON.stringify(loadedPlanned);
           
           if (cloudData.settings) {
             applySettings(cloudData.settings);
           }
           // Note: For cloud users without settings, we use the default state values (empty strings)
           
+          initializationCompleteRef.current = true;
           setCloudDataLoaded(true);
           return; // Cloud users never load from localStorage
         } catch (e) {
           console.error("Error loading from cloud:", e);
           // Even on error, cloud users should not load other users' localStorage data
+          initializationCompleteRef.current = true;
           setCloudDataLoaded(true);
           return;
         }
@@ -4824,6 +4835,8 @@ export default function AstroTracker() {
           console.error("Error loading planned projects:", e);
         }
       }
+      
+      initializationCompleteRef.current = true;
     };
 
     loadData();
@@ -4873,7 +4886,7 @@ export default function AstroTracker() {
       }
     };
     loadEphemerisData();
-  }, [cloudSync.isCloudEnabled, cloudDataLoaded]);
+  }, []); // Empty deps - runs only once on mount
 
   // Load weather data when mainLocation changes (separate effect to avoid re-running settings load)
   useEffect(() => {
@@ -4899,18 +4912,24 @@ export default function AstroTracker() {
     loadWeatherData();
   }, [mainLocation?.coords]);
 
+  // Store cloudSync in a ref to avoid dependency issues in callbacks
+  const cloudSyncRef = useRef(cloudSync);
+  useEffect(() => {
+    cloudSyncRef.current = cloudSync;
+  }, [cloudSync]);
+
   // Function to perform immediate sync
   const performImmediateSync = useCallback(async () => {
-    if (!cloudSync.isCloudEnabled || !cloudDataLoaded || !pendingSyncDataRef.current) return;
+    if (!cloudSyncRef.current.isCloudEnabled || !cloudDataLoaded || !pendingSyncDataRef.current) return;
     
     const { objects: objData, planned, settings } = pendingSyncDataRef.current;
-    const synced = await cloudSync.saveToCloud(objData, planned, settings);
+    const synced = await cloudSyncRef.current.saveToCloud(objData, planned, settings);
     if (synced) {
       lastSyncedObjectsRef.current = JSON.stringify(objData);
       lastSyncedPlannedRef.current = JSON.stringify(planned);
       pendingSyncDataRef.current = null;
     }
-  }, [cloudSync, cloudDataLoaded]);
+  }, [cloudDataLoaded]);
 
   // Refs for settings to avoid including them in sync effect dependencies
   const settingsRef = useRef({
@@ -4946,11 +4965,12 @@ export default function AstroTracker() {
     };
   }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit]);
 
+
   // Auto-save objects and plannedProjects to cloud whenever they change
-  // IMPORTANT: Only trigger on data changes (objects/plannedProjects)
+  // IMPORTANT: Only trigger on data changes (objects/plannedProjects), not on cloudSync reference changes
   useEffect(() => {
-    // Skip if cloud is not enabled or data hasn't been loaded yet
-    if (!cloudSync.isCloudEnabled || !cloudDataLoaded) return;
+    // Skip if initialization is not complete or cloud is not enabled
+    if (!initializationCompleteRef.current || !cloudSyncRef.current.isCloudEnabled || !cloudDataLoaded) return;
     
     const objectsString = JSON.stringify(objects);
     const plannedString = JSON.stringify(plannedProjects);
@@ -4958,6 +4978,13 @@ export default function AstroTracker() {
     // Only sync if actual data changed from last known synced state
     const objectsChanged = objectsString !== lastSyncedObjectsRef.current;
     const plannedChanged = plannedString !== lastSyncedPlannedRef.current;
+    
+    console.log('[CloudSync] Change check:', { 
+      objectsChanged, 
+      plannedChanged,
+      objectsCount: objects.length,
+      plannedCount: plannedProjects.length
+    });
     
     // Skip if nothing changed
     if (!objectsChanged && !plannedChanged) {
@@ -4989,24 +5016,30 @@ export default function AstroTracker() {
     // Store pending data for potential flush on unmount
     pendingSyncDataRef.current = { objects, planned: plannedProjects, settings: settingsToSave };
     
+    // Capture current values for the async callback
+    const objectsToSave = [...objects];
+    const plannedToSave = [...plannedProjects];
+    const objectsStringToSave = objectsString;
+    const plannedStringToSave = plannedString;
+    
     // Debounce to prevent multiple rapid saves
     cloudSyncTimeoutRef.current = setTimeout(async () => {
       console.log('[CloudSync] Saving to cloud:', { 
-        objectsCount: objects.length, 
-        plannedCount: plannedProjects.length 
+        objectsCount: objectsToSave.length, 
+        plannedCount: plannedToSave.length 
       });
       
-      const synced = await cloudSync.saveToCloud(objects, plannedProjects, settingsToSave);
+      const synced = await cloudSyncRef.current.saveToCloud(objectsToSave, plannedToSave, settingsToSave);
       if (synced) {
         console.log('[CloudSync] Saved successfully');
-        lastSyncedObjectsRef.current = objectsString;
-        lastSyncedPlannedRef.current = plannedString;
+        lastSyncedObjectsRef.current = objectsStringToSave;
+        lastSyncedPlannedRef.current = plannedStringToSave;
         pendingSyncDataRef.current = null;
       } else {
         console.error('[CloudSync] Save failed');
       }
-    }, 2000);
-  }, [objects, plannedProjects, cloudSync.isCloudEnabled, cloudDataLoaded, cloudSync.saveToCloud]);
+    }, 1500);
+  }, [objects, plannedProjects, cloudDataLoaded]);
 
   // Auto-save to localStorage as backup
   useEffect(() => {
