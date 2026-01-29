@@ -10,3 +10,5 @@ export type { BetaUser } from './hooks/useBetaAuth';
 
 export { useCloudStorage } from './hooks/useCloudStorage';
 export { METRIC_EVENTS } from './hooks/useUsageMetrics';
+
+export { BetaProvider, useBetaContext, useBetaContextOptional } from './context/BetaContext';
