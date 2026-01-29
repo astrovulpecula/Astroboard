@@ -68,12 +68,22 @@ interface MetricSummary {
   topEvents: { event_type: string; count: number }[];
 }
 
+interface AppUsageMetrics {
+  totalImages: number;
+  totalObjects: number;
+  totalLights: number;
+  totalExposureHours: number;
+  topFilters: { filter: string; count: number }[];
+  topConstellations: { constellation: string; count: number }[];
+}
+
 export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'invitations' | 'users' | 'feedback' | 'metrics'>('invitations');
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [users, setUsers] = useState<BetaUserData[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [metrics, setMetrics] = useState<MetricSummary | null>(null);
+  const [appUsage, setAppUsage] = useState<AppUsageMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingInvite, setSendingInvite] = useState(false);
   const [newInviteEmail, setNewInviteEmail] = useState('');
@@ -122,7 +132,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const loadMetrics = async () => {
     const { data: metricsData } = await supabase
       .from('usage_metrics')
-      .select('event_type, session_id, user_id');
+      .select('event_type, session_id, user_id, event_data');
 
     if (metricsData) {
       const uniqueSessions = new Set(metricsData.map(m => m.session_id));
@@ -143,6 +153,62 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
         totalEvents: metricsData.length,
         uniqueUsers: uniqueUsers.size,
         topEvents,
+      });
+
+      // Calculate app usage metrics from event_data
+      let totalImages = 0;
+      let totalObjects = 0;
+      let totalLights = 0;
+      let totalExposureSeconds = 0;
+      const filterCounts: Record<string, number> = {};
+      const constellationCounts: Record<string, number> = {};
+
+      metricsData.forEach(m => {
+        const data = m.event_data as Record<string, any> | null;
+        if (!data) return;
+
+        // Count images
+        if (data.images_count) totalImages += Number(data.images_count) || 0;
+        if (data.image_uploaded) totalImages += 1;
+
+        // Count objects
+        if (data.objects_count) totalObjects = Math.max(totalObjects, Number(data.objects_count) || 0);
+        if (data.object_created) totalObjects += 1;
+
+        // Count lights and exposure
+        if (data.lights) totalLights += Number(data.lights) || 0;
+        if (data.exposure_seconds) totalExposureSeconds += Number(data.exposure_seconds) || 0;
+
+        // Track filters
+        if (data.filter) {
+          const filter = String(data.filter);
+          filterCounts[filter] = (filterCounts[filter] || 0) + 1;
+        }
+
+        // Track constellations
+        if (data.constellation) {
+          const constellation = String(data.constellation);
+          constellationCounts[constellation] = (constellationCounts[constellation] || 0) + 1;
+        }
+      });
+
+      const topFilters = Object.entries(filterCounts)
+        .map(([filter, count]) => ({ filter, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      const topConstellations = Object.entries(constellationCounts)
+        .map(([constellation, count]) => ({ constellation, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+      setAppUsage({
+        totalImages,
+        totalObjects,
+        totalLights,
+        totalExposureHours: Math.round((totalExposureSeconds / 3600) * 100) / 100,
+        topFilters,
+        topConstellations,
       });
     }
   };
@@ -456,22 +522,102 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
 
             {/* Metrics Tab */}
             {activeTab === 'metrics' && metrics && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Usuarios únicos</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.uniqueUsers}</p>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Sesiones totales</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.totalSessions}</p>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Eventos registrados</p>
-                    <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.totalEvents}</p>
+              <div className="space-y-6">
+                {/* Session Metrics */}
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Métricas de uso</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Usuarios únicos</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.uniqueUsers}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Sesiones totales</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.totalSessions}</p>
+                    </div>
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Eventos registrados</p>
+                      <p className="text-2xl font-bold text-slate-900 dark:text-white">{metrics.totalEvents}</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* App Usage Metrics */}
+                {appUsage && (
+                  <div>
+                    <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Métricas de contenido</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Imágenes subidas</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{appUsage.totalImages}</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Objetos creados</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{appUsage.totalObjects}</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Lights totales</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{appUsage.totalLights.toLocaleString()}</p>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Horas de exposición</p>
+                        <p className="text-2xl font-bold text-slate-900 dark:text-white">{appUsage.totalExposureHours}h</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Filters */}
+                {appUsage && appUsage.topFilters.length > 0 && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                    <h3 className="font-medium text-slate-900 dark:text-white mb-3">Filtros más usados</h3>
+                    <div className="space-y-2">
+                      {appUsage.topFilters.map((item, i) => (
+                        <div key={item.filter} className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500 dark:text-slate-400 w-6">{i + 1}.</span>
+                          <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-6 overflow-hidden">
+                            <div
+                              className="bg-purple-500 h-full rounded-full flex items-center px-2"
+                              style={{
+                                width: `${(item.count / appUsage.topFilters[0].count) * 100}%`,
+                              }}
+                            >
+                              <span className="text-xs text-white truncate">{item.filter}</span>
+                            </div>
+                          </div>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 w-12 text-right">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Constellations */}
+                {appUsage && appUsage.topConstellations.length > 0 && (
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+                    <h3 className="font-medium text-slate-900 dark:text-white mb-3">Constelaciones más fotografiadas</h3>
+                    <div className="space-y-2">
+                      {appUsage.topConstellations.map((item, i) => (
+                        <div key={item.constellation} className="flex items-center gap-3">
+                          <span className="text-sm text-slate-500 dark:text-slate-400 w-6">{i + 1}.</span>
+                          <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-6 overflow-hidden">
+                            <div
+                              className="bg-emerald-500 h-full rounded-full flex items-center px-2"
+                              style={{
+                                width: `${(item.count / appUsage.topConstellations[0].count) * 100}%`,
+                              }}
+                            >
+                              <span className="text-xs text-white truncate">{item.constellation}</span>
+                            </div>
+                          </div>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300 w-12 text-right">{item.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Top Events */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
                   <h3 className="font-medium text-slate-900 dark:text-white mb-3">Eventos más frecuentes</h3>
                   <div className="space-y-2">
