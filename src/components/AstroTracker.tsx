@@ -4680,10 +4680,6 @@ export default function AstroTracker() {
     theme: 'dark' as 'dark' | 'light',
   });
 
-  // Estado para el diálogo de salida
-  const [showExitDialog, setShowExitDialog] = useState(false);
-  const [pendingExit, setPendingExit] = useState(false);
-
   const cycleTheme = () => {
     setTheme((prev) => {
       if (prev === "dark") return "astro";
@@ -4969,23 +4965,6 @@ export default function AstroTracker() {
     setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [objects, plannedProjects, userName, cameras, telescopes, locations, mainLocation, guideTelescope, guideCamera, mount, dateFormat, defaultTheme, jsonPath, visibleHighlights, language]);
 
-  // Manejar cierre de página/app
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Solo mostrar aviso si hay datos
-      if (objects.length > 0 || plannedProjects.length > 0) {
-        e.preventDefault();
-        // Mostrar el diálogo personalizado
-        setShowExitDialog(true);
-        // El navegador mostrará su propio diálogo nativo además
-        e.returnValue = '';
-        return '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [objects.length, plannedProjects.length]);
 
   const filteredObjects = useMemo(() => {
     let filtered = objects;
@@ -6596,7 +6575,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No planning data yet. Import a JSON file to see your planned projects.' : 'No hay datos de planificación todavía. Importa un archivo JSON para ver tus proyectos planificados.'}
+                        {language === 'en' ? 'No planning data yet. Create your first planned project.' : 'No hay datos de planificación todavía. Crea tu primer proyecto planificado.'}
                       </p>
                     </Card>
                   ) : (
@@ -7218,7 +7197,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No objects yet. Import a JSON file or create your first object.' : 'No hay objetos todavía. Importa un archivo JSON o crea tu primer objeto.'}
+                        {language === 'en' ? 'No objects yet. Create your first object.' : 'No hay objetos todavía. Crea tu primer objeto.'}
                       </p>
                     </Card>
                   ) : (
@@ -7678,7 +7657,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No statistics yet. Import a JSON file to see your data.' : 'No hay estadísticas todavía. Importa un archivo JSON para ver tus datos.'}
+                        {language === 'en' ? 'No statistics yet. Create objects and sessions to see your data.' : 'No hay estadísticas todavía. Crea objetos y sesiones para ver tus datos.'}
                       </p>
                     </Card>
                   ) : (
@@ -8333,7 +8312,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <ImageIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No gallery images yet. Import a JSON file to see your rated photos.' : 'No hay imágenes en la galería todavía. Importa un archivo JSON para ver tus fotos valoradas.'}
+                        {language === 'en' ? 'No gallery images yet. Rate your photos to see them here.' : 'No hay imágenes en la galería todavía. Valora tus fotos para verlas aquí.'}
                       </p>
                     </Card>
                   ) : (
@@ -12242,31 +12221,6 @@ export default function AstroTracker() {
         )}
       </div>
 
-      {/* Exit Confirmation Dialog */}
-      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('exitConfirmTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('exitConfirmDescription')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => {
-              setShowExitDialog(false);
-            }}>
-              {t('exitClose')}
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => {
-              exportJsonData();
-              setShowExitDialog(false);
-            }}>
-              <Download className="w-4 h-4 mr-2" />
-              {t('exitDownload')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Footer */}
       <footer className="w-full py-4 text-center text-xs text-muted-foreground border-t border-border/50 mt-auto">
