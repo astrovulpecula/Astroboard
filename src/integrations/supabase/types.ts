@@ -14,16 +14,195 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      beta_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          payment_comment: string | null
+          payment_preference:
+            | Database["public"]["Enums"]["payment_preference"]
+            | null
+          rating: number | null
+          recommend_comment: string | null
+          user_id: string
+          what_liked: string | null
+          what_to_improve: string | null
+          would_recommend: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_comment?: string | null
+          payment_preference?:
+            | Database["public"]["Enums"]["payment_preference"]
+            | null
+          rating?: number | null
+          recommend_comment?: string | null
+          user_id: string
+          what_liked?: string | null
+          what_to_improve?: string | null
+          would_recommend?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_comment?: string | null
+          payment_preference?:
+            | Database["public"]["Enums"]["payment_preference"]
+            | null
+          rating?: number | null
+          recommend_comment?: string | null
+          user_id?: string
+          what_liked?: string | null
+          what_to_improve?: string | null
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "beta_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beta_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invitation_code: string
+          role: Database["public"]["Enums"]["beta_role"]
+          status: Database["public"]["Enums"]["invitation_status"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string
+          role?: Database["public"]["Enums"]["beta_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_code?: string
+          role?: Database["public"]["Enums"]["beta_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+        }
+        Relationships: []
+      }
+      beta_users: {
+        Row: {
+          created_at: string
+          email: string
+          first_login_at: string | null
+          gdpr_accepted: boolean
+          gdpr_accepted_at: string | null
+          id: string
+          invitation_id: string | null
+          last_login_at: string | null
+          role: Database["public"]["Enums"]["beta_role"]
+          user_id: string
+          welcome_shown: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_login_at?: string | null
+          gdpr_accepted?: boolean
+          gdpr_accepted_at?: string | null
+          id?: string
+          invitation_id?: string | null
+          last_login_at?: string | null
+          role?: Database["public"]["Enums"]["beta_role"]
+          user_id: string
+          welcome_shown?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_login_at?: string | null
+          gdpr_accepted?: boolean
+          gdpr_accepted_at?: string | null
+          id?: string
+          invitation_id?: string | null
+          last_login_at?: string | null
+          role?: Database["public"]["Enums"]["beta_role"]
+          user_id?: string
+          welcome_shown?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beta_users_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "beta_invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usage_metrics: {
+        Row: {
+          created_at: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          page_path: string | null
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          page_path?: string | null
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          page_path?: string | null
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_metrics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "beta_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_beta_role: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["beta_role"]
+      }
+      is_beta_admin: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      beta_role: "admin" | "tester"
+      invitation_status: "pending" | "accepted" | "expired"
+      payment_preference: "one_time" | "subscription" | "undecided"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +329,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      beta_role: ["admin", "tester"],
+      invitation_status: ["pending", "accepted", "expired"],
+      payment_preference: ["one_time", "subscription", "undecided"],
+    },
   },
 } as const
