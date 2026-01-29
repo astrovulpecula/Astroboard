@@ -4912,85 +4912,133 @@ export default function AstroTracker() {
     }
   }, [cloudSync, cloudDataLoaded]);
 
-  // Auto-save objects and plannedProjects to localStorage and cloud whenever they change
+  // Refs for settings to avoid including them in sync effect dependencies
+  const settingsRef = useRef({
+    defaultTheme,
+    jsonPath,
+    cameras,
+    telescopes,
+    mainLocation,
+    locations,
+    guideTelescope,
+    guideCamera,
+    mount,
+    userName,
+    dateFormat,
+    minAltitudeLimit,
+  });
+  
+  // Keep settingsRef up to date
   useEffect(() => {
-    const saveData = async () => {
-      const objectsString = JSON.stringify(objects);
-      const plannedString = JSON.stringify(plannedProjects);
-      const dataSizeKB = (objectsString.length * 2) / 1024;
+    settingsRef.current = {
+      defaultTheme,
+      jsonPath,
+      cameras,
+      telescopes,
+      mainLocation,
+      locations,
+      guideTelescope,
+      guideCamera,
+      mount,
+      userName,
+      dateFormat,
+      minAltitudeLimit,
+    };
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit]);
+
+  // Auto-save objects and plannedProjects to cloud whenever they change
+  // IMPORTANT: Only trigger on data changes (objects/plannedProjects)
+  useEffect(() => {
+    // Skip if cloud is not enabled or data hasn't been loaded yet
+    if (!cloudSync.isCloudEnabled || !cloudDataLoaded) return;
+    
+    const objectsString = JSON.stringify(objects);
+    const plannedString = JSON.stringify(plannedProjects);
+    
+    // Only sync if actual data changed from last known synced state
+    const objectsChanged = objectsString !== lastSyncedObjectsRef.current;
+    const plannedChanged = plannedString !== lastSyncedPlannedRef.current;
+    
+    // Skip if nothing changed
+    if (!objectsChanged && !plannedChanged) {
+      return;
+    }
+    
+    // Clear any pending timeout
+    if (cloudSyncTimeoutRef.current) {
+      clearTimeout(cloudSyncTimeoutRef.current);
+    }
+    
+    // Use current settings from ref
+    const currentSettings = settingsRef.current;
+    const settingsToSave = {
+      defaultTheme: currentSettings.defaultTheme,
+      jsonPath: currentSettings.jsonPath,
+      cameras: currentSettings.cameras.filter((c) => c.trim() !== ""),
+      telescopes: currentSettings.telescopes.filter((t) => t.name.trim() !== ""),
+      mainLocation: currentSettings.mainLocation,
+      locations: currentSettings.locations.filter((l) => l.name.trim() !== ""),
+      guideTelescope: currentSettings.guideTelescope,
+      guideCamera: currentSettings.guideCamera,
+      mount: currentSettings.mount,
+      userName: currentSettings.userName,
+      dateFormat: currentSettings.dateFormat,
+      minAltitudeLimit: currentSettings.minAltitudeLimit,
+    };
+    
+    // Store pending data for potential flush on unmount
+    pendingSyncDataRef.current = { objects, planned: plannedProjects, settings: settingsToSave };
+    
+    // Debounce to prevent multiple rapid saves
+    cloudSyncTimeoutRef.current = setTimeout(async () => {
+      console.log('[CloudSync] Saving to cloud:', { 
+        objectsCount: objects.length, 
+        plannedCount: plannedProjects.length 
+      });
       
-      // Always try to save to cloud first (no size limit issue)
-      if (cloudSync.isCloudEnabled && cloudDataLoaded) {
-        // Debounce cloud sync
-        if (cloudSyncTimeoutRef.current) {
-          clearTimeout(cloudSyncTimeoutRef.current);
-        }
-        
-        // Sync if objects OR plannedProjects changed
-        const objectsChanged = objectsString !== lastSyncedObjectsRef.current;
-        const plannedChanged = plannedString !== lastSyncedPlannedRef.current;
-        
-        if (objectsChanged || plannedChanged) {
-          const settings = {
-            defaultTheme,
-            jsonPath,
-            cameras: cameras.filter((c) => c.trim() !== ""),
-            telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-            mainLocation,
-            locations: locations.filter((l) => l.name.trim() !== ""),
-            guideTelescope,
-            guideCamera,
-            mount,
-            userName,
-            dateFormat,
-            minAltitudeLimit,
-          };
-          
-          // Store pending data for potential flush on unmount
-          pendingSyncDataRef.current = { objects, planned: plannedProjects, settings };
-          
-          cloudSyncTimeoutRef.current = setTimeout(async () => {
-            const synced = await cloudSync.saveToCloud(objects, plannedProjects, settings);
-            if (synced) {
-              lastSyncedObjectsRef.current = objectsString;
-              lastSyncedPlannedRef.current = plannedString;
-              pendingSyncDataRef.current = null;
-            }
-          }, 1500); // Debounce to 1.5 seconds
-        }
+      const synced = await cloudSync.saveToCloud(objects, plannedProjects, settingsToSave);
+      if (synced) {
+        console.log('[CloudSync] Saved successfully');
+        lastSyncedObjectsRef.current = objectsString;
+        lastSyncedPlannedRef.current = plannedString;
+        pendingSyncDataRef.current = null;
+      } else {
+        console.error('[CloudSync] Save failed');
       }
-      
-      // Also save to localStorage as backup (with size check)
-      if (dataSizeKB > 4096) {
-        console.warn(`Datos muy grandes para localStorage: ${(dataSizeKB / 1024).toFixed(2)}MB`);
-        // Don't show error if cloud is enabled - data is safe in cloud
+    }, 2000);
+  }, [objects, plannedProjects, cloudSync.isCloudEnabled, cloudDataLoaded, cloudSync.saveToCloud]);
+
+  // Auto-save to localStorage as backup
+  useEffect(() => {
+    const objectsString = JSON.stringify(objects);
+    const dataSizeKB = (objectsString.length * 2) / 1024;
+    
+    if (dataSizeKB > 4096) {
+      console.warn(`Datos muy grandes para localStorage: ${(dataSizeKB / 1024).toFixed(2)}MB`);
+      if (!cloudSync.isCloudEnabled) {
+        toast({
+          title: "Datos demasiado grandes",
+          description: `Los datos ocupan ${(dataSizeKB / 1024).toFixed(2)}MB. El límite del navegador es ~5MB.`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    safeLocalStorageSave(
+      "astroTrackerData",
+      objectsString,
+      (warningMessage) => {
         if (!cloudSync.isCloudEnabled) {
           toast({
-            title: "Datos demasiado grandes",
-            description: `Los datos ocupan ${(dataSizeKB / 1024).toFixed(2)}MB. El límite del navegador es ~5MB.`,
+            title: "Aviso de almacenamiento",
+            description: warningMessage,
             variant: "destructive",
           });
         }
-        return;
       }
-      
-      await safeLocalStorageSave(
-        "astroTrackerData",
-        objectsString,
-        (warningMessage) => {
-          if (!cloudSync.isCloudEnabled) {
-            toast({
-              title: "Aviso de almacenamiento",
-              description: warningMessage,
-              variant: "destructive",
-            });
-          }
-        }
-      );
-    };
-    
-    saveData();
-  }, [objects, plannedProjects, toast, cloudSync.isCloudEnabled, cloudDataLoaded, defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, cloudSync]);
+    );
+  }, [objects, toast, cloudSync.isCloudEnabled]);
 
   // Auto-save planned projects to localStorage
   useEffect(() => {
