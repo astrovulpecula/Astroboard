@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateJsonUpload } from "@/lib/json-validation";
 import { safeLocalStorageSave, checkStorageQuota, formatBytes } from "@/lib/storage-utils";
 import { useLanguage } from "@/hooks/use-language";
+import { useCloudSync } from "@/hooks/useCloudSync";
 import { Language } from "@/lib/i18n";
 import {
   Plus,
@@ -4533,8 +4534,11 @@ export default function AstroTracker() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { language, setLanguage, t } = useLanguage();
+  const cloudSync = useCloudSync();
+  
   // TODOS los useState deben ir juntos al principio
   const [objects, setObjects] = useState(sample);
+  const [cloudDataLoaded, setCloudDataLoaded] = useState(false);
   const [view, setView] = useState("objects");
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -4687,14 +4691,11 @@ export default function AstroTracker() {
     });
   };
 
-  // Load settings and data from localStorage on mount
+  // Load settings and data from localStorage or cloud on mount
   useEffect(() => {
-    const savedSettings = localStorage.getItem("astroTrackerSettings");
-    const savedData = localStorage.getItem("astroTrackerData");
-
-    if (savedSettings) {
-      try {
-        const settings = JSON.parse(savedSettings);
+    const loadData = async () => {
+      // Helper to apply settings
+      const applySettings = (settings: any) => {
         if (settings.defaultTheme) {
           setDefaultTheme(settings.defaultTheme);
           setTheme(settings.defaultTheme);
@@ -4711,44 +4712,83 @@ export default function AstroTracker() {
         if (settings.mount) setMount(settings.mount);
         if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
-      } catch (e) {
-        console.error("Error loading settings:", e);
-      }
-    }
+      };
 
-    // Load data from localStorage if exists
-    if (savedData && savedData !== "[]") {
-      try {
-        const data = JSON.parse(savedData);
-        if (Array.isArray(data) && data.length > 0) {
-          setObjects(data);
-          setHasImportedData(true);
-        } else {
-          // No data but don't show JSON import modal - user can create first object
+      // Try to load from cloud first if enabled
+      if (cloudSync.isCloudEnabled && !cloudDataLoaded) {
+        try {
+          const cloudData = await cloudSync.loadFromCloud();
+          
+          if (cloudData.objects && Array.isArray(cloudData.objects) && cloudData.objects.length > 0) {
+            setObjects(cloudData.objects);
+            setHasImportedData(true);
+          }
+          
+          if (cloudData.planned && Array.isArray(cloudData.planned)) {
+            setPlannedProjects(cloudData.planned);
+          }
+          
+          if (cloudData.settings) {
+            applySettings(cloudData.settings);
+          }
+          
+          setCloudDataLoaded(true);
+          
+          // If cloud had data, we're done
+          if (cloudData.objects && cloudData.objects.length > 0) {
+            return;
+          }
+        } catch (e) {
+          console.error("Error loading from cloud:", e);
+        }
+      }
+
+      // Fallback to localStorage
+      const savedSettings = localStorage.getItem("astroTrackerSettings");
+      const savedData = localStorage.getItem("astroTrackerData");
+
+      if (savedSettings) {
+        try {
+          const settings = JSON.parse(savedSettings);
+          applySettings(settings);
+        } catch (e) {
+          console.error("Error loading settings:", e);
+        }
+      }
+
+      // Load data from localStorage if exists
+      if (savedData && savedData !== "[]") {
+        try {
+          const data = JSON.parse(savedData);
+          if (Array.isArray(data) && data.length > 0) {
+            setObjects(data);
+            setHasImportedData(true);
+          } else {
+            setHasImportedData(false);
+          }
+        } catch (e) {
+          console.error("Error loading data:", e);
           setHasImportedData(false);
         }
-      } catch (e) {
-        console.error("Error loading data:", e);
+      } else {
         setHasImportedData(false);
       }
-    } else {
-      // No saved data - don't show JSON import modal, just start with empty state
-      setHasImportedData(false);
-    }
 
-    // Load planned projects from localStorage
-    const savedPlanned = localStorage.getItem("astroTrackerPlannedProjects");
-    if (savedPlanned) {
-      try {
-        const planned = JSON.parse(savedPlanned);
-        if (Array.isArray(planned)) {
-          setPlannedProjects(planned);
+      // Load planned projects from localStorage
+      const savedPlanned = localStorage.getItem("astroTrackerPlannedProjects");
+      if (savedPlanned) {
+        try {
+          const planned = JSON.parse(savedPlanned);
+          if (Array.isArray(planned)) {
+            setPlannedProjects(planned);
+          }
+        } catch (e) {
+          console.error("Error loading planned projects:", e);
         }
-      } catch (e) {
-        console.error("Error loading planned projects:", e);
       }
-    }
-    // No planned projects is fine, don't show modal
+    };
+
+    loadData();
 
     // Load ephemeris data
     const loadEphemerisData = async () => {
@@ -4795,7 +4835,7 @@ export default function AstroTracker() {
       }
     };
     loadEphemerisData();
-  }, []);
+  }, [cloudSync.isCloudEnabled, cloudDataLoaded]);
 
   // Load weather data when mainLocation changes (separate effect to avoid re-running settings load)
   useEffect(() => {
@@ -4821,51 +4861,94 @@ export default function AstroTracker() {
     loadWeatherData();
   }, [mainLocation?.coords]);
 
-  // Auto-save objects to localStorage whenever they change
+  // Ref for debounced cloud sync
+  const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncedDataRef = useRef<string>("");
+
+  // Auto-save objects to localStorage and cloud whenever they change
   useEffect(() => {
     const saveData = async () => {
       const dataString = JSON.stringify(objects);
       const dataSizeKB = (dataString.length * 2) / 1024;
       
-      // Check if data is too large (localStorage limit ~5MB = 5120KB, warn at 4MB)
-      if (dataSizeKB > 4096) {
-        console.warn(`Datos muy grandes para localStorage: ${(dataSizeKB / 1024).toFixed(2)}MB`);
-        toast({
-          title: "Datos demasiado grandes",
-          description: `Los datos ocupan ${(dataSizeKB / 1024).toFixed(2)}MB. El límite del navegador es ~5MB. Considera eliminar algunas imágenes. Los datos están en memoria pero no se guardarán automáticamente.`,
-          variant: "destructive",
-        });
-        return;
+      // Always try to save to cloud first (no size limit issue)
+      if (cloudSync.isCloudEnabled && cloudDataLoaded) {
+        // Debounce cloud sync
+        if (cloudSyncTimeoutRef.current) {
+          clearTimeout(cloudSyncTimeoutRef.current);
+        }
+        
+        // Only sync if data actually changed
+        if (dataString !== lastSyncedDataRef.current) {
+          cloudSyncTimeoutRef.current = setTimeout(async () => {
+            const settings = {
+              defaultTheme,
+              jsonPath,
+              cameras: cameras.filter((c) => c.trim() !== ""),
+              telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+              mainLocation,
+              locations: locations.filter((l) => l.name.trim() !== ""),
+              guideTelescope,
+              guideCamera,
+              mount,
+              userName,
+              dateFormat,
+              minAltitudeLimit,
+            };
+            
+            const synced = await cloudSync.saveToCloud(objects, plannedProjects, settings);
+            if (synced) {
+              lastSyncedDataRef.current = dataString;
+            }
+          }, 3000); // Debounce by 3 seconds
+        }
       }
       
-      const saved = await safeLocalStorageSave(
-        "astroTrackerData",
-        dataString,
-        (warningMessage) => {
+      // Also save to localStorage as backup (with size check)
+      if (dataSizeKB > 4096) {
+        console.warn(`Datos muy grandes para localStorage: ${(dataSizeKB / 1024).toFixed(2)}MB`);
+        // Don't show error if cloud is enabled - data is safe in cloud
+        if (!cloudSync.isCloudEnabled) {
           toast({
-            title: "Aviso de almacenamiento",
-            description: warningMessage,
+            title: "Datos demasiado grandes",
+            description: `Los datos ocupan ${(dataSizeKB / 1024).toFixed(2)}MB. El límite del navegador es ~5MB.`,
             variant: "destructive",
           });
         }
-      );
-      
-      if (!saved) {
-        toast({
-          title: "Error de almacenamiento",
-          description: "No se pudieron guardar los datos. Exporta tu proyecto para evitar pérdida de datos. Los datos están en memoria pero no se guardarán automáticamente.",
-          variant: "destructive",
-        });
+        return;
       }
+      
+      await safeLocalStorageSave(
+        "astroTrackerData",
+        dataString,
+        (warningMessage) => {
+          if (!cloudSync.isCloudEnabled) {
+            toast({
+              title: "Aviso de almacenamiento",
+              description: warningMessage,
+              variant: "destructive",
+            });
+          }
+        }
+      );
     };
     
     saveData();
-  }, [objects, toast]);
+  }, [objects, toast, cloudSync.isCloudEnabled, cloudDataLoaded, defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, plannedProjects]);
 
   // Auto-save planned projects to localStorage
   useEffect(() => {
     localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(plannedProjects));
   }, [plannedProjects]);
+
+  // Cleanup cloud sync timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (cloudSyncTimeoutRef.current) {
+        clearTimeout(cloudSyncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Save settings to localStorage
   const saveSettings = useCallback(async () => {

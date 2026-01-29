@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BETA_CONFIG } from '../config';
 import { useBetaAuth, type BetaUser } from '../hooks/useBetaAuth';
 import { useUsageMetrics } from '../hooks/useUsageMetrics';
+import { BetaProvider } from '../context/BetaContext';
 import { BetaAuthPage } from './BetaAuthPage';
 import { GdprModal } from './GdprModal';
 import { WelcomeModal } from './WelcomeModal';
@@ -98,7 +99,7 @@ export function BetaGate({ children }: BetaGateProps) {
 
   // Authenticated and ready - render app with beta features
   return (
-    <>
+    <BetaProvider betaUser={betaUser} isAdmin={isAdmin}>
       {/* Admin button */}
       {isAdmin && (
         <button
@@ -120,7 +121,7 @@ export function BetaGate({ children }: BetaGateProps) {
 
       {/* App content */}
       {children}
-    </>
+    </BetaProvider>
   );
 }
 
