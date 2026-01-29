@@ -128,26 +128,29 @@ export function useBetaAuth(): UseBetaAuthReturn {
 
   const signUp = async (email: string, password: string, invitationCode: string) => {
     try {
-      // Verify invitation exists and is valid
-      const { data: invitation, error: invError } = await supabase
-        .from('beta_invitations')
-        .select('*')
-        .eq('invitation_code', invitationCode)
-        .eq('status', 'pending')
-        .maybeSingle();
+      // Verify invitation via secure edge function (no direct table access)
+      const verifyResponse = await supabase.functions.invoke('verify-invitation', {
+        body: { invitation_code: invitationCode, email },
+      });
 
-      if (invError || !invitation) {
-        return { error: new Error('Código de invitación inválido o expirado') };
+      if (verifyResponse.error) {
+        console.error('Invitation verification failed:', verifyResponse.error);
+        return { error: new Error('Error al verificar la invitación') };
       }
 
-      if (invitation.email.toLowerCase() !== email.toLowerCase()) {
-        return { error: new Error('El email no coincide con la invitación') };
+      const verifyData = verifyResponse.data as {
+        valid: boolean;
+        invitation_id?: string;
+        role?: string;
+        error?: string;
+      };
+
+      if (!verifyData.valid) {
+        return { error: new Error(verifyData.error || 'Código de invitación inválido') };
       }
 
-      // Check expiration
-      if (new Date(invitation.expires_at) < new Date()) {
-        return { error: new Error('La invitación ha expirado') };
-      }
+      const invitationId = verifyData.invitation_id;
+      const invitationRole = verifyData.role;
 
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -172,8 +175,8 @@ export function useBetaAuth(): UseBetaAuthReturn {
         .insert({
           user_id: authData.user.id,
           email: email.toLowerCase(),
-          role: invitation.role,
-          invitation_id: invitation.id,
+          role: invitationRole as 'admin' | 'tester',
+          invitation_id: invitationId,
           first_login_at: new Date().toISOString(),
           last_login_at: new Date().toISOString(),
         });
@@ -183,14 +186,14 @@ export function useBetaAuth(): UseBetaAuthReturn {
         return { error: new Error('Error al crear el perfil de beta') };
       }
 
-      // Mark invitation as accepted
+      // Mark invitation as accepted via admin policy (user is now authenticated)
       await supabase
         .from('beta_invitations')
         .update({
           status: 'accepted',
           accepted_at: new Date().toISOString(),
         })
-        .eq('id', invitation.id);
+        .eq('id', invitationId);
 
       return { error: null };
     } catch (err) {
