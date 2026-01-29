@@ -4895,7 +4895,8 @@ export default function AstroTracker() {
 
   // Ref for debounced cloud sync
   const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSyncedDataRef = useRef<string>("");
+  const lastSyncedObjectsRef = useRef<string>("");
+  const lastSyncedPlannedRef = useRef<string>("");
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
 
   // Function to perform immediate sync
@@ -4905,16 +4906,18 @@ export default function AstroTracker() {
     const { objects: objData, planned, settings } = pendingSyncDataRef.current;
     const synced = await cloudSync.saveToCloud(objData, planned, settings);
     if (synced) {
-      lastSyncedDataRef.current = JSON.stringify(objData);
+      lastSyncedObjectsRef.current = JSON.stringify(objData);
+      lastSyncedPlannedRef.current = JSON.stringify(planned);
       pendingSyncDataRef.current = null;
     }
   }, [cloudSync, cloudDataLoaded]);
 
-  // Auto-save objects to localStorage and cloud whenever they change
+  // Auto-save objects and plannedProjects to localStorage and cloud whenever they change
   useEffect(() => {
     const saveData = async () => {
-      const dataString = JSON.stringify(objects);
-      const dataSizeKB = (dataString.length * 2) / 1024;
+      const objectsString = JSON.stringify(objects);
+      const plannedString = JSON.stringify(plannedProjects);
+      const dataSizeKB = (objectsString.length * 2) / 1024;
       
       // Always try to save to cloud first (no size limit issue)
       if (cloudSync.isCloudEnabled && cloudDataLoaded) {
@@ -4923,8 +4926,11 @@ export default function AstroTracker() {
           clearTimeout(cloudSyncTimeoutRef.current);
         }
         
-        // Only sync if data actually changed
-        if (dataString !== lastSyncedDataRef.current) {
+        // Sync if objects OR plannedProjects changed
+        const objectsChanged = objectsString !== lastSyncedObjectsRef.current;
+        const plannedChanged = plannedString !== lastSyncedPlannedRef.current;
+        
+        if (objectsChanged || plannedChanged) {
           const settings = {
             defaultTheme,
             jsonPath,
@@ -4946,10 +4952,11 @@ export default function AstroTracker() {
           cloudSyncTimeoutRef.current = setTimeout(async () => {
             const synced = await cloudSync.saveToCloud(objects, plannedProjects, settings);
             if (synced) {
-              lastSyncedDataRef.current = dataString;
+              lastSyncedObjectsRef.current = objectsString;
+              lastSyncedPlannedRef.current = plannedString;
               pendingSyncDataRef.current = null;
             }
-          }, 1500); // Reduced debounce to 1.5 seconds for faster sync
+          }, 1500); // Debounce to 1.5 seconds
         }
       }
       
@@ -4969,7 +4976,7 @@ export default function AstroTracker() {
       
       await safeLocalStorageSave(
         "astroTrackerData",
-        dataString,
+        objectsString,
         (warningMessage) => {
           if (!cloudSync.isCloudEnabled) {
             toast({
@@ -4983,7 +4990,7 @@ export default function AstroTracker() {
     };
     
     saveData();
-  }, [objects, toast, cloudSync.isCloudEnabled, cloudDataLoaded, defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, plannedProjects]);
+  }, [objects, plannedProjects, toast, cloudSync.isCloudEnabled, cloudDataLoaded, defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, cloudSync]);
 
   // Auto-save planned projects to localStorage
   useEffect(() => {
@@ -5194,7 +5201,7 @@ export default function AstroTracker() {
   ]);
 
   const addObj = useCallback(
-    (base: any) => {
+    async (base: any) => {
       if (!base.id || !base.id.trim()) {
         alert("Debes proporcionar un código para el objeto.");
         return;
@@ -5203,13 +5210,23 @@ export default function AstroTracker() {
         alert("Ya existe un objeto con ese código.");
         return;
       }
-      const no = { ...base, id: base.id.trim(), createdAt: new Date().toISOString(), projects: [], image: undefined };
+      
+      // Upload image to cloud if provided
+      let imageUrl = undefined;
+      if (base.image && cloudSync.isCloudEnabled) {
+        const imageName = `object-${base.id.trim()}-${Date.now()}.jpg`;
+        imageUrl = await cloudSync.uploadImageToCloud(base.image, imageName);
+      } else if (base.image) {
+        imageUrl = base.image;
+      }
+      
+      const no = { ...base, id: base.id.trim(), createdAt: new Date().toISOString(), projects: [], image: imageUrl };
       setObjects([...objects, no]);
       setSelectedObjectId(no.id);
       setMObj(false);
       setView("projects");
     },
-    [objects],
+    [objects, cloudSync],
   );
 
   const delObj = useCallback(
@@ -5548,6 +5565,54 @@ export default function AstroTracker() {
       );
     },
     [objects, obj, proj, cloudSync],
+  );
+
+  // Add planned project with cloud image upload
+  const addPlannedProject = useCallback(
+    async (planned: any) => {
+      let processedPlanned = { ...planned };
+      
+      // Upload images to cloud if enabled
+      if (cloudSync.isCloudEnabled) {
+        if (planned.encuadreImage && planned.encuadreImage.startsWith('data:')) {
+          const imageName = `planned-encuadre-${planned.id}-${Date.now()}.jpg`;
+          const cloudUrl = await cloudSync.uploadImageToCloud(planned.encuadreImage, imageName);
+          processedPlanned.encuadreImage = cloudUrl;
+        }
+        if (planned.objectImage && planned.objectImage.startsWith('data:')) {
+          const imageName = `planned-object-${planned.id}-${Date.now()}.jpg`;
+          const cloudUrl = await cloudSync.uploadImageToCloud(planned.objectImage, imageName);
+          processedPlanned.objectImage = cloudUrl;
+        }
+      }
+      
+      setPlannedProjects(prev => [...prev, processedPlanned]);
+    },
+    [cloudSync]
+  );
+
+  // Update planned project with cloud image upload
+  const updatePlannedProject = useCallback(
+    async (updated: any) => {
+      let processedUpdated = { ...updated };
+      
+      // Upload images to cloud if enabled
+      if (cloudSync.isCloudEnabled) {
+        if (updated.encuadreImage && updated.encuadreImage.startsWith('data:')) {
+          const imageName = `planned-encuadre-${updated.id}-${Date.now()}.jpg`;
+          const cloudUrl = await cloudSync.uploadImageToCloud(updated.encuadreImage, imageName);
+          processedUpdated.encuadreImage = cloudUrl;
+        }
+        if (updated.objectImage && updated.objectImage.startsWith('data:')) {
+          const imageName = `planned-object-${updated.id}-${Date.now()}.jpg`;
+          const cloudUrl = await cloudSync.uploadImageToCloud(updated.objectImage, imageName);
+          processedUpdated.objectImage = cloudUrl;
+        }
+      }
+      
+      setPlannedProjects(prev => prev.map(p => p.id === updated.id ? processedUpdated : p));
+    },
+    [cloudSync]
   );
 
   const updateRating = useCallback(
@@ -10882,8 +10947,8 @@ export default function AstroTracker() {
           title="Nueva planificación"
         >
           <FPlanned 
-            onSubmit={(planned) => {
-              setPlannedProjects([...plannedProjects, planned]);
+            onSubmit={async (planned) => {
+              await addPlannedProject(planned);
               setMPlanned(false);
             }}
             locations={locations}
@@ -10903,10 +10968,8 @@ export default function AstroTracker() {
             return (
               <FPlannedEdit
                 initial={plannedToEdit}
-                onSubmit={(updated) => {
-                  setPlannedProjects(plannedProjects.map(p => 
-                    p.id === editingPlannedId ? updated : p
-                  ));
+                onSubmit={async (updated) => {
+                  await updatePlannedProject({ ...updated, id: editingPlannedId });
                   setEditingPlannedId(null);
                 }}
                 onCancel={() => setEditingPlannedId(null)}
