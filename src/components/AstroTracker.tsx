@@ -4720,10 +4720,16 @@ export default function AstroTracker() {
   const lastSyncedObjectsRef = useRef<string>("");
   const lastSyncedPlannedRef = useRef<string>("");
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
+  
+  // Track the loaded cloud data to prevent overwriting with empty state
+  const cloudLoadedDataRef = useRef<{ objects: any[] | null; planned: any[] | null }>({ objects: null, planned: null });
 
   // Ref to track if initialization has STARTED (sync) and COMPLETED (async)
   const initializationStartedRef = useRef(false);
   const initializationCompleteRef = useRef(false);
+  
+  // Track if we've received any user interaction that modifies data
+  const userHasModifiedDataRef = useRef(false);
 
   // Load settings and data from localStorage or cloud on mount
   useEffect(() => {
@@ -4779,6 +4785,9 @@ export default function AstroTracker() {
           lastSyncedObjectsRef.current = objectsRefValue;
           lastSyncedPlannedRef.current = plannedRefValue;
           
+          // Store the loaded data to verify against later
+          cloudLoadedDataRef.current = { objects: loadedObjects, planned: loadedPlanned };
+          
           console.log('[Init] Refs set:', { 
             objectsRefLength: objectsRefValue.length,
             plannedRefLength: plannedRefValue.length 
@@ -4794,6 +4803,7 @@ export default function AstroTracker() {
           // Note: For cloud users without settings, we use the default state values (empty strings)
           
           initializationCompleteRef.current = true;
+          userHasModifiedDataRef.current = false; // Reset - no user modifications yet
           setCloudDataLoaded(true);
           return; // Cloud users never load from localStorage
         } catch (e) {
@@ -4997,14 +5007,27 @@ export default function AstroTracker() {
       plannedChanged,
       objectsCount: objects.length,
       plannedCount: plannedProjects.length,
-      currentObjectsLength: objectsString.length,
-      lastSyncedObjectsLength: lastSyncedObjectsRef.current.length,
-      areEqual: objectsString === lastSyncedObjectsRef.current
+      userHasModified: userHasModifiedDataRef.current
     });
     
     // Skip if nothing changed
     if (!objectsChanged && !plannedChanged) {
       return;
+    }
+    
+    // SAFETY CHECK: Prevent saving empty data unless user explicitly made changes
+    // This protects against React StrictMode race conditions
+    if (!userHasModifiedDataRef.current) {
+      const cloudHadObjects = (cloudLoadedDataRef.current.objects?.length || 0) > 0;
+      const cloudHadPlanned = (cloudLoadedDataRef.current.planned?.length || 0) > 0;
+      const currentHasNoObjects = objects.length === 0;
+      const currentHasNoPlanned = plannedProjects.length === 0;
+      
+      // If cloud had data but current state is empty, and user hasn't modified anything, DON'T save
+      if ((cloudHadObjects && currentHasNoObjects) || (cloudHadPlanned && currentHasNoPlanned)) {
+        console.log('[CloudSync] BLOCKED: Preventing save of empty data over existing cloud data (no user modifications detected)');
+        return;
+      }
     }
     
     // Clear any pending timeout
@@ -5318,6 +5341,7 @@ export default function AstroTracker() {
       }
       
       const no = { ...base, id: base.id.trim(), createdAt: new Date().toISOString(), projects: [], image: imageUrl };
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects([...objects, no]);
       setSelectedObjectId(no.id);
       setMObj(false);
@@ -5329,6 +5353,7 @@ export default function AstroTracker() {
   const delObj = useCallback(
     (id: string) => {
       if (!confirm("¿Eliminar este objeto?")) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       const newObjects = objects.filter((o) => o.id !== id);
       setObjects(newObjects);
       if (selectedObjectId === id) {
@@ -5367,6 +5392,7 @@ export default function AstroTracker() {
         images,
         ratings: {},
       };
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(objects.map((o) => (o.id === obj.id ? { ...o, projects: [...o.projects, np] } : o)));
       setSelectedProjectId(np.id);
       setMProj(false);
@@ -5378,6 +5404,7 @@ export default function AstroTracker() {
   const updateProj = useCallback(
     (pid: string, updates: any) => {
       if (!obj) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o) =>
           o.id !== obj.id
@@ -5507,6 +5534,7 @@ export default function AstroTracker() {
 
       console.log("Adding session:", s);
 
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o: any) =>
           o.id !== obj.id
@@ -5540,6 +5568,7 @@ export default function AstroTracker() {
   const editSession = useCallback(
     (sid: string, data: any) => {
       if (!obj || !proj) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o: any) =>
           o.id !== obj.id
@@ -5571,6 +5600,7 @@ export default function AstroTracker() {
     (sid: string) => {
       if (!confirm("¿Eliminar sesión?")) return;
       if (!obj || !proj) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o: any) =>
           o.id !== obj.id
@@ -5601,6 +5631,7 @@ export default function AstroTracker() {
   const delProj = useCallback(
     (pid: string) => {
       if (!obj || !confirm("¿Eliminar proyecto?")) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o) => (o.id !== obj.id ? o : { ...o, projects: o.projects.filter((p) => p.id !== pid) })),
       );
@@ -5615,6 +5646,7 @@ export default function AstroTracker() {
   const upObjImg = useCallback(
     async (oid: string, img: string | null) => {
       if (!img) {
+        userHasModifiedDataRef.current = true; // Mark as user modification
         setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: null })));
         return;
       }
@@ -5623,8 +5655,10 @@ export default function AstroTracker() {
       if (cloudSync.isCloudEnabled && img.startsWith('data:')) {
         const imageName = `object-${oid}-${Date.now()}.jpg`;
         const cloudUrl = await cloudSync.uploadImageToCloud(img, imageName);
+        userHasModifiedDataRef.current = true; // Mark as user modification
         setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: cloudUrl })));
       } else {
+        userHasModifiedDataRef.current = true; // Mark as user modification
         setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: img })));
       }
     },
@@ -5648,6 +5682,7 @@ export default function AstroTracker() {
         }
       }
       
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o) =>
           o.id !== obj.id
@@ -5683,6 +5718,7 @@ export default function AstroTracker() {
         }
       }
       
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setPlannedProjects(prev => [...prev, processedPlanned]);
     },
     [cloudSync]
@@ -5707,6 +5743,7 @@ export default function AstroTracker() {
         }
       }
       
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setPlannedProjects(prev => prev.map(p => p.id === updated.id ? processedUpdated : p));
     },
     [cloudSync]
@@ -5715,6 +5752,7 @@ export default function AstroTracker() {
   const updateRating = useCallback(
     (keyName: string, rating: number) => {
       if (!obj || !proj) return;
+      userHasModifiedDataRef.current = true; // Mark as user modification
       setObjects(
         objects.map((o) =>
           o.id !== obj.id
@@ -6484,6 +6522,7 @@ export default function AstroTracker() {
                       return obj;
                     });
 
+                    userHasModifiedDataRef.current = true; // Mark as user modification (import)
                     setObjects(processedObjects);
 
                     // Restaurar settings si existen
@@ -6549,6 +6588,7 @@ export default function AstroTracker() {
 
                     // Restaurar plannedProjects si existen
                     if (json.plannedProjects && Array.isArray(json.plannedProjects)) {
+                      userHasModifiedDataRef.current = true; // Mark as user modification (import)
                       setPlannedProjects(json.plannedProjects);
                       localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(json.plannedProjects));
                     }
@@ -7275,6 +7315,7 @@ export default function AstroTracker() {
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (confirm("¿Eliminar este proyecto planificado?")) {
+                                        userHasModifiedDataRef.current = true; // Mark as user modification
                                         setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
                                       }
                                     }}
@@ -11021,6 +11062,7 @@ export default function AstroTracker() {
               addProj(projData);
               // If created from a planned project, remove it and add encuadre image
               if (plannedFromPlan) {
+                userHasModifiedDataRef.current = true; // Mark as user modification
                 setPlannedProjects(plannedProjects.filter((p) => p.id !== plannedFromPlan.id));
                 setPlannedFromPlan(null);
               }
