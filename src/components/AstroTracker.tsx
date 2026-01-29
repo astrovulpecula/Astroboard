@@ -4715,6 +4715,12 @@ export default function AstroTracker() {
     });
   };
 
+  // Refs for debounced cloud sync - declared before useEffect that uses them
+  const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncedObjectsRef = useRef<string>("");
+  const lastSyncedPlannedRef = useRef<string>("");
+  const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
+
   // Load settings and data from localStorage or cloud on mount
   useEffect(() => {
     const loadData = async () => {
@@ -4745,20 +4751,20 @@ export default function AstroTracker() {
           
           // For cloud users, ONLY use cloud data - never fall back to localStorage
           // This ensures data isolation between users on the same browser
-          if (cloudData.objects && Array.isArray(cloudData.objects) && cloudData.objects.length > 0) {
-            setObjects(cloudData.objects);
-            setHasImportedData(true);
-          } else {
-            // Cloud user with no data = start fresh with empty state
-            setObjects([]);
-            setHasImportedData(false);
-          }
+          const loadedObjects = (cloudData.objects && Array.isArray(cloudData.objects)) 
+            ? cloudData.objects 
+            : [];
+          const loadedPlanned = (cloudData.planned && Array.isArray(cloudData.planned)) 
+            ? cloudData.planned 
+            : [];
           
-          if (cloudData.planned && Array.isArray(cloudData.planned)) {
-            setPlannedProjects(cloudData.planned);
-          } else {
-            setPlannedProjects([]);
-          }
+          setObjects(loadedObjects);
+          setHasImportedData(loadedObjects.length > 0);
+          setPlannedProjects(loadedPlanned);
+          
+          // CRITICAL: Initialize sync refs with loaded data to prevent immediate re-sync
+          lastSyncedObjectsRef.current = JSON.stringify(loadedObjects);
+          lastSyncedPlannedRef.current = JSON.stringify(loadedPlanned);
           
           if (cloudData.settings) {
             applySettings(cloudData.settings);
@@ -4892,12 +4898,6 @@ export default function AstroTracker() {
     };
     loadWeatherData();
   }, [mainLocation?.coords]);
-
-  // Ref for debounced cloud sync
-  const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSyncedObjectsRef = useRef<string>("");
-  const lastSyncedPlannedRef = useRef<string>("");
-  const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
 
   // Function to perform immediate sync
   const performImmediateSync = useCallback(async () => {
