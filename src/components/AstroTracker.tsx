@@ -379,10 +379,11 @@ const ObjectThumbnail = ({
 }: {
   objectId: string;
   displayImage: string | null;
-  onUpload: (id: string, url: string) => void;
+  onUpload: (id: string, url: string) => Promise<void> | void;
   onDelete: (id: string) => void;
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -402,10 +403,52 @@ const ObjectThumbnail = ({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
+      setIsUploading(true);
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            const maxDim = 800;
+            let w = img.width,
+              h = img.height;
+            if (w > h) {
+              if (w > maxDim) {
+                h *= maxDim / w;
+                w = maxDim;
+              }
+            } else {
+              if (h > maxDim) {
+                w *= maxDim / h;
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            ctx?.drawImage(img, 0, 0, w, h);
+            resolve();
+          };
+        });
+        const url = canvas.toDataURL("image/jpeg", 0.8);
+        await onUpload(objectId, url);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setIsUploading(true);
+    try {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       const img = new Image();
-      img.src = URL.createObjectURL(file);
+      img.src = URL.createObjectURL(f);
       await new Promise<void>((resolve) => {
         img.onload = () => {
           const maxDim = 800;
@@ -429,42 +472,10 @@ const ObjectThumbnail = ({
         };
       });
       const url = canvas.toDataURL("image/jpeg", 0.8);
-      onUpload(objectId, url);
+      await onUpload(objectId, url);
+    } finally {
+      setIsUploading(false);
     }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const img = new Image();
-    img.src = URL.createObjectURL(f);
-    await new Promise<void>((resolve) => {
-      img.onload = () => {
-        const maxDim = 800;
-        let w = img.width,
-          h = img.height;
-        if (w > h) {
-          if (w > maxDim) {
-            h *= maxDim / w;
-            w = maxDim;
-          }
-        } else {
-          if (h > maxDim) {
-            w *= maxDim / h;
-            h = maxDim;
-          }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        ctx?.drawImage(img, 0, 0, w, h);
-        resolve();
-      };
-    });
-    const url = canvas.toDataURL("image/jpeg", 0.8);
-    onUpload(objectId, url);
     e.target.value = "";
   };
 
@@ -3718,7 +3729,7 @@ const ImageCard = ({
   title: string;
   keyName: string;
   proj: any;
-  upImgs: (patch: any) => void;
+  upImgs: (patch: any) => Promise<void> | void;
   rating?: number;
   onRatingChange?: (rating: number) => void;
   theme: string;
@@ -3726,6 +3737,7 @@ const ImageCard = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentRating, setCurrentRating] = useState(rating || 0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -3742,16 +3754,26 @@ const ImageCard = ({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith("image/")) {
-      const url = await compressImage(file);
-      upImgs({ [keyName]: url });
+      setIsUploading(true);
+      try {
+        const url = await compressImage(file);
+        await upImgs({ [keyName]: url });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const url = await compressImage(f);
-    upImgs({ [keyName]: url });
+    setIsUploading(true);
+    try {
+      const url = await compressImage(f);
+      await upImgs({ [keyName]: url });
+    } finally {
+      setIsUploading(false);
+    }
     e.target.value = "";
   };
 
@@ -4537,7 +4559,9 @@ export default function AstroTracker() {
   const cloudSync = useCloudSync();
   
   // TODOS los useState deben ir juntos al principio
-  const [objects, setObjects] = useState(sample);
+  // IMPORTANT: Start with empty array - cloud users should NOT see sample data
+  // Sample data is ONLY used as fallback for non-cloud users without localStorage
+  const [objects, setObjects] = useState<any[]>([]);
   const [cloudDataLoaded, setCloudDataLoaded] = useState(false);
   const [view, setView] = useState("objects");
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
@@ -4872,6 +4896,19 @@ export default function AstroTracker() {
   // Ref for debounced cloud sync
   const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSyncedDataRef = useRef<string>("");
+  const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
+
+  // Function to perform immediate sync
+  const performImmediateSync = useCallback(async () => {
+    if (!cloudSync.isCloudEnabled || !cloudDataLoaded || !pendingSyncDataRef.current) return;
+    
+    const { objects: objData, planned, settings } = pendingSyncDataRef.current;
+    const synced = await cloudSync.saveToCloud(objData, planned, settings);
+    if (synced) {
+      lastSyncedDataRef.current = JSON.stringify(objData);
+      pendingSyncDataRef.current = null;
+    }
+  }, [cloudSync, cloudDataLoaded]);
 
   // Auto-save objects to localStorage and cloud whenever they change
   useEffect(() => {
@@ -4888,27 +4925,31 @@ export default function AstroTracker() {
         
         // Only sync if data actually changed
         if (dataString !== lastSyncedDataRef.current) {
+          const settings = {
+            defaultTheme,
+            jsonPath,
+            cameras: cameras.filter((c) => c.trim() !== ""),
+            telescopes: telescopes.filter((t) => t.name.trim() !== ""),
+            mainLocation,
+            locations: locations.filter((l) => l.name.trim() !== ""),
+            guideTelescope,
+            guideCamera,
+            mount,
+            userName,
+            dateFormat,
+            minAltitudeLimit,
+          };
+          
+          // Store pending data for potential flush on unmount
+          pendingSyncDataRef.current = { objects, planned: plannedProjects, settings };
+          
           cloudSyncTimeoutRef.current = setTimeout(async () => {
-            const settings = {
-              defaultTheme,
-              jsonPath,
-              cameras: cameras.filter((c) => c.trim() !== ""),
-              telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-              mainLocation,
-              locations: locations.filter((l) => l.name.trim() !== ""),
-              guideTelescope,
-              guideCamera,
-              mount,
-              userName,
-              dateFormat,
-              minAltitudeLimit,
-            };
-            
             const synced = await cloudSync.saveToCloud(objects, plannedProjects, settings);
             if (synced) {
               lastSyncedDataRef.current = dataString;
+              pendingSyncDataRef.current = null;
             }
-          }, 3000); // Debounce by 3 seconds
+          }, 1500); // Reduced debounce to 1.5 seconds for faster sync
         }
       }
       
@@ -4949,14 +4990,18 @@ export default function AstroTracker() {
     localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(plannedProjects));
   }, [plannedProjects]);
 
-  // Cleanup cloud sync timeout on unmount
+  // Cleanup cloud sync timeout on unmount and flush pending sync
   useEffect(() => {
     return () => {
       if (cloudSyncTimeoutRef.current) {
         clearTimeout(cloudSyncTimeoutRef.current);
       }
+      // Flush pending sync on unmount
+      if (pendingSyncDataRef.current) {
+        performImmediateSync();
+      }
     };
-  }, []);
+  }, [performImmediateSync]);
 
   // Save settings to localStorage
   const saveSettings = useCallback(async () => {
@@ -5454,15 +5499,41 @@ export default function AstroTracker() {
   );
 
   const upObjImg = useCallback(
-    (oid: string, img: string | null) => {
-      setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: img })));
+    async (oid: string, img: string | null) => {
+      if (!img) {
+        setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: null })));
+        return;
+      }
+      
+      // If cloud is enabled and this is a data URL, upload to cloud first
+      if (cloudSync.isCloudEnabled && img.startsWith('data:')) {
+        const imageName = `object-${oid}-${Date.now()}.jpg`;
+        const cloudUrl = await cloudSync.uploadImageToCloud(img, imageName);
+        setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: cloudUrl })));
+      } else {
+        setObjects(objects.map((o) => (o.id !== oid ? o : { ...o, image: img })));
+      }
     },
-    [objects],
+    [objects, cloudSync],
   );
 
   const upImgs = useCallback(
-    (patch: any) => {
+    async (patch: any) => {
       if (!obj || !proj) return;
+      
+      // Process each image in the patch
+      const processedPatch: any = {};
+      for (const [key, value] of Object.entries(patch)) {
+        if (value && typeof value === 'string' && value.startsWith('data:') && cloudSync.isCloudEnabled) {
+          // Upload to cloud storage
+          const imageName = `${obj.id}-${proj.id}-${key}-${Date.now()}.jpg`;
+          const cloudUrl = await cloudSync.uploadImageToCloud(value, imageName);
+          processedPatch[key] = cloudUrl;
+        } else {
+          processedPatch[key] = value;
+        }
+      }
+      
       setObjects(
         objects.map((o) =>
           o.id !== obj.id
@@ -5470,13 +5541,13 @@ export default function AstroTracker() {
             : {
                 ...o,
                 projects: o.projects.map((p) =>
-                  p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...patch } },
+                  p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...processedPatch } },
                 ),
               },
         ),
       );
     },
-    [objects, obj, proj],
+    [objects, obj, proj, cloudSync],
   );
 
   const updateRating = useCallback(
