@@ -4721,13 +4721,15 @@ export default function AstroTracker() {
   const lastSyncedPlannedRef = useRef<string>("");
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
 
-  // Ref to track if initialization is complete - prevents race conditions
+  // Ref to track if initialization has STARTED (sync) and COMPLETED (async)
+  const initializationStartedRef = useRef(false);
   const initializationCompleteRef = useRef(false);
 
   // Load settings and data from localStorage or cloud on mount
   useEffect(() => {
-    // Prevent double initialization in Strict Mode
-    if (initializationCompleteRef.current) return;
+    // Prevent double initialization in Strict Mode - check synchronously BEFORE any async
+    if (initializationStartedRef.current) return;
+    initializationStartedRef.current = true; // Set immediately to block second call
     
     const loadData = async () => {
       // Helper to apply settings
@@ -4765,11 +4767,22 @@ export default function AstroTracker() {
             ? cloudData.planned 
             : [];
           
-          console.log('[Init] Loaded from cloud:', { objectsCount: loadedObjects.length, plannedCount: loadedPlanned.length });
+          console.log('[Init] Loaded from cloud:', { 
+            objectsCount: loadedObjects.length, 
+            plannedCount: loadedPlanned.length,
+            objectsData: loadedObjects.map((o: any) => o.id)
+          });
           
           // CRITICAL: Set refs BEFORE setting state to prevent auto-save from triggering
-          lastSyncedObjectsRef.current = JSON.stringify(loadedObjects);
-          lastSyncedPlannedRef.current = JSON.stringify(loadedPlanned);
+          const objectsRefValue = JSON.stringify(loadedObjects);
+          const plannedRefValue = JSON.stringify(loadedPlanned);
+          lastSyncedObjectsRef.current = objectsRefValue;
+          lastSyncedPlannedRef.current = plannedRefValue;
+          
+          console.log('[Init] Refs set:', { 
+            objectsRefLength: objectsRefValue.length,
+            plannedRefLength: plannedRefValue.length 
+          });
           
           setObjects(loadedObjects);
           setHasImportedData(loadedObjects.length > 0);
@@ -4983,7 +4996,10 @@ export default function AstroTracker() {
       objectsChanged, 
       plannedChanged,
       objectsCount: objects.length,
-      plannedCount: plannedProjects.length
+      plannedCount: plannedProjects.length,
+      currentObjectsLength: objectsString.length,
+      lastSyncedObjectsLength: lastSyncedObjectsRef.current.length,
+      areEqual: objectsString === lastSyncedObjectsRef.current
     });
     
     // Skip if nothing changed
