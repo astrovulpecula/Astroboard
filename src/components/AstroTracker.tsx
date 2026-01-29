@@ -4724,16 +4724,15 @@ export default function AstroTracker() {
           setObjects(data);
           setHasImportedData(true);
         } else {
-          setShowInitialFilePrompt(true);
+          // No data but don't show JSON import modal - user can create first object
           setHasImportedData(false);
         }
       } catch (e) {
         console.error("Error loading data:", e);
-        setShowInitialFilePrompt(true);
         setHasImportedData(false);
       }
     } else {
-      setShowInitialFilePrompt(true);
+      // No saved data - don't show JSON import modal, just start with empty state
       setHasImportedData(false);
     }
 
@@ -4748,9 +4747,8 @@ export default function AstroTracker() {
       } catch (e) {
         console.error("Error loading planned projects:", e);
       }
-    } else {
-      setShowInitialFilePrompt(true);
     }
+    // No planned projects is fine, don't show modal
 
     // Load ephemeris data
     const loadEphemerisData = async () => {

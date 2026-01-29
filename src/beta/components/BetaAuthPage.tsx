@@ -53,6 +53,12 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
       if (result.error) {
         setError(result.error.message);
+      } else if (mode === 'signup') {
+        // Registration successful
+        setSuccess('¡Cuenta creada correctamente! Ya puedes iniciar sesión.');
+        setMode('signin');
+        setPassword('');
+        setInvitationCode('');
       }
     } catch (err) {
       setError('Ha ocurrido un error. Inténtalo de nuevo.');
