@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BetaGate } from "@/beta";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -15,13 +16,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <BetaGate>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BetaGate>
+        <Routes>
+          {/* Public route for password reset */}
+          <Route path="/reset-password" element={<ResetPassword />} />
+          {/* Protected routes with BetaGate */}
+          <Route path="/*" element={
+            <BetaGate>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BetaGate>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

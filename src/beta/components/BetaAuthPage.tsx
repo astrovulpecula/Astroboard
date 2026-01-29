@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, Key, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Key, Loader2, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import logoLight from '@/assets/logo-light.png';
 import logoDark from '@/assets/logo-dark.png';
 
@@ -9,20 +10,35 @@ interface BetaAuthPageProps {
 }
 
 export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [invitationCode, setInvitationCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setLoading(true);
 
     try {
+      if (mode === 'reset') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (resetError) {
+          setError(resetError.message);
+        } else {
+          setSuccess('Se ha enviado un enlace de recuperación a tu email.');
+        }
+        setLoading(false);
+        return;
+      }
+
       let result;
       if (mode === 'signin') {
         result = await onSignIn(email, password);
@@ -67,29 +83,50 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
         {/* Card */}
         <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-slate-200 dark:border-slate-700">
-          {/* Tabs */}
-          <div className="flex rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 mb-6">
+          {/* Tabs or Back button */}
+          {mode === 'reset' ? (
             <button
-              onClick={() => { setMode('signin'); setError(null); }}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
-                mode === 'signin'
-                  ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
+              onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 text-sm"
             >
-              Iniciar sesión
+              <ArrowLeft className="w-4 h-4" />
+              Volver a iniciar sesión
             </button>
-            <button
-              onClick={() => { setMode('signup'); setError(null); }}
-              className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
-                mode === 'signup'
-                  ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
-                  : 'text-slate-600 dark:text-slate-400'
-              }`}
-            >
-              Registrarse
-            </button>
-          </div>
+          ) : (
+            <div className="flex rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 mb-6">
+              <button
+                onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
+                  mode === 'signin'
+                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Iniciar sesión
+              </button>
+              <button
+                onClick={() => { setMode('signup'); setError(null); setSuccess(null); }}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
+                  mode === 'signup'
+                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                Registrarse
+              </button>
+            </div>
+          )}
+
+          {mode === 'reset' && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                Recuperar contraseña
+              </h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Invitation Code (signup only) */}
@@ -130,31 +167,40 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+            {/* Password (not for reset mode) */}
+            {mode !== 'reset' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Success */}
+            {success && (
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
+                {success}
+              </div>
+            )}
 
             {/* Error */}
             {error && (
@@ -166,7 +212,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             {/* Submit */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !!success}
               className="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
@@ -176,11 +222,22 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
                 </>
               ) : mode === 'signin' ? (
                 'Iniciar sesión'
-              ) : (
+              ) : mode === 'signup' ? (
                 'Crear cuenta'
+              ) : (
+                'Enviar enlace'
               )}
             </button>
           </form>
+
+          {mode === 'signin' && (
+            <button
+              onClick={() => { setMode('reset'); setError(null); setSuccess(null); }}
+              className="w-full mt-4 text-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+            >
+              ¿Has olvidado tu contraseña?
+            </button>
+          )}
 
           {mode === 'signup' && (
             <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
