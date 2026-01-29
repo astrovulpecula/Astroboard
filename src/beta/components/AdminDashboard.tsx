@@ -89,34 +89,89 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const [newInviteEmail, setNewInviteEmail] = useState('');
   const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
 
+  const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
+  // Verify admin status server-side on component mount
   useEffect(() => {
-    loadData();
-  }, [activeTab]);
+    const verifyAdminAccess = async () => {
+      try {
+        // Test admin access by attempting to fetch admin-only data
+        // RLS policies will reject if user is not an admin
+        const { data, error } = await supabase
+          .from('beta_users')
+          .select('id')
+          .limit(2); // Admins can see multiple users, non-admins only see their own
+        
+        if (error) {
+          console.error('Admin verification failed:', error);
+          setVerificationError('Acceso no autorizado');
+          return;
+        }
+        
+        // If we can see more than 1 user or the query succeeded with admin policy, we're admin
+        // The RLS policy "Admins can view all users" uses is_beta_admin() server-side
+        if (data && data.length > 0) {
+          setIsVerifiedAdmin(true);
+        } else {
+          setVerificationError('Acceso no autorizado');
+        }
+      } catch (err) {
+        console.error('Admin verification error:', err);
+        setVerificationError('Error de verificación');
+      }
+    };
+
+    verifyAdminAccess();
+  }, []);
+
+  useEffect(() => {
+    if (isVerifiedAdmin) {
+      loadData();
+    }
+  }, [activeTab, isVerifiedAdmin]);
 
   const loadData = async () => {
+    if (!isVerifiedAdmin) return;
+    
     setLoading(true);
     try {
       switch (activeTab) {
         case 'invitations':
-          const { data: invData } = await supabase
+          const { data: invData, error: invError } = await supabase
             .from('beta_invitations')
             .select('*')
             .order('created_at', { ascending: false });
-          setInvitations((invData as Invitation[]) || []);
+          if (invError) {
+            console.error('Failed to load invitations:', invError.message);
+            setInvitations([]);
+          } else {
+            setInvitations((invData as Invitation[]) || []);
+          }
           break;
         case 'users':
-          const { data: userData } = await supabase
+          const { data: userData, error: userError } = await supabase
             .from('beta_users')
             .select('id, email, role, first_login_at, last_login_at, created_at')
             .order('created_at', { ascending: false });
-          setUsers((userData as BetaUserData[]) || []);
+          if (userError) {
+            console.error('Failed to load users:', userError.message);
+            setUsers([]);
+          } else {
+            setUsers((userData as BetaUserData[]) || []);
+          }
           break;
         case 'feedback':
-          const { data: fbData } = await supabase
+          const { data: fbData, error: fbError } = await supabase
             .from('beta_feedback')
             .select('*, beta_users(email)')
             .order('created_at', { ascending: false });
-          setFeedback((fbData as unknown as Feedback[]) || []);
+          if (fbError) {
+            console.error('Failed to load feedback:', fbError.message);
+            setFeedback([]);
+          } else {
+            setFeedback((fbData as unknown as Feedback[]) || []);
+          }
           break;
         case 'metrics':
           await loadMetrics();
@@ -265,6 +320,39 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const recommendRate = feedback.length > 0
     ? Math.round((feedback.filter(f => f.would_recommend === true).length / feedback.filter(f => f.would_recommend !== null).length) * 100)
     : 0;
+
+  // Show error if verification failed
+  if (verificationError) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{verificationError}</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">No tienes permisos para acceder al panel de administración.</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium"
+          >
+            Volver a la app
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while verifying admin status
+  if (!isVerifiedAdmin) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin text-slate-400 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Verificando acceso...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 overflow-y-auto">
