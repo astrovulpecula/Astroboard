@@ -4719,31 +4719,39 @@ export default function AstroTracker() {
         try {
           const cloudData = await cloudSync.loadFromCloud();
           
+          // For cloud users, ONLY use cloud data - never fall back to localStorage
+          // This ensures data isolation between users on the same browser
           if (cloudData.objects && Array.isArray(cloudData.objects) && cloudData.objects.length > 0) {
             setObjects(cloudData.objects);
             setHasImportedData(true);
+          } else {
+            // Cloud user with no data = start fresh with empty state
+            setObjects([]);
+            setHasImportedData(false);
           }
           
           if (cloudData.planned && Array.isArray(cloudData.planned)) {
             setPlannedProjects(cloudData.planned);
+          } else {
+            setPlannedProjects([]);
           }
           
           if (cloudData.settings) {
             applySettings(cloudData.settings);
           }
+          // Note: For cloud users without settings, we use the default state values (empty strings)
           
           setCloudDataLoaded(true);
-          
-          // If cloud had data, we're done
-          if (cloudData.objects && cloudData.objects.length > 0) {
-            return;
-          }
+          return; // Cloud users never load from localStorage
         } catch (e) {
           console.error("Error loading from cloud:", e);
+          // Even on error, cloud users should not load other users' localStorage data
+          setCloudDataLoaded(true);
+          return;
         }
       }
 
-      // Fallback to localStorage
+      // localStorage is ONLY used for non-cloud users (offline mode)
       const savedSettings = localStorage.getItem("astroTrackerSettings");
       const savedData = localStorage.getItem("astroTrackerData");
 
