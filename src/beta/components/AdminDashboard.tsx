@@ -16,9 +16,21 @@ import {
   ChevronDown,
   ChevronUp,
   LogOut,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import type { BetaUser } from '../hooks/useBetaAuth';
 import { BETA_CONFIG } from '../config';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface AdminDashboardProps {
   betaUser: BetaUser;
@@ -39,6 +51,7 @@ interface Invitation {
 
 interface BetaUserData {
   id: string;
+  user_id: string;
   email: string;
   role: 'admin' | 'tester';
   first_login_at: string | null;
@@ -87,6 +100,9 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const [loading, setLoading] = useState(true);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [expandedFeedback, setExpandedFeedback] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<BetaUserData | null>(null);
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -151,7 +167,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
         case 'users':
           const { data: userData, error: userError } = await supabase
             .from('beta_users')
-            .select('id, email, role, first_login_at, last_login_at, created_at')
+            .select('id, user_id, email, role, first_login_at, last_login_at, created_at')
             .order('created_at', { ascending: false });
           if (userError) {
             console.error('Failed to load users:', userError.message);
@@ -284,6 +300,34 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
       console.error('Error generating invitation code:', err);
     } finally {
       setGeneratingCode(false);
+    }
+  };
+
+  const deleteUser = async (user: BetaUserData) => {
+    setDeletingUser(true);
+    setDeleteError(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { user_id: user.user_id, beta_user_id: user.id },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Error al eliminar usuario');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Reload users list
+      setUserToDelete(null);
+      loadData();
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setDeleteError(err instanceof Error ? err.message : 'Error al eliminar usuario');
+    } finally {
+      setDeletingUser(false);
     }
   };
 
@@ -480,6 +524,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Rol</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Primer login</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Último login</th>
+                      <th className="text-right p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -497,6 +542,17 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                         </td>
                         <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(user.first_login_at)}</td>
                         <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(user.last_login_at)}</td>
+                        <td className="p-3 text-right">
+                          {user.role !== 'admin' && (
+                            <button
+                              onClick={() => setUserToDelete(user)}
+                              className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                              title="Eliminar usuario y todos sus datos"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -738,6 +794,63 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
           </>
         )}
       </div>
+
+      {/* Delete User Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => { setUserToDelete(null); setDeleteError(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Eliminar usuario
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                ¿Estás seguro de que quieres eliminar a <strong>{userToDelete?.email}</strong>?
+              </p>
+              <p className="text-red-600 dark:text-red-400 font-medium">
+                Esta acción eliminará permanentemente:
+              </p>
+              <ul className="list-disc list-inside text-sm text-slate-600 dark:text-slate-400">
+                <li>La cuenta del usuario</li>
+                <li>Todos sus datos almacenados (JSON)</li>
+                <li>Todas sus imágenes subidas</li>
+                <li>Su historial de feedback</li>
+                <li>Sus métricas de uso</li>
+              </ul>
+              <p className="text-red-600 dark:text-red-400 font-semibold">
+                Esta acción no se puede deshacer.
+              </p>
+              {deleteError && (
+                <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300 text-sm">
+                  {deleteError}
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingUser}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (userToDelete) {
+                  deleteUser(userToDelete);
+                }
+              }}
+              disabled={deletingUser}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletingUser ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar usuario'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
