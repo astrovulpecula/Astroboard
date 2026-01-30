@@ -11283,6 +11283,7 @@ export default function AstroTracker() {
                       const objectsData = validationResult.data!.objects;
                       const settingsData = validationResult.data!.settings;
                       
+                      pendingChangesRef.current++; // Mark as user modification (import)
                       setObjects(objectsData);
                       try {
                         localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
@@ -12174,6 +12175,7 @@ export default function AstroTracker() {
                   const objectsData = validationResult.data!.objects;
                   const settingsData = validationResult.data!.settings;
                   
+                  pendingChangesRef.current++; // Mark as user modification (import)
                   setObjects(objectsData);
                   try {
                     localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
