@@ -4980,6 +4980,43 @@ export default function AstroTracker() {
   }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit]);
 
 
+  // Force cloud sync - used after import to ensure data is saved immediately
+  const forceCloudSync = useCallback(async (objectsToSave: any[], plannedToSave: any[]) => {
+    if (!cloudSyncRef.current.isCloudEnabled) return false;
+    
+    console.log('[CloudSync] Force sync triggered:', { 
+      objectsCount: objectsToSave.length, 
+      plannedCount: plannedToSave.length 
+    });
+    
+    const currentSettings = settingsRef.current;
+    const settingsToSave = {
+      defaultTheme: currentSettings.defaultTheme,
+      jsonPath: currentSettings.jsonPath,
+      cameras: currentSettings.cameras.filter((c) => c.trim() !== ""),
+      telescopes: currentSettings.telescopes.filter((t) => t.name.trim() !== ""),
+      mainLocation: currentSettings.mainLocation,
+      locations: currentSettings.locations.filter((l) => l.name.trim() !== ""),
+      guideTelescope: currentSettings.guideTelescope,
+      guideCamera: currentSettings.guideCamera,
+      mount: currentSettings.mount,
+      userName: currentSettings.userName,
+      dateFormat: currentSettings.dateFormat,
+      minAltitudeLimit: currentSettings.minAltitudeLimit,
+    };
+    
+    const synced = await cloudSyncRef.current.saveToCloud(objectsToSave, plannedToSave, settingsToSave);
+    if (synced) {
+      console.log('[CloudSync] Force sync successful');
+      cloudLoadedDataRef.current = { objects: objectsToSave, planned: plannedToSave };
+      pendingSyncDataRef.current = null;
+      pendingChangesRef.current = 0;
+    } else {
+      console.error('[CloudSync] Force sync failed');
+    }
+    return synced;
+  }, []);
+
   // Auto-save objects and plannedProjects to cloud whenever they change
   // Uses pendingChangesRef counter to distinguish user actions from initial load
   useEffect(() => {
@@ -6490,7 +6527,6 @@ export default function AstroTracker() {
                       return obj;
                     });
 
-                    pendingChangesRef.current++; // Mark as user modification (import)
                     setObjects(processedObjects);
 
                     // Restaurar settings si existen
@@ -6555,10 +6591,18 @@ export default function AstroTracker() {
                     }
 
                     // Restaurar plannedProjects si existen
-                    if (json.plannedProjects && Array.isArray(json.plannedProjects)) {
-                      pendingChangesRef.current++; // Mark as user modification (import)
-                      setPlannedProjects(json.plannedProjects);
-                      localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(json.plannedProjects));
+                    const importedPlanned = (json.plannedProjects && Array.isArray(json.plannedProjects)) 
+                      ? json.plannedProjects 
+                      : [];
+                    if (importedPlanned.length > 0) {
+                      setPlannedProjects(importedPlanned);
+                      localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(importedPlanned));
+                    }
+
+                    // Force immediate cloud sync for imported data
+                    if (cloudSyncRef.current.isCloudEnabled) {
+                      console.log('[Import] Triggering force cloud sync');
+                      forceCloudSync(processedObjects, importedPlanned);
                     }
 
                     setHasImportedData(true);
@@ -11283,7 +11327,6 @@ export default function AstroTracker() {
                       const objectsData = validationResult.data!.objects;
                       const settingsData = validationResult.data!.settings;
                       
-                      pendingChangesRef.current++; // Mark as user modification (import)
                       setObjects(objectsData);
                       try {
                         localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
@@ -11323,6 +11366,12 @@ export default function AstroTracker() {
                           userName: settingsData.userName || userName,
                         };
                         localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                      }
+                      
+                      // Force immediate cloud sync for imported data
+                      if (cloudSyncRef.current.isCloudEnabled) {
+                        console.log('[Import] Triggering force cloud sync');
+                        forceCloudSync(objectsData, []);
                       }
                       
                       setShowInitialFilePrompt(false);
@@ -12175,7 +12224,6 @@ export default function AstroTracker() {
                   const objectsData = validationResult.data!.objects;
                   const settingsData = validationResult.data!.settings;
                   
-                  pendingChangesRef.current++; // Mark as user modification (import)
                   setObjects(objectsData);
                   try {
                     localStorage.setItem("astroTrackerData", JSON.stringify(objectsData));
@@ -12221,6 +12269,12 @@ export default function AstroTracker() {
                       minAltitudeLimit: settingsData.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
                     };
                     localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
+                  }
+                  
+                  // Force immediate cloud sync for imported data
+                  if (cloudSyncRef.current.isCloudEnabled) {
+                    console.log('[Import] Triggering force cloud sync');
+                    forceCloudSync(objectsData, []);
                   }
                   
                   setHasImportedData(true);
