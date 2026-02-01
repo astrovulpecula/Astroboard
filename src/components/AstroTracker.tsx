@@ -4,6 +4,7 @@ import { validateJsonUpload } from "@/lib/json-validation";
 import { safeLocalStorageSave, checkStorageQuota, formatBytes } from "@/lib/storage-utils";
 import { useLanguage } from "@/hooks/use-language";
 import { useCloudSync } from "@/hooks/useCloudSync";
+import { supabase } from "@/integrations/supabase/client";
 import { Language } from "@/lib/i18n";
 import {
   Plus,
@@ -11711,11 +11712,27 @@ export default function AstroTracker() {
             </div>
 
             {/* Botones */}
-            <div className="flex items-center justify-end gap-2 mt-2">
-              <Btn outline onClick={() => setShowSettings(false)}>
-                {t('cancel')}
-              </Btn>
-              <Btn onClick={saveSettings}>{t('save')}</Btn>
+            <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Cerrar sesión
+              </button>
+              <div className="flex items-center gap-2">
+                <Btn outline onClick={() => setShowSettings(false)}>
+                  {t('cancel')}
+                </Btn>
+                <Btn onClick={saveSettings}>{t('save')}</Btn>
+              </div>
             </div>
           </div>
         </Modal>

@@ -13,6 +13,9 @@ const generateSessionId = () => {
   return newId;
 };
 
+// Heartbeat interval in milliseconds (1 minute)
+const HEARTBEAT_INTERVAL = 60 * 1000;
+
 interface UseUsageMetricsReturn {
   trackEvent: (eventType: string, eventData?: Record<string, Json>) => void;
   trackPageView: (pagePath: string) => void;
@@ -21,6 +24,7 @@ interface UseUsageMetricsReturn {
 export function useUsageMetrics(betaUser: BetaUser | null): UseUsageMetricsReturn {
   const sessionId = useRef(generateSessionId());
   const lastPageView = useRef<string | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
   const trackEvent = useCallback(async (
     eventType: string, 
@@ -47,11 +51,48 @@ export function useUsageMetrics(betaUser: BetaUser | null): UseUsageMetricsRetur
     trackEvent('page_view', { path: pagePath });
   }, [trackEvent]);
 
-  // Track session start
+  // Track session start and set up heartbeat for session time tracking
   useEffect(() => {
-    if (betaUser) {
-      trackEvent('session_start');
-    }
+    if (!betaUser) return;
+
+    trackEvent('session_start');
+
+    // Set up heartbeat to track active session time
+    // Each heartbeat represents 1 minute of active usage
+    heartbeatInterval.current = setInterval(() => {
+      // Only send heartbeat if document is visible (user is actively using the app)
+      if (document.visibilityState === 'visible') {
+        trackEvent('session_heartbeat');
+      }
+    }, HEARTBEAT_INTERVAL);
+
+    // Cleanup on unmount or user change
+    return () => {
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+    };
+  }, [betaUser, trackEvent]);
+
+  // Handle visibility changes - pause/resume heartbeat
+  useEffect(() => {
+    if (!betaUser) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // User switched away from the app
+        trackEvent('session_pause');
+      } else {
+        // User came back to the app
+        trackEvent('session_resume');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [betaUser, trackEvent]);
 
   return { trackEvent, trackPageView };
@@ -63,6 +104,9 @@ export const METRIC_EVENTS = {
   PAGE_VIEW: 'page_view',
   SESSION_START: 'session_start',
   SESSION_END: 'session_end',
+  SESSION_HEARTBEAT: 'session_heartbeat',
+  SESSION_PAUSE: 'session_pause',
+  SESSION_RESUME: 'session_resume',
   
   // Objects
   OBJECT_CREATED: 'object_created',
