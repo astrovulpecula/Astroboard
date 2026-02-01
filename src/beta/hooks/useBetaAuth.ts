@@ -186,14 +186,8 @@ export function useBetaAuth(): UseBetaAuthReturn {
         return { error: new Error('Error al crear el perfil de beta') };
       }
 
-      // Mark invitation as accepted via admin policy (user is now authenticated)
-      await supabase
-        .from('beta_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', invitationId);
+      // Invitation was already marked as accepted in verify-invitation edge function
+      // No need to update again here
 
       return { error: null };
     } catch (err) {
