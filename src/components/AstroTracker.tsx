@@ -4981,40 +4981,55 @@ export default function AstroTracker() {
 
 
   // Force cloud sync - used after import to ensure data is saved immediately
-  const forceCloudSync = useCallback(async (objectsToSave: any[], plannedToSave: any[]) => {
-    if (!cloudSyncRef.current.isCloudEnabled) return false;
+  // Now accepts optional settings parameter to ensure imported settings are also saved
+  const forceCloudSync = useCallback(async (
+    objectsToSave: any[], 
+    plannedToSave: any[],
+    importedSettings?: any
+  ): Promise<boolean> => {
+    if (!cloudSyncRef.current.isCloudEnabled) {
+      console.log('[CloudSync] Force sync skipped: cloud not enabled');
+      return false;
+    }
     
     console.log('[CloudSync] Force sync triggered:', { 
       objectsCount: objectsToSave.length, 
-      plannedCount: plannedToSave.length 
+      plannedCount: plannedToSave.length,
+      hasImportedSettings: !!importedSettings
     });
     
-    const currentSettings = settingsRef.current;
-    const settingsToSave = {
-      defaultTheme: currentSettings.defaultTheme,
-      jsonPath: currentSettings.jsonPath,
-      cameras: currentSettings.cameras.filter((c) => c.trim() !== ""),
-      telescopes: currentSettings.telescopes.filter((t) => t.name.trim() !== ""),
-      mainLocation: currentSettings.mainLocation,
-      locations: currentSettings.locations.filter((l) => l.name.trim() !== ""),
-      guideTelescope: currentSettings.guideTelescope,
-      guideCamera: currentSettings.guideCamera,
-      mount: currentSettings.mount,
-      userName: currentSettings.userName,
-      dateFormat: currentSettings.dateFormat,
-      minAltitudeLimit: currentSettings.minAltitudeLimit,
+    // Use imported settings if provided, otherwise use current settings from ref
+    const settingsToSave = importedSettings || {
+      defaultTheme: settingsRef.current.defaultTheme,
+      jsonPath: settingsRef.current.jsonPath,
+      cameras: settingsRef.current.cameras.filter((c) => c.trim() !== ""),
+      telescopes: settingsRef.current.telescopes.filter((t) => t.name.trim() !== ""),
+      mainLocation: settingsRef.current.mainLocation,
+      locations: settingsRef.current.locations.filter((l) => l.name.trim() !== ""),
+      guideTelescope: settingsRef.current.guideTelescope,
+      guideCamera: settingsRef.current.guideCamera,
+      mount: settingsRef.current.mount,
+      userName: settingsRef.current.userName,
+      dateFormat: settingsRef.current.dateFormat,
+      minAltitudeLimit: settingsRef.current.minAltitudeLimit,
     };
     
-    const synced = await cloudSyncRef.current.saveToCloud(objectsToSave, plannedToSave, settingsToSave);
-    if (synced) {
-      console.log('[CloudSync] Force sync successful');
-      cloudLoadedDataRef.current = { objects: objectsToSave, planned: plannedToSave };
-      pendingSyncDataRef.current = null;
-      pendingChangesRef.current = 0;
-    } else {
-      console.error('[CloudSync] Force sync failed');
+    try {
+      const synced = await cloudSyncRef.current.saveToCloud(objectsToSave, plannedToSave, settingsToSave);
+      if (synced) {
+        console.log('[CloudSync] Force sync successful - data persisted to cloud');
+        cloudLoadedDataRef.current = { objects: objectsToSave, planned: plannedToSave };
+        pendingSyncDataRef.current = null;
+        pendingChangesRef.current = 0;
+        return true;
+      } else {
+        console.error('[CloudSync] Force sync failed - saveToCloud returned false');
+        return false;
+      }
+    } catch (error) {
+      console.error('[CloudSync] Force sync error:', error);
+      return false;
     }
-    return synced;
   }, []);
 
   // Auto-save objects and plannedProjects to cloud whenever they change
@@ -6601,8 +6616,35 @@ export default function AstroTracker() {
 
                     // Force immediate cloud sync for imported data
                     if (cloudSyncRef.current.isCloudEnabled) {
-                      console.log('[Import] Triggering force cloud sync');
-                      forceCloudSync(processedObjects, importedPlanned);
+                      console.log('[Import] Triggering force cloud sync with await');
+                      // Build the complete settings object to sync
+                      const settingsForSync = {
+                        defaultTheme: settingsData?.defaultTheme || defaultTheme,
+                        jsonPath: settingsData?.jsonPath || importedFileName,
+                        cameras: settingsData?.cameras || cameras.filter((c) => c.trim() !== ""),
+                        telescopes: settingsData?.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                        mainLocation: settingsData?.mainLocation || mainLocation,
+                        locations: settingsData?.locations || locations.filter((l) => l.name.trim() !== ""),
+                        guideTelescope: settingsData?.guideTelescope || guideTelescope,
+                        guideCamera: settingsData?.guideCamera || guideCamera,
+                        mount: settingsData?.mount || mount,
+                        userName: settingsData?.userName || userName,
+                        dateFormat: settingsData?.dateFormat || dateFormat,
+                        minAltitudeLimit: settingsData?.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
+                      };
+                      const syncSuccess = await forceCloudSync(processedObjects, importedPlanned, settingsForSync);
+                      if (syncSuccess) {
+                        toast({
+                          title: 'Datos sincronizados',
+                          description: 'Los datos importados se han guardado en la nube correctamente',
+                        });
+                      } else {
+                        toast({
+                          title: 'Error de sincronización',
+                          description: 'Los datos se cargaron localmente pero no se pudieron guardar en la nube',
+                          variant: 'destructive',
+                        });
+                      }
                     }
 
                     setHasImportedData(true);
@@ -11370,8 +11412,27 @@ export default function AstroTracker() {
                       
                       // Force immediate cloud sync for imported data
                       if (cloudSyncRef.current.isCloudEnabled) {
-                        console.log('[Import] Triggering force cloud sync');
-                        forceCloudSync(objectsData, []);
+                        console.log('[Import] Triggering force cloud sync with await');
+                        const settingsForSync = {
+                          defaultTheme,
+                          jsonPath: f.name,
+                          cameras: settingsData?.cameras || cameras.filter((c) => c.trim() !== ""),
+                          telescopes: settingsData?.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                          locations: settingsData?.locations || locations.filter((l) => l.name.trim() !== ""),
+                          mainLocation: settingsData?.mainLocation || mainLocation,
+                          guideTelescope: settingsData?.guideTelescope || guideTelescope,
+                          guideCamera: settingsData?.guideCamera || guideCamera,
+                          mount: settingsData?.mount || mount,
+                          dateFormat: settingsData?.dateFormat || dateFormat,
+                          userName: settingsData?.userName || userName,
+                        };
+                        const syncSuccess = await forceCloudSync(objectsData, [], settingsForSync);
+                        if (syncSuccess) {
+                          toast({
+                            title: 'Datos sincronizados',
+                            description: 'Los datos importados se han guardado en la nube',
+                          });
+                        }
                       }
                       
                       setShowInitialFilePrompt(false);
@@ -12273,8 +12334,29 @@ export default function AstroTracker() {
                   
                   // Force immediate cloud sync for imported data
                   if (cloudSyncRef.current.isCloudEnabled) {
-                    console.log('[Import] Triggering force cloud sync');
-                    forceCloudSync(objectsData, []);
+                    console.log('[Import] Triggering force cloud sync with await');
+                    const settingsForSync = {
+                      defaultTheme,
+                      jsonPath: f.name,
+                      cameras: settingsData?.cameras || cameras.filter((c) => c.trim() !== ""),
+                      telescopes: settingsData?.telescopes || telescopes.filter((t) => t.name.trim() !== ""),
+                      locations: settingsData?.locations || locations.filter((l) => l.name.trim() !== ""),
+                      mainLocation: settingsData?.mainLocation || mainLocation,
+                      guideTelescope: settingsData?.guideTelescope || guideTelescope,
+                      guideCamera: settingsData?.guideCamera || guideCamera,
+                      mount: settingsData?.mount || mount,
+                      dateFormat: settingsData?.dateFormat || dateFormat,
+                      userName: settingsData?.userName || userName,
+                      language: settingsData?.language || language,
+                      minAltitudeLimit: settingsData?.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
+                    };
+                    const syncSuccess = await forceCloudSync(objectsData, [], settingsForSync);
+                    if (syncSuccess) {
+                      toast({
+                        title: 'Datos sincronizados',
+                        description: 'Los datos importados se han guardado en la nube',
+                      });
+                    }
                   }
                   
                   setHasImportedData(true);
