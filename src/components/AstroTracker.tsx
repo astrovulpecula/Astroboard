@@ -4228,7 +4228,7 @@ const generatePDFReport = async (
   html += `
     <div class="footer">
       <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-      <p style="margin-top: 0.5rem;">StarBoard - Astronomy Tracker</p>
+      <p style="margin-top: 0.5rem;">AstroBoard - Astronomy Tracker</p>
     </div>
   </div>
 
@@ -6415,11 +6415,11 @@ export default function AstroTracker() {
                 }}
                 className="hover:opacity-80 transition-opacity"
               >
-                <img src={theme === "dark" ? logoDark : logoLight} alt="StarBoard" className="h-10 w-10 md:h-14 md:w-14" />
+                <img src={theme === "dark" ? logoDark : logoLight} alt="AstroBoard" className="h-10 w-10 md:h-14 md:w-14" />
               </button>
               {/* Hide name on mobile, show on md+ */}
               <div className="hidden md:block">
-                <div className="font-semibold">StarBoard</div>
+                <div className="font-semibold">AstroBoard</div>
                 <div className="text-xs text-slate-500">
                   {view === "objects" ? "Dashboard" : view === "projects" ? "Proyectos" : view === "project" ? "Sesiones" : view === "ratings" ? "Galería de Valoraciones" : view === "constellationDetail" ? `Constelación: ${selectedConstellation}` : view === "ephemerides" ? "Efemérides" : "ONP vs SNP"}
                 </div>
@@ -12265,7 +12265,7 @@ export default function AstroTracker() {
         <Modal
           open={showInitialFilePrompt}
           onClose={() => setShowInitialFilePrompt(false)}
-          title="Bienvenido a StarBoard"
+          title="Bienvenido a AstroBoard"
         >
           <div className="grid gap-4">
             <p className="text-slate-600 dark:text-slate-400">
