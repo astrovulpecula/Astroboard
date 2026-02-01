@@ -1,6 +1,6 @@
 {
-  "name": "StarBoard - Astronomy Tracker",
-  "short_name": "StarBoard",
+  "name": "AstroBoard - Astronomy Tracker",
+  "short_name": "AstroBoard",
   "description": "Astronomy session tracker and capture log for astrophotography enthusiasts",
   "start_url": "/Astroboard/",
   "display": "standalone",
