@@ -6606,14 +6606,14 @@ export default function AstroTracker() {
                       localStorage.setItem("astroTrackerSettings", JSON.stringify(parsedSettings));
                     }
 
-                    // Restaurar plannedProjects si existen
+                    // SOBRESCRIBIR plannedProjects - siempre reemplazar con los datos del JSON
+                    // Si el JSON no tiene plannedProjects, se establecerá un array vacío
                     const importedPlanned = (json.plannedProjects && Array.isArray(json.plannedProjects)) 
                       ? json.plannedProjects 
                       : [];
-                    if (importedPlanned.length > 0) {
-                      setPlannedProjects(importedPlanned);
-                      localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(importedPlanned));
-                    }
+                    // Siempre sobrescribir, incluso si está vacío
+                    setPlannedProjects(importedPlanned);
+                    localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(importedPlanned));
 
                     // Force immediate cloud sync for imported data
                     if (cloudSyncRef.current.isCloudEnabled) {
