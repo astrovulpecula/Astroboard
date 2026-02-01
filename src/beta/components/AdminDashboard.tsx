@@ -47,6 +47,7 @@ interface Invitation {
   created_at: string;
   expires_at: string;
   accepted_at: string | null;
+  used_by_email?: string | null; // Email del usuario que usó la invitación
 }
 
 interface BetaUserData {
@@ -57,6 +58,7 @@ interface BetaUserData {
   first_login_at: string | null;
   last_login_at: string | null;
   created_at: string;
+  total_session_time?: number; // Total session time in seconds
 }
 
 interface Feedback {
@@ -153,18 +155,28 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     try {
       switch (activeTab) {
         case 'invitations':
+          // Fetch invitations with linked user info via beta_users table
           const { data: invData, error: invError } = await supabase
             .from('beta_invitations')
-            .select('*')
+            .select('*, beta_users!beta_users_invitation_id_fkey(email)')
             .order('created_at', { ascending: false });
           if (invError) {
             console.error('Failed to load invitations:', invError.message);
             setInvitations([]);
           } else {
-            setInvitations((invData as Invitation[]) || []);
+            // Map the data to include the user email who used the invitation
+            const mappedInvitations = (invData || []).map((inv: any) => ({
+              ...inv,
+              // Check if there's a beta_user linked to this invitation
+              used_by_email: inv.beta_users && inv.beta_users.length > 0 
+                ? inv.beta_users[0].email 
+                : null,
+            }));
+            setInvitations(mappedInvitations as Invitation[]);
           }
           break;
         case 'users':
+          // Fetch users
           const { data: userData, error: userError } = await supabase
             .from('beta_users')
             .select('id, user_id, email, role, first_login_at, last_login_at, created_at')
@@ -173,7 +185,21 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             console.error('Failed to load users:', userError.message);
             setUsers([]);
           } else {
-            setUsers((userData as BetaUserData[]) || []);
+            // Fetch session time metrics for each user
+            const usersWithTime = await Promise.all(
+              (userData || []).map(async (user: any) => {
+                const { data: sessionData } = await supabase
+                  .from('usage_metrics')
+                  .select('event_data')
+                  .eq('user_id', user.id)
+                  .eq('event_type', 'session_heartbeat');
+                
+                // Each heartbeat represents 60 seconds of activity
+                const totalSeconds = (sessionData?.length || 0) * 60;
+                return { ...user, total_session_time: totalSeconds };
+              })
+            );
+            setUsers(usersWithTime as BetaUserData[]);
           }
           break;
         case 'feedback':
@@ -342,6 +368,16 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     });
   };
 
+  const formatSessionTime = (seconds: number | undefined) => {
+    if (!seconds || seconds === 0) return '–';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -482,9 +518,14 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                     </thead>
                     <tbody>
                       {invitations.map((inv) => {
-                        const isUsed = inv.status === 'accepted';
-                        const isPending = inv.status === 'pending';
-                        const userEmail = isUsed && !inv.email.includes('@placeholder.local') ? inv.email : null;
+                        // Determine if invitation is used based on linked user OR status
+                        const hasLinkedUser = !!inv.used_by_email;
+                        const isUsed = inv.status === 'accepted' || hasLinkedUser;
+                        const isPending = !isUsed && inv.status === 'pending';
+                        const isExpired = inv.status === 'expired' || (!isUsed && new Date(inv.expires_at) < new Date());
+                        
+                        // Display the user who used the invitation
+                        const displayEmail = inv.used_by_email || null;
                         
                         return (
                           <tr key={inv.id} className="border-b border-slate-100 dark:border-slate-700/50 last:border-0">
@@ -495,14 +536,20 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                             </td>
                             <td className="p-3">
                               <div className="flex items-center gap-2">
-                                {getStatusIcon(inv.status)}
-                                <span className={`text-sm ${isUsed ? 'text-green-600 dark:text-green-400 font-medium' : isPending ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
-                                  {isUsed ? 'Usado' : isPending ? 'Disponible' : 'Expirado'}
+                                {isUsed ? (
+                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                ) : isExpired ? (
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                ) : (
+                                  <Clock className="w-4 h-4 text-amber-500" />
+                                )}
+                                <span className={`text-sm ${isUsed ? 'text-green-600 dark:text-green-400 font-medium' : isExpired ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                                  {isUsed ? 'Usado' : isExpired ? 'Expirado' : 'Disponible'}
                                 </span>
                               </div>
                             </td>
                             <td className="p-3 text-sm text-slate-600 dark:text-slate-400">
-                              {userEmail || (isUsed ? '—' : '—')}
+                              {displayEmail || '—'}
                             </td>
                             <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(inv.created_at)}</td>
                           </tr>
@@ -522,6 +569,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                     <tr className="border-b border-slate-200 dark:border-slate-700">
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Email</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Rol</th>
+                      <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Tiempo de uso</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Primer login</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Último login</th>
                       <th className="text-right p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Acciones</th>
@@ -539,6 +587,9 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                           }`}>
                             {user.role}
                           </span>
+                        </td>
+                        <td className="p-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
+                          {formatSessionTime(user.total_session_time)}
                         </td>
                         <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(user.first_login_at)}</td>
                         <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(user.last_login_at)}</td>
