@@ -105,6 +105,8 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const [userToDelete, setUserToDelete] = useState<BetaUserData | null>(null);
   const [deletingUser, setDeletingUser] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
+  const [deletingInvitation, setDeletingInvitation] = useState(false);
 
   const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
@@ -329,6 +331,25 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     }
   };
 
+  const deleteInvitation = async (invitation: Invitation) => {
+    setDeletingInvitation(true);
+    try {
+      const { error } = await supabase
+        .from('beta_invitations')
+        .delete()
+        .eq('id', invitation.id);
+
+      if (error) throw error;
+
+      setInvitationToDelete(null);
+      loadData();
+    } catch (err) {
+      console.error('Error deleting invitation:', err);
+    } finally {
+      setDeletingInvitation(false);
+    }
+  };
+
   const deleteUser = async (user: BetaUserData) => {
     setDeletingUser(true);
     setDeleteError(null);
@@ -514,6 +535,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Estado</th>
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Usuario</th>
                         <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Fecha</th>
+                        <th className="text-right p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -552,6 +574,15 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                               {displayEmail || '—'}
                             </td>
                             <td className="p-3 text-sm text-slate-500 dark:text-slate-400">{formatDate(inv.created_at)}</td>
+                            <td className="p-3 text-right">
+                              <button
+                                onClick={() => setInvitationToDelete(inv)}
+                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+                                title="Eliminar invitación"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -897,6 +928,53 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                 </>
               ) : (
                 'Eliminar usuario'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Invitation Confirmation Dialog */}
+      <AlertDialog open={!!invitationToDelete} onOpenChange={() => setInvitationToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Eliminar invitación
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                ¿Estás seguro de que quieres eliminar esta invitación?
+              </p>
+              <p className="font-mono text-sm bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded inline-block">
+                {invitationToDelete?.invitation_code}
+              </p>
+              {invitationToDelete?.used_by_email && (
+                <p className="text-amber-600 dark:text-amber-400">
+                  Esta invitación fue usada por: {invitationToDelete.used_by_email}
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingInvitation}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (invitationToDelete) {
+                  deleteInvitation(invitationToDelete);
+                }
+              }}
+              disabled={deletingInvitation}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {deletingInvitation ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar invitación'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -54,7 +54,6 @@ serve(async (req) => {
       .from('beta_invitations')
       .select('id, email, role, status, expires_at')
       .eq('invitation_code', invitation_code)
-      .eq('status', 'pending')
       .maybeSingle();
 
     if (error) {
@@ -68,7 +67,15 @@ serve(async (req) => {
     // Check if invitation exists
     if (!invitation) {
       return new Response(
-        JSON.stringify({ valid: false, error: 'Código de invitación inválido o ya usado' } as VerifyInvitationResponse),
+        JSON.stringify({ valid: false, error: 'Código de invitación inválido' } as VerifyInvitationResponse),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if already used (status is 'accepted')
+    if (invitation.status === 'accepted') {
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Este código de invitación ya ha sido utilizado' } as VerifyInvitationResponse),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -81,17 +88,26 @@ serve(async (req) => {
       );
     }
 
-    // Update invitation with the registering user's email
+    // IMMEDIATELY mark invitation as accepted to prevent reuse
     const { error: updateError } = await supabaseAdmin
       .from('beta_invitations')
-      .update({ email: email.toLowerCase() })
-      .eq('id', invitation.id);
+      .update({ 
+        email: email.toLowerCase(),
+        status: 'accepted',
+        accepted_at: new Date().toISOString()
+      })
+      .eq('id', invitation.id)
+      .eq('status', 'pending'); // Extra safety: only update if still pending
 
     if (updateError) {
-      console.error('Error updating invitation email:', updateError);
+      console.error('Error updating invitation:', updateError);
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Error al procesar la invitación' } as VerifyInvitationResponse),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Invitation is valid
+    // Invitation is valid and now marked as used
     return new Response(
       JSON.stringify({
         valid: true,
