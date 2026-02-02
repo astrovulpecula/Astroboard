@@ -267,30 +267,29 @@ export default function MultiObjectVisibilityChart({
               strokeOpacity={0.5}
             />
             {/* Moon curve - dark gray */}
-            {!hiddenObjects.has('moon') && (
-              <Line
-                type="monotone"
-                dataKey="moon"
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth={2}
-                strokeOpacity={0.5}
-                dot={false}
-                name={language === 'en' ? 'Moon' : 'Luna'}
-                strokeDasharray="4 2"
-              />
-            )}
+            <Line
+              type="monotone"
+              dataKey="moon"
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth={3}
+              strokeOpacity={hiddenObjects.has('moon') ? 0 : 0.5}
+              dot={false}
+              name={language === 'en' ? 'Moon' : 'Luna'}
+              strokeDasharray="4 2"
+              hide={hiddenObjects.has('moon')}
+            />
             {objectsData.map((obj) => (
-              !hiddenObjects.has(obj.id) && (
-                <Line
-                  key={obj.id}
-                  type="monotone"
-                  dataKey={obj.id}
-                  stroke={obj.color}
-                  strokeWidth={2}
-                  dot={false}
-                  name={obj.id}
-                />
-              )
+              <Line
+                key={obj.id}
+                type="monotone"
+                dataKey={obj.id}
+                stroke={obj.color}
+                strokeWidth={3}
+                strokeOpacity={hiddenObjects.has(obj.id) ? 0 : 1}
+                dot={false}
+                name={obj.id}
+                hide={hiddenObjects.has(obj.id)}
+              />
             ))}
             <Legend 
               content={renderLegend}
