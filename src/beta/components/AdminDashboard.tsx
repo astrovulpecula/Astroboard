@@ -12,12 +12,13 @@ import {
   XCircle,
   Star,
   TrendingUp,
-  Calendar,
   ChevronDown,
   ChevronUp,
   LogOut,
   Trash2,
   AlertTriangle,
+  RotateCcw,
+  Check,
 } from 'lucide-react';
 import type { BetaUser } from '../hooks/useBetaAuth';
 import { BETA_CONFIG } from '../config';
@@ -47,7 +48,7 @@ interface Invitation {
   created_at: string;
   expires_at: string;
   accepted_at: string | null;
-  used_by_email?: string | null; // Email del usuario que usó la invitación
+  used_by_email?: string | null;
 }
 
 interface BetaUserData {
@@ -58,7 +59,8 @@ interface BetaUserData {
   first_login_at: string | null;
   last_login_at: string | null;
   created_at: string;
-  total_session_time?: number; // Total session time in seconds
+  total_session_time?: number;
+  has_feedback?: boolean;
 }
 
 interface Feedback {
@@ -71,6 +73,17 @@ interface Feedback {
   payment_preference: 'one_time' | 'subscription' | 'undecided' | null;
   payment_comment: string | null;
   created_at: string;
+  usage_frequency: string | null;
+  usage_moment: string | null;
+  problem_to_solve: string | null;
+  found_confusing: boolean | null;
+  ease_of_use: number | null;
+  previous_management: string | null;
+  uses_similar_app: boolean | null;
+  similar_app_name: string | null;
+  pay_features: string[] | null;
+  pay_features_other: string | null;
+  experience_level: string | null;
   beta_users: {
     email: string;
   };
@@ -92,11 +105,31 @@ interface AppUsageMetrics {
   topConstellations: { constellation: string; count: number }[];
 }
 
+interface FeedbackStats {
+  experienceLevels: Record<string, number>;
+  usageFrequencies: Record<string, number>;
+  usageMoments: Record<string, number>;
+  previousManagements: Record<string, number>;
+  usesSimilarApp: { yes: number; no: number };
+  foundConfusing: { yes: number; no: number };
+  easeOfUse: Record<number, number>;
+  payFeatures: Record<string, number>;
+  textComments: {
+    problemToSolve: string[];
+    whatLiked: string[];
+    whatToImprove: string[];
+    similarAppNames: string[];
+    payFeaturesOther: string[];
+    paymentComments: string[];
+  };
+}
+
 export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<'invitations' | 'users' | 'feedback' | 'metrics'>('invitations');
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [users, setUsers] = useState<BetaUserData[]>([]);
   const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [feedbackStats, setFeedbackStats] = useState<FeedbackStats | null>(null);
   const [metrics, setMetrics] = useState<MetricSummary | null>(null);
   const [appUsage, setAppUsage] = useState<AppUsageMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,20 +140,19 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [invitationToDelete, setInvitationToDelete] = useState<Invitation | null>(null);
   const [deletingInvitation, setDeletingInvitation] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resettingFeedback, setResettingFeedback] = useState(false);
 
   const [isVerifiedAdmin, setIsVerifiedAdmin] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
-  // Verify admin status server-side on component mount
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
-        // Test admin access by attempting to fetch admin-only data
-        // RLS policies will reject if user is not an admin
         const { data, error } = await supabase
           .from('beta_users')
           .select('id')
-          .limit(2); // Admins can see multiple users, non-admins only see their own
+          .limit(2);
         
         if (error) {
           console.error('Admin verification failed:', error);
@@ -128,8 +160,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
           return;
         }
         
-        // If we can see more than 1 user or the query succeeded with admin policy, we're admin
-        // The RLS policy "Admins can view all users" uses is_beta_admin() server-side
         if (data && data.length > 0) {
           setIsVerifiedAdmin(true);
         } else {
@@ -157,7 +187,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     try {
       switch (activeTab) {
         case 'invitations':
-          // Fetch invitations with linked user info via beta_users table
           const { data: invData, error: invError } = await supabase
             .from('beta_invitations')
             .select('*, beta_users!beta_users_invitation_id_fkey(email)')
@@ -166,10 +195,8 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             console.error('Failed to load invitations:', invError.message);
             setInvitations([]);
           } else {
-            // Map the data to include the user email who used the invitation
             const mappedInvitations = (invData || []).map((inv: any) => ({
               ...inv,
-              // Check if there's a beta_user linked to this invitation
               used_by_email: inv.beta_users && inv.beta_users.length > 0 
                 ? inv.beta_users[0].email 
                 : null,
@@ -178,7 +205,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
           }
           break;
         case 'users':
-          // Fetch users
           const { data: userData, error: userError } = await supabase
             .from('beta_users')
             .select('id, user_id, email, role, first_login_at, last_login_at, created_at')
@@ -187,7 +213,13 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             console.error('Failed to load users:', userError.message);
             setUsers([]);
           } else {
-            // Fetch session time metrics for each user
+            // Fetch feedback to check which users have submitted
+            const { data: feedbackData } = await supabase
+              .from('beta_feedback')
+              .select('user_id');
+            
+            const usersWithFeedback = new Set((feedbackData || []).map(f => f.user_id));
+            
             const usersWithTime = await Promise.all(
               (userData || []).map(async (user: any) => {
                 const { data: sessionData } = await supabase
@@ -196,9 +228,12 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   .eq('user_id', user.id)
                   .eq('event_type', 'session_heartbeat');
                 
-                // Each heartbeat represents 60 seconds of activity
                 const totalSeconds = (sessionData?.length || 0) * 60;
-                return { ...user, total_session_time: totalSeconds };
+                return { 
+                  ...user, 
+                  total_session_time: totalSeconds,
+                  has_feedback: usersWithFeedback.has(user.id)
+                };
               })
             );
             setUsers(usersWithTime as BetaUserData[]);
@@ -213,7 +248,9 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             console.error('Failed to load feedback:', fbError.message);
             setFeedback([]);
           } else {
-            setFeedback((fbData as unknown as Feedback[]) || []);
+            const feedbackList = (fbData as unknown as Feedback[]) || [];
+            setFeedback(feedbackList);
+            calculateFeedbackStats(feedbackList);
           }
           break;
         case 'metrics':
@@ -225,6 +262,79 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateFeedbackStats = (feedbackList: Feedback[]) => {
+    const stats: FeedbackStats = {
+      experienceLevels: {},
+      usageFrequencies: {},
+      usageMoments: {},
+      previousManagements: {},
+      usesSimilarApp: { yes: 0, no: 0 },
+      foundConfusing: { yes: 0, no: 0 },
+      easeOfUse: {},
+      payFeatures: {},
+      textComments: {
+        problemToSolve: [],
+        whatLiked: [],
+        whatToImprove: [],
+        similarAppNames: [],
+        payFeaturesOther: [],
+        paymentComments: [],
+      },
+    };
+
+    feedbackList.forEach(fb => {
+      // Experience levels
+      if (fb.experience_level) {
+        stats.experienceLevels[fb.experience_level] = (stats.experienceLevels[fb.experience_level] || 0) + 1;
+      }
+
+      // Usage frequencies
+      if (fb.usage_frequency) {
+        stats.usageFrequencies[fb.usage_frequency] = (stats.usageFrequencies[fb.usage_frequency] || 0) + 1;
+      }
+
+      // Usage moments
+      if (fb.usage_moment) {
+        stats.usageMoments[fb.usage_moment] = (stats.usageMoments[fb.usage_moment] || 0) + 1;
+      }
+
+      // Previous management
+      if (fb.previous_management) {
+        stats.previousManagements[fb.previous_management] = (stats.previousManagements[fb.previous_management] || 0) + 1;
+      }
+
+      // Uses similar app
+      if (fb.uses_similar_app === true) stats.usesSimilarApp.yes++;
+      if (fb.uses_similar_app === false) stats.usesSimilarApp.no++;
+
+      // Found confusing
+      if (fb.found_confusing === true) stats.foundConfusing.yes++;
+      if (fb.found_confusing === false) stats.foundConfusing.no++;
+
+      // Ease of use
+      if (fb.ease_of_use) {
+        stats.easeOfUse[fb.ease_of_use] = (stats.easeOfUse[fb.ease_of_use] || 0) + 1;
+      }
+
+      // Pay features
+      if (fb.pay_features) {
+        fb.pay_features.forEach(feature => {
+          stats.payFeatures[feature] = (stats.payFeatures[feature] || 0) + 1;
+        });
+      }
+
+      // Text comments
+      if (fb.problem_to_solve) stats.textComments.problemToSolve.push(fb.problem_to_solve);
+      if (fb.what_liked) stats.textComments.whatLiked.push(fb.what_liked);
+      if (fb.what_to_improve) stats.textComments.whatToImprove.push(fb.what_to_improve);
+      if (fb.similar_app_name) stats.textComments.similarAppNames.push(fb.similar_app_name);
+      if (fb.pay_features_other) stats.textComments.payFeaturesOther.push(fb.pay_features_other);
+      if (fb.payment_comment) stats.textComments.paymentComments.push(fb.payment_comment);
+    });
+
+    setFeedbackStats(stats);
   };
 
   const loadMetrics = async () => {
@@ -253,7 +363,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
         topEvents,
       });
 
-      // Calculate app usage metrics from event_data
       let totalImages = 0;
       let totalObjects = 0;
       let totalLights = 0;
@@ -265,25 +374,18 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
         const data = m.event_data as Record<string, any> | null;
         if (!data) return;
 
-        // Count images
         if (data.images_count) totalImages += Number(data.images_count) || 0;
         if (data.image_uploaded) totalImages += 1;
-
-        // Count objects
         if (data.objects_count) totalObjects = Math.max(totalObjects, Number(data.objects_count) || 0);
         if (data.object_created) totalObjects += 1;
-
-        // Count lights and exposure
         if (data.lights) totalLights += Number(data.lights) || 0;
         if (data.exposure_seconds) totalExposureSeconds += Number(data.exposure_seconds) || 0;
 
-        // Track filters
         if (data.filter) {
           const filter = String(data.filter);
           filterCounts[filter] = (filterCounts[filter] || 0) + 1;
         }
 
-        // Track constellations
         if (data.constellation) {
           const constellation = String(data.constellation);
           constellationCounts[constellation] = (constellationCounts[constellation] || 0) + 1;
@@ -313,16 +415,12 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
 
   const generateInvitationCode = async () => {
     setGeneratingCode(true);
-
     try {
-      // Insert with placeholder email (will be filled when user registers)
       const { error } = await supabase.from('beta_invitations').insert([{
         email: `pending_${Date.now()}@placeholder.local`,
         role: 'tester',
       }]);
-
       if (error) throw error;
-
       loadData();
     } catch (err) {
       console.error('Error generating invitation code:', err);
@@ -338,9 +436,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
         .from('beta_invitations')
         .delete()
         .eq('id', invitation.id);
-
       if (error) throw error;
-
       setInvitationToDelete(null);
       loadData();
     } catch (err) {
@@ -353,21 +449,12 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
   const deleteUser = async (user: BetaUserData) => {
     setDeletingUser(true);
     setDeleteError(null);
-    
     try {
       const { data, error } = await supabase.functions.invoke('delete-user', {
         body: { user_id: user.user_id, beta_user_id: user.id },
       });
-
-      if (error) {
-        throw new Error(error.message || 'Error al eliminar usuario');
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      // Reload users list
+      if (error) throw new Error(error.message || 'Error al eliminar usuario');
+      if (data?.error) throw new Error(data.error);
       setUserToDelete(null);
       loadData();
     } catch (err) {
@@ -375,6 +462,26 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
       setDeleteError(err instanceof Error ? err.message : 'Error al eliminar usuario');
     } finally {
       setDeletingUser(false);
+    }
+  };
+
+  const resetAllFeedback = async () => {
+    setResettingFeedback(true);
+    try {
+      const { error } = await supabase
+        .from('beta_feedback')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+      
+      if (error) throw error;
+      
+      setShowResetConfirm(false);
+      setFeedback([]);
+      setFeedbackStats(null);
+    } catch (err) {
+      console.error('Error resetting feedback:', err);
+    } finally {
+      setResettingFeedback(false);
     }
   };
 
@@ -393,23 +500,8 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     if (!seconds || seconds === 0) return '–';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
+    if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'accepted':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'pending':
-        return <Clock className="w-4 h-4 text-amber-500" />;
-      case 'expired':
-        return <XCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return null;
-    }
   };
 
   const avgRating = feedback.length > 0
@@ -420,7 +512,163 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     ? Math.round((feedback.filter(f => f.would_recommend === true).length / feedback.filter(f => f.would_recommend !== null).length) * 100)
     : 0;
 
-  // Show error if verification failed
+  // Label mappings
+  const experienceLevelLabels: Record<string, string> = {
+    beginner: 'Principiante',
+    intermediate: 'Intermedio',
+    advanced: 'Avanzado',
+    professional: 'Profesional',
+  };
+
+  const usageFrequencyLabels: Record<string, string> = {
+    daily: 'A diario',
+    weekly: 'Varias veces/semana',
+    monthly: 'Varias veces/mes',
+    sessions_only: 'Solo en sesiones',
+  };
+
+  const usageMomentLabels: Record<string, string> = {
+    during_session: 'Durante la sesión',
+    after_analysis: 'Después, para analizar',
+    future_planning: 'Planificar futuras',
+    history_only: 'Registro histórico',
+  };
+
+  const previousManagementLabels: Record<string, string> = {
+    excel: 'Excel / Sheets',
+    dedicated_apps: 'Apps dedicadas',
+    loose_notes: 'Notas sueltas',
+    no_tracking: 'Sin registro',
+  };
+
+  const payFeatureLabels: Record<string, string> = {
+    advanced_analysis: 'Análisis avanzados',
+    integrations: 'Integraciones',
+    mobile_app: 'App móvil',
+    cloud_sync: 'Sync cloud',
+    export_advanced: 'Export avanzada',
+  };
+
+  // Bar chart component
+  const BarChart = ({ 
+    data, 
+    labels, 
+    color = 'bg-blue-500',
+    title 
+  }: { 
+    data: Record<string, number>; 
+    labels: Record<string, string>;
+    color?: string;
+    title: string;
+  }) => {
+    const entries = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const maxCount = Math.max(...entries.map(([, count]) => count), 1);
+    
+    if (entries.length === 0) return null;
+
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+        <h4 className="font-medium text-slate-900 dark:text-white mb-3 text-sm">{title}</h4>
+        <div className="space-y-2">
+          {entries.map(([key, count]) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-5 overflow-hidden">
+                <div
+                  className={`${color} h-full rounded-full flex items-center px-2`}
+                  style={{ width: `${(count / maxCount) * 100}%` }}
+                >
+                  <span className="text-xs text-white truncate">{labels[key] || key}</span>
+                </div>
+              </div>
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-8 text-right">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Yes/No chart
+  const YesNoChart = ({ 
+    data, 
+    title,
+    yesColor = 'bg-green-500',
+    noColor = 'bg-red-500'
+  }: { 
+    data: { yes: number; no: number }; 
+    title: string;
+    yesColor?: string;
+    noColor?: string;
+  }) => {
+    const total = data.yes + data.no;
+    if (total === 0) return null;
+
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+        <h4 className="font-medium text-slate-900 dark:text-white mb-3 text-sm">{title}</h4>
+        <div className="flex gap-4">
+          <div className="flex-1 text-center">
+            <div className={`${yesColor} text-white rounded-lg py-2 mb-1`}>
+              <span className="text-xl font-bold">{data.yes}</span>
+            </div>
+            <span className="text-xs text-slate-500">Sí</span>
+          </div>
+          <div className="flex-1 text-center">
+            <div className={`${noColor} text-white rounded-lg py-2 mb-1`}>
+              <span className="text-xl font-bold">{data.no}</span>
+            </div>
+            <span className="text-xs text-slate-500">No</span>
+          </div>
+        </div>
+        <div className="mt-2 text-center text-xs text-slate-400">
+          {Math.round((data.yes / total) * 100)}% respondió Sí
+        </div>
+      </div>
+    );
+  };
+
+  // Ease of use chart
+  const EaseOfUseChart = ({ data }: { data: Record<number, number> }) => {
+    const total = Object.values(data).reduce((a, b) => a + b, 0);
+    if (total === 0) return null;
+
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+        <h4 className="font-medium text-slate-900 dark:text-white mb-3 text-sm">Facilidad de uso (1=fácil, 5=difícil)</h4>
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map(num => (
+            <div key={num} className="flex-1 text-center">
+              <div className={`rounded-lg py-2 mb-1 ${
+                num <= 2 ? 'bg-green-500' : num === 3 ? 'bg-amber-500' : 'bg-red-500'
+              } text-white`}>
+                <span className="text-lg font-bold">{data[num] || 0}</span>
+              </div>
+              <span className="text-xs text-slate-500">{num}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Text comments section
+  const TextCommentsSection = ({ title, comments }: { title: string; comments: string[] }) => {
+    if (comments.length === 0) return null;
+
+    return (
+      <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
+        <h4 className="font-medium text-slate-900 dark:text-white mb-3 text-sm">{title}</h4>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {comments.map((comment, i) => (
+            <div key={i} className="p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-sm text-slate-600 dark:text-slate-300">
+              "{comment}"
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   if (verificationError) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
@@ -441,7 +689,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
     );
   }
 
-  // Show loading while verifying admin status
   if (!isVerifiedAdmin) {
     return (
       <div className="fixed inset-0 z-50 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
@@ -509,7 +756,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             {/* Invitations Tab */}
             {activeTab === 'invitations' && (
               <div className="space-y-4">
-                {/* Generate Code Button */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-4 flex items-center justify-between">
                   <div>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -526,7 +772,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </button>
                 </div>
 
-                {/* Invitations List */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
                   <table className="w-full">
                     <thead>
@@ -540,13 +785,9 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                     </thead>
                     <tbody>
                       {invitations.map((inv) => {
-                        // Determine if invitation is used based on linked user OR status
                         const hasLinkedUser = !!inv.used_by_email;
                         const isUsed = inv.status === 'accepted' || hasLinkedUser;
-                        const isPending = !isUsed && inv.status === 'pending';
                         const isExpired = inv.status === 'expired' || (!isUsed && new Date(inv.expires_at) < new Date());
-                        
-                        // Display the user who used the invitation
                         const displayEmail = inv.used_by_email || null;
                         
                         return (
@@ -600,6 +841,7 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                     <tr className="border-b border-slate-200 dark:border-slate-700">
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Email</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Rol</th>
+                      <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Feedback</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Tiempo de uso</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Primer login</th>
                       <th className="text-left p-3 text-sm font-medium text-slate-500 dark:text-slate-400">Último login</th>
@@ -618,6 +860,19 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                           }`}>
                             {user.role}
                           </span>
+                        </td>
+                        <td className="p-3">
+                          {user.has_feedback ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              <Check className="w-3 h-3" />
+                              Completado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                              <Clock className="w-3 h-3" />
+                              Pendiente
+                            </span>
+                          )}
                         </td>
                         <td className="p-3 text-sm text-slate-600 dark:text-slate-400 font-medium">
                           {formatSessionTime(user.total_session_time)}
@@ -644,7 +899,20 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
 
             {/* Feedback Tab */}
             {activeTab === 'feedback' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Header with Reset Button */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Análisis de Feedback</h3>
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    disabled={feedback.length === 0}
+                    className="px-4 py-2 rounded-lg border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 flex items-center gap-2 text-sm"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Resetear datos
+                  </button>
+                </div>
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
@@ -682,72 +950,217 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </div>
                 </div>
 
-                {/* Feedback List */}
-                <div className="space-y-3">
-                  {feedback.map((fb) => (
-                    <div key={fb.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
-                      <button
-                        onClick={() => setExpandedFeedback(expandedFeedback === fb.id ? null : fb.id)}
-                        className="w-full p-4 flex items-center justify-between text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-4 h-4 ${
-                                  star <= (fb.rating || 0)
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-slate-300 dark:text-slate-600'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">{fb.beta_users?.email}</span>
-                          <span className="text-xs text-slate-400">{formatDate(fb.created_at)}</span>
-                        </div>
-                        {expandedFeedback === fb.id ? (
-                          <ChevronUp className="w-5 h-5 text-slate-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-slate-400" />
-                        )}
-                      </button>
-                      {expandedFeedback === fb.id && (
-                        <div className="px-4 pb-4 space-y-3 border-t border-slate-200 dark:border-slate-700 pt-3">
-                          {fb.what_liked && (
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Qué le gustó?</p>
-                              <p className="text-slate-600 dark:text-slate-400">{fb.what_liked}</p>
-                            </div>
-                          )}
-                          {fb.what_to_improve && (
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Qué mejoraría?</p>
-                              <p className="text-slate-600 dark:text-slate-400">{fb.what_to_improve}</p>
-                            </div>
-                          )}
-                          {fb.would_recommend !== null && (
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Recomendaría?</p>
-                              <p className="text-slate-600 dark:text-slate-400">
-                                {fb.would_recommend ? 'Sí' : 'No'}
-                                {fb.recommend_comment && ` - ${fb.recommend_comment}`}
-                              </p>
-                            </div>
-                          )}
-                          {fb.payment_preference && (
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Preferencia de pago</p>
-                              <p className="text-slate-600 dark:text-slate-400">
-                                {fb.payment_preference === 'one_time' ? 'Pago único' : fb.payment_preference === 'subscription' ? 'Suscripción' : 'Indeciso'}
-                                {fb.payment_comment && ` - ${fb.payment_comment}`}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                {/* Charts Grid */}
+                {feedbackStats && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <BarChart 
+                        data={feedbackStats.experienceLevels} 
+                        labels={experienceLevelLabels}
+                        color="bg-purple-500"
+                        title="Nivel de experiencia"
+                      />
+                      <BarChart 
+                        data={feedbackStats.usageFrequencies} 
+                        labels={usageFrequencyLabels}
+                        color="bg-blue-500"
+                        title="Frecuencia de uso"
+                      />
+                      <BarChart 
+                        data={feedbackStats.usageMoments} 
+                        labels={usageMomentLabels}
+                        color="bg-cyan-500"
+                        title="Momento de uso"
+                      />
+                      <BarChart 
+                        data={feedbackStats.previousManagements} 
+                        labels={previousManagementLabels}
+                        color="bg-amber-500"
+                        title="Gestión anterior"
+                      />
+                      <YesNoChart 
+                        data={feedbackStats.usesSimilarApp}
+                        title="¿Usa app similar?"
+                        yesColor="bg-amber-500"
+                        noColor="bg-slate-400"
+                      />
+                      <YesNoChart 
+                        data={feedbackStats.foundConfusing}
+                        title="¿Encontró algo confuso?"
+                        yesColor="bg-red-500"
+                        noColor="bg-green-500"
+                      />
+                      <EaseOfUseChart data={feedbackStats.easeOfUse} />
+                      <BarChart 
+                        data={feedbackStats.payFeatures} 
+                        labels={payFeatureLabels}
+                        color="bg-emerald-500"
+                        title="Características por las que pagarían"
+                      />
                     </div>
-                  ))}
+
+                    {/* Text Comments */}
+                    <div>
+                      <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Comentarios de texto</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <TextCommentsSection 
+                          title="Problemas que resuelve Astroboard" 
+                          comments={feedbackStats.textComments.problemToSolve} 
+                        />
+                        <TextCommentsSection 
+                          title="Lo que más les gustó" 
+                          comments={feedbackStats.textComments.whatLiked} 
+                        />
+                        <TextCommentsSection 
+                          title="Lo que mejorarían" 
+                          comments={feedbackStats.textComments.whatToImprove} 
+                        />
+                        <TextCommentsSection 
+                          title="Apps similares que usan" 
+                          comments={feedbackStats.textComments.similarAppNames} 
+                        />
+                        <TextCommentsSection 
+                          title="Otras características por pagar" 
+                          comments={feedbackStats.textComments.payFeaturesOther} 
+                        />
+                        <TextCommentsSection 
+                          title="Comentarios de pago" 
+                          comments={feedbackStats.textComments.paymentComments} 
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Individual Feedback List */}
+                <div>
+                  <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Respuestas individuales</h3>
+                  <div className="space-y-3">
+                    {feedback.map((fb) => (
+                      <div key={fb.id} className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => setExpandedFeedback(expandedFeedback === fb.id ? null : fb.id)}
+                          className="w-full p-4 flex items-center justify-between text-left"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${
+                                    star <= (fb.rating || 0)
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-slate-300 dark:text-slate-600'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">{fb.beta_users?.email}</span>
+                            <span className="text-xs text-slate-400">{formatDate(fb.created_at)}</span>
+                          </div>
+                          {expandedFeedback === fb.id ? (
+                            <ChevronUp className="w-5 h-5 text-slate-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                          )}
+                        </button>
+                        {expandedFeedback === fb.id && (
+                          <div className="px-4 pb-4 space-y-3 border-t border-slate-200 dark:border-slate-700 pt-3">
+                            {fb.experience_level && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Nivel de experiencia</p>
+                                <p className="text-slate-600 dark:text-slate-400">{experienceLevelLabels[fb.experience_level] || fb.experience_level}</p>
+                              </div>
+                            )}
+                            {fb.usage_frequency && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Frecuencia de uso</p>
+                                <p className="text-slate-600 dark:text-slate-400">{usageFrequencyLabels[fb.usage_frequency] || fb.usage_frequency}</p>
+                              </div>
+                            )}
+                            {fb.usage_moment && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Momento de uso</p>
+                                <p className="text-slate-600 dark:text-slate-400">{usageMomentLabels[fb.usage_moment] || fb.usage_moment}</p>
+                              </div>
+                            )}
+                            {fb.previous_management && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Gestión anterior</p>
+                                <p className="text-slate-600 dark:text-slate-400">{previousManagementLabels[fb.previous_management] || fb.previous_management}</p>
+                              </div>
+                            )}
+                            {fb.uses_similar_app !== null && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Usa app similar?</p>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  {fb.uses_similar_app ? 'Sí' : 'No'}
+                                  {fb.similar_app_name && ` - ${fb.similar_app_name}`}
+                                </p>
+                              </div>
+                            )}
+                            {fb.problem_to_solve && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Problema que resuelve</p>
+                                <p className="text-slate-600 dark:text-slate-400">{fb.problem_to_solve}</p>
+                              </div>
+                            )}
+                            {fb.ease_of_use && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Facilidad de uso</p>
+                                <p className="text-slate-600 dark:text-slate-400">{fb.ease_of_use}/5 (1=fácil, 5=difícil)</p>
+                              </div>
+                            )}
+                            {fb.found_confusing !== null && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Encontró algo confuso?</p>
+                                <p className="text-slate-600 dark:text-slate-400">{fb.found_confusing ? 'Sí' : 'No'}</p>
+                              </div>
+                            )}
+                            {fb.what_liked && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Qué le gustó?</p>
+                                <p className="text-slate-600 dark:text-slate-400">{fb.what_liked}</p>
+                              </div>
+                            )}
+                            {fb.what_to_improve && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Qué mejoraría?</p>
+                                <p className="text-slate-600 dark:text-slate-400">{fb.what_to_improve}</p>
+                              </div>
+                            )}
+                            {fb.would_recommend !== null && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">¿Recomendaría?</p>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  {fb.would_recommend ? 'Sí' : 'No'}
+                                  {fb.recommend_comment && ` - ${fb.recommend_comment}`}
+                                </p>
+                              </div>
+                            )}
+                            {fb.pay_features && fb.pay_features.length > 0 && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Pagaría por</p>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  {fb.pay_features.map(f => payFeatureLabels[f] || f).join(', ')}
+                                  {fb.pay_features_other && `, ${fb.pay_features_other}`}
+                                </p>
+                              </div>
+                            )}
+                            {fb.payment_preference && (
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">Preferencia de pago</p>
+                                <p className="text-slate-600 dark:text-slate-400">
+                                  {fb.payment_preference === 'one_time' ? 'Pago único' : fb.payment_preference === 'subscription' ? 'Suscripción' : 'Indeciso'}
+                                  {fb.payment_comment && ` - ${fb.payment_comment}`}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -755,7 +1168,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
             {/* Metrics Tab */}
             {activeTab === 'metrics' && metrics && (
               <div className="space-y-6">
-                {/* Session Metrics */}
                 <div>
                   <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Métricas de uso</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -774,7 +1186,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </div>
                 </div>
 
-                {/* App Usage Metrics */}
                 {appUsage && (
                   <div>
                     <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-3">Métricas de contenido</h3>
@@ -799,7 +1210,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </div>
                 )}
 
-                {/* Top Filters */}
                 {appUsage && appUsage.topFilters.length > 0 && (
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
                     <h3 className="font-medium text-slate-900 dark:text-white mb-3">Filtros más usados</h3>
@@ -824,7 +1234,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </div>
                 )}
 
-                {/* Top Constellations */}
                 {appUsage && appUsage.topConstellations.length > 0 && (
                   <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
                     <h3 className="font-medium text-slate-900 dark:text-white mb-3">Constelaciones más fotografiadas</h3>
@@ -849,7 +1258,6 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                   </div>
                 )}
 
-                {/* Top Events */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl p-4">
                   <h3 className="font-medium text-slate-900 dark:text-white mb-3">Eventos más frecuentes</h3>
                   <div className="space-y-2">
@@ -975,6 +1383,49 @@ export function AdminDashboard({ betaUser, onClose, onSignOut }: AdminDashboardP
                 </>
               ) : (
                 'Eliminar invitación'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset Feedback Confirmation Dialog */}
+      <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Resetear todos los datos de feedback
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                ¿Estás seguro de que quieres eliminar <strong>todas las respuestas de feedback</strong>?
+              </p>
+              <p className="text-red-600 dark:text-red-400 font-medium">
+                Se eliminarán {feedback.length} respuestas de forma permanente.
+              </p>
+              <p className="text-red-600 dark:text-red-400 font-semibold">
+                Esta acción no se puede deshacer.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={resettingFeedback}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                resetAllFeedback();
+              }}
+              disabled={resettingFeedback}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {resettingFeedback ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar todo el feedback'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
