@@ -187,9 +187,9 @@ export default function VisibilityChart({
               <Line
                 type="monotone"
                 dataKey="moonAltitude"
-                stroke="hsl(var(--muted-foreground))"
+                stroke="hsl(262, 83%, 58%)"
                 strokeWidth={2}
-                strokeOpacity={0.6}
+                strokeOpacity={0.7}
                 dot={false}
                 connectNulls
               />
@@ -354,9 +354,9 @@ export default function VisibilityChart({
                 <Line
                   type="monotone"
                   dataKey="moonAltitude"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="hsl(262, 83%, 58%)"
                   strokeWidth={3}
-                  strokeOpacity={0.5}
+                  strokeOpacity={0.7}
                   dot={false}
                   name={language === 'en' ? 'Moon' : 'Luna'}
                   connectNulls

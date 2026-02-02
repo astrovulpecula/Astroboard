@@ -270,9 +270,9 @@ export default function MultiObjectVisibilityChart({
             <Line
               type="monotone"
               dataKey="moon"
-              stroke="hsl(var(--muted-foreground))"
+              stroke="hsl(262, 83%, 58%)"
               strokeWidth={3}
-              strokeOpacity={hiddenObjects.has('moon') ? 0 : 0.5}
+              strokeOpacity={hiddenObjects.has('moon') ? 0 : 0.7}
               dot={false}
               name={language === 'en' ? 'Moon' : 'Luna'}
               strokeDasharray="4 2"
