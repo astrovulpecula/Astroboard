@@ -17,42 +17,75 @@ export type Database = {
       beta_feedback: {
         Row: {
           created_at: string
+          ease_of_use: number | null
+          experience_level: string | null
+          found_confusing: boolean | null
           id: string
+          pay_features: string[] | null
+          pay_features_other: string | null
           payment_comment: string | null
           payment_preference:
             | Database["public"]["Enums"]["payment_preference"]
             | null
+          previous_management: string | null
+          problem_to_solve: string | null
           rating: number | null
           recommend_comment: string | null
+          similar_app_name: string | null
+          usage_frequency: string | null
+          usage_moment: string | null
           user_id: string
+          uses_similar_app: boolean | null
           what_liked: string | null
           what_to_improve: string | null
           would_recommend: boolean | null
         }
         Insert: {
           created_at?: string
+          ease_of_use?: number | null
+          experience_level?: string | null
+          found_confusing?: boolean | null
           id?: string
+          pay_features?: string[] | null
+          pay_features_other?: string | null
           payment_comment?: string | null
           payment_preference?:
             | Database["public"]["Enums"]["payment_preference"]
             | null
+          previous_management?: string | null
+          problem_to_solve?: string | null
           rating?: number | null
           recommend_comment?: string | null
+          similar_app_name?: string | null
+          usage_frequency?: string | null
+          usage_moment?: string | null
           user_id: string
+          uses_similar_app?: boolean | null
           what_liked?: string | null
           what_to_improve?: string | null
           would_recommend?: boolean | null
         }
         Update: {
           created_at?: string
+          ease_of_use?: number | null
+          experience_level?: string | null
+          found_confusing?: boolean | null
           id?: string
+          pay_features?: string[] | null
+          pay_features_other?: string | null
           payment_comment?: string | null
           payment_preference?:
             | Database["public"]["Enums"]["payment_preference"]
             | null
+          previous_management?: string | null
+          problem_to_solve?: string | null
           rating?: number | null
           recommend_comment?: string | null
+          similar_app_name?: string | null
+          usage_frequency?: string | null
+          usage_moment?: string | null
           user_id?: string
+          uses_similar_app?: boolean | null
           what_liked?: string | null
           what_to_improve?: string | null
           would_recommend?: boolean | null
