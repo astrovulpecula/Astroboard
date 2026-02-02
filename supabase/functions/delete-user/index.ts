@@ -127,7 +127,7 @@ serve(async (req) => {
     if (deleteAuthError) {
       console.error("Error deleting auth user:", deleteAuthError);
       return new Response(
-        JSON.stringify({ error: "Failed to delete auth user", details: deleteAuthError.message }),
+        JSON.stringify({ error: "Failed to delete user" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -138,9 +138,8 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     console.error("Error in delete-user function:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: message }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
