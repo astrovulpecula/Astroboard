@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   AreaChart,
   Area,
@@ -23,6 +23,7 @@ import {
 } from '@/lib/astronomy-calculations';
 import { calculateMoonNightVisibility } from '@/lib/moon-position';
 import { Clock, ArrowUp, Sunrise, Sunset, Calendar, Moon } from 'lucide-react';
+
 interface VisibilityChartProps {
   objectCode: string;
   coordinates: string; // "lat, lon" format
@@ -45,6 +46,11 @@ export default function VisibilityChart({
   defaultView = 'today',
 }: VisibilityChartProps) {
   const [viewMode, setViewMode] = useState<'today' | 'annual'>(defaultView);
+  const [moonHidden, setMoonHidden] = useState(false);
+
+  const toggleMoon = useCallback(() => {
+    setMoonHidden(prev => !prev);
+  }, []);
 
   const coords = useMemo(() => parseCoordinates(coordinates), [coordinates]);
   const objectCoords = useMemo(() => getObjectCoordinates(objectCode), [objectCode]);
@@ -356,19 +362,43 @@ export default function VisibilityChart({
                   dataKey="moonAltitude"
                   stroke="hsl(262, 83%, 58%)"
                   strokeWidth={3}
-                  strokeOpacity={0.7}
+                  strokeOpacity={moonHidden ? 0 : 0.7}
                   dot={false}
                   name={language === 'en' ? 'Moon' : 'Luna'}
                   connectNulls
+                  hide={moonHidden}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
+          {/* Moon Legend */}
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={toggleMoon}
+              className={`flex items-center gap-1.5 text-xs transition-opacity ${
+                moonHidden ? 'opacity-40' : 'opacity-100'
+              } hover:opacity-70`}
+            >
+              <Moon className="w-3 h-3" style={{ color: 'hsl(262, 83%, 58%)' }} />
+              <span
+                className="w-4 h-0.5 rounded"
+                style={{ 
+                  backgroundColor: 'hsl(262, 83%, 58%)',
+                  opacity: moonHidden ? 0.4 : 1,
+                }}
+              />
+              <span className={moonHidden ? 'line-through text-muted-foreground' : ''}>
+                {language === 'en' ? 'Moon' : 'Luna'}
+              </span>
+            </button>
+          </div>
+
           <p className="text-xs text-muted-foreground text-center">
             {language === 'en'
-              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Gray line: Moon. Objects above 30° offer better imaging conditions.`
-              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea gris: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
+              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Purple line: Moon. Objects above 30° offer better imaging conditions.`
+              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea morada: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
           </p>
         </>
       ) : (
