@@ -92,6 +92,7 @@ import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
 import VisibilityChart from "@/components/VisibilityChart";
+import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
 import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
@@ -2641,6 +2642,12 @@ function FSessionAutomated({
   const [rejectedLights, setRejectedLights] = useState("");
   const [notes, setNotes] = useState("");
   
+  // Manual weather/environment fields (when FITS doesn't have data)
+  const [manualMpsas, setManualMpsas] = useState("");
+  const [manualAmbientTemp, setManualAmbientTemp] = useState("");
+  const [manualHumidity, setManualHumidity] = useState("");
+  const [manualWind, setManualWind] = useState("");
+  
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
   // Auto-fill form when FITS analysis changes
@@ -2702,6 +2709,35 @@ function FSessionAutomated({
       onSubmit={(e) => {
         e.preventDefault();
 
+        // Build fitsAnalysis with manual data if needed
+        let finalFitsAnalysis = fitsAnalysis;
+        
+        // If no FITS analysis but user entered manual data, create a synthetic one
+        const hasManualData = manualMpsas || manualAmbientTemp || manualHumidity || manualWind;
+        if (hasManualData && !fitsAnalysis) {
+          finalFitsAnalysis = {
+            files: [],
+            averages: {
+              mpsas: manualMpsas ? parseFloat(manualMpsas) : undefined,
+              ambientTemp: manualAmbientTemp ? parseFloat(manualAmbientTemp) : undefined,
+              humidity: manualHumidity ? parseFloat(manualHumidity) : undefined,
+              wind: manualWind ? parseFloat(manualWind) : undefined,
+            },
+          };
+        } else if (hasManualData && fitsAnalysis) {
+          // Merge manual data with FITS data (manual overrides missing values)
+          finalFitsAnalysis = {
+            ...fitsAnalysis,
+            averages: {
+              ...fitsAnalysis.averages,
+              mpsas: fitsAnalysis.averages.mpsas ?? (manualMpsas ? parseFloat(manualMpsas) : undefined),
+              ambientTemp: fitsAnalysis.averages.ambientTemp ?? (manualAmbientTemp ? parseFloat(manualAmbientTemp) : undefined),
+              humidity: fitsAnalysis.averages.humidity ?? (manualHumidity ? parseFloat(manualHumidity) : undefined),
+              wind: fitsAnalysis.averages.wind ?? (manualWind ? parseFloat(manualWind) : undefined),
+            },
+          };
+        }
+
         const sessionData = {
           date,
           lights: num(lights),
@@ -2716,7 +2752,7 @@ function FSessionAutomated({
           rejectedLights: rejectedLights !== "" ? parseInt(rejectedLights) : undefined,
           notes,
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
-          fitsAnalysis: fitsAnalysis || undefined,
+          fitsAnalysis: finalFitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
         };
 
@@ -2990,6 +3026,74 @@ function FSessionAutomated({
           />
         </label>
       </div>
+
+      {/* Manual environment data fields - shown when FITS lacks this data */}
+      {(!fitsAnalysis?.averages?.mpsas || !fitsAnalysis?.averages?.ambientTemp || !fitsAnalysis?.averages?.humidity || !fitsAnalysis?.averages?.wind) && (
+        <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
+            <Thermometer className="w-4 h-4" />
+            <span>Datos ambientales manuales</span>
+            <span className="text-xs font-normal">(opcional, si FITS no los tiene)</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {!fitsAnalysis?.averages?.mpsas && (
+              <label className="grid gap-1">
+                <span className="text-xs text-muted-foreground">MPSAS</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={manualMpsas}
+                  onChange={(e) => setManualMpsas(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="21.5"
+                />
+              </label>
+            )}
+            {!fitsAnalysis?.averages?.ambientTemp && (
+              <label className="grid gap-1">
+                <span className="text-xs text-muted-foreground">Temp. °C</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={manualAmbientTemp}
+                  onChange={(e) => setManualAmbientTemp(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="15"
+                />
+              </label>
+            )}
+            {!fitsAnalysis?.averages?.humidity && (
+              <label className="grid gap-1">
+                <span className="text-xs text-muted-foreground">Humedad %</span>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  value={manualHumidity}
+                  onChange={(e) => setManualHumidity(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="60"
+                />
+              </label>
+            )}
+            {!fitsAnalysis?.averages?.wind && (
+              <label className="grid gap-1">
+                <span className="text-xs text-muted-foreground">Viento m/s</span>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  value={manualWind}
+                  onChange={(e) => setManualWind(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="5"
+                />
+              </label>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Notes - left blank */}
       <label className="grid gap-1">
@@ -7123,6 +7227,19 @@ export default function AstroTracker() {
                           </div>
                         </div>
                       </div>
+                    </Card>
+                  )}
+
+                  {/* Multi-Object Nocturnal Visibility Chart */}
+                  {plannedProjects.length > 0 && mainLocation?.coords && (
+                    <Card className="p-4">
+                      <MultiObjectVisibilityChart
+                        plannedProjects={plannedProjects}
+                        coordinates={mainLocation.coords}
+                        date={new Date()}
+                        language={language}
+                        altitudeLimit={minAltitudeLimit}
+                      />
                     </Card>
                   )}
 
