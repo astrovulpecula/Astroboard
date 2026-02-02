@@ -167,7 +167,7 @@ export const translations = {
     fitsHumidityWindChart: "Humedad y viento",
 
     // Statistics
-    statistics: "Estadísticas",
+    statistics: "Métricas",
     totalExposure: "Exposición Total",
     totalLights: "Total Lights",
     totalSessions: "Total Sesiones",
@@ -226,7 +226,7 @@ export const translations = {
     forecast: "Pronóstico",
     planning: "Planificación",
     objectsSection: "Objetos",
-    statisticsSection: "Estadísticas",
+    statisticsSection: "Métricas",
     gallery: "Galería",
     weatherForecast: "Pronóstico Meteorológico",
     
@@ -482,7 +482,7 @@ export const translations = {
     fitsHumidityWindChart: "Humidity and wind",
     
     // Statistics
-    statistics: "Statistics",
+    statistics: "Metrics",
     totalExposure: "Total Exposure",
     totalLights: "Total Lights",
     totalSessions: "Total Sessions",
@@ -541,7 +541,7 @@ export const translations = {
     forecast: "Forecast",
     planning: "Planning",
     objectsSection: "Objects",
-    statisticsSection: "Statistics",
+    statisticsSection: "Metrics",
     gallery: "Gallery",
     weatherForecast: "Weather Forecast",
     

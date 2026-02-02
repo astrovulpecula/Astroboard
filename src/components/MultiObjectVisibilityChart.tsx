@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   LineChart,
   Line,
@@ -19,7 +19,7 @@ import {
 import { calculateMoonNightVisibility } from '@/lib/moon-position';
 import { Moon } from 'lucide-react';
 
-interface PlannedProject {
+interface ObjectData {
   id: string;
   objectId: string;
   objectName?: string;
@@ -27,11 +27,12 @@ interface PlannedProject {
 }
 
 interface MultiObjectVisibilityChartProps {
-  plannedProjects: PlannedProject[];
+  objects: ObjectData[];
   coordinates: string; // "lat, lon" format
   date?: Date;
   language?: 'es' | 'en';
   altitudeLimit?: number;
+  title?: string;
 }
 
 // Color palette for different objects
@@ -49,13 +50,17 @@ const OBJECT_COLORS = [
 ];
 
 export default function MultiObjectVisibilityChart({
-  plannedProjects,
+  objects,
   coordinates,
   date = new Date(),
   language = 'es',
   altitudeLimit,
+  title,
 }: MultiObjectVisibilityChartProps) {
   const coords = useMemo(() => parseCoordinates(coordinates), [coordinates]);
+  
+  // Track which objects are visible in the chart (interactive legend)
+  const [hiddenObjects, setHiddenObjects] = useState<Set<string>>(new Set());
 
   // Calculate Moon visibility
   const moonData = useMemo(() => {
@@ -74,8 +79,8 @@ export default function MultiObjectVisibilityChart({
       color: string;
     }> = [];
 
-    plannedProjects.forEach((planned, idx) => {
-      const objectCoords = getObjectCoordinates(planned.objectId);
+    objects.forEach((obj, idx) => {
+      const objectCoords = getObjectCoordinates(obj.objectId);
       if (!objectCoords) return;
 
       const visibility = calculateNightVisibility(
@@ -87,8 +92,8 @@ export default function MultiObjectVisibilityChart({
 
       if (visibility && !visibility.neverRises) {
         results.push({
-          id: planned.objectId,
-          name: planned.objectName || planned.objectId,
+          id: obj.objectId,
+          name: obj.objectName || obj.objectId,
           visibility,
           color: OBJECT_COLORS[idx % OBJECT_COLORS.length],
         });
@@ -96,7 +101,7 @@ export default function MultiObjectVisibilityChart({
     });
 
     return results;
-  }, [plannedProjects, coords, date]);
+  }, [objects, coords, date]);
 
   // Build combined chart data with hourly altitude for each object + Moon
   const chartData = useMemo(() => {
@@ -144,12 +149,60 @@ export default function MultiObjectVisibilityChart({
     );
   }
 
+  // Toggle object visibility on legend click
+  const handleLegendClick = useCallback((dataKey: string) => {
+    setHiddenObjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dataKey)) {
+        newSet.delete(dataKey);
+      } else {
+        newSet.add(dataKey);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Custom legend with clickable items
+  const renderLegend = useCallback((props: any) => {
+    const { payload } = props;
+    return (
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+        {payload?.map((entry: any, index: number) => {
+          const isHidden = hiddenObjects.has(entry.dataKey);
+          return (
+            <button
+              key={`item-${index}`}
+              type="button"
+              onClick={() => handleLegendClick(entry.dataKey)}
+              className={`flex items-center gap-1.5 text-xs transition-opacity ${
+                isHidden ? 'opacity-40' : 'opacity-100'
+              } hover:opacity-70`}
+            >
+              <span
+                className="w-3 h-0.5 rounded"
+                style={{ 
+                  backgroundColor: entry.color,
+                  opacity: isHidden ? 0.4 : 1,
+                }}
+              />
+              <span className={isHidden ? 'line-through' : ''}>
+                {entry.value}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }, [hiddenObjects, handleLegendClick]);
+
+  const chartTitle = title || (language === 'en' ? 'Night Visibility - All Objects' : 'Visibilidad Nocturna - Todos los Objetos');
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <Moon className="w-4 h-4 text-primary" />
         <h3 className="text-sm font-semibold">
-          {language === 'en' ? 'Night Visibility - All Objects' : 'Visibilidad Nocturna - Todos los Objetos'}
+          {chartTitle}
         </h3>
         <span className="text-xs text-muted-foreground">
           ({objectsData.length} {language === 'en' ? 'objects with data' : 'objetos con datos'})
@@ -214,30 +267,33 @@ export default function MultiObjectVisibilityChart({
               strokeOpacity={0.5}
             />
             {/* Moon curve - dark gray */}
-            <Line
-              type="monotone"
-              dataKey="moon"
-              stroke="hsl(var(--muted-foreground))"
-              strokeWidth={2}
-              strokeOpacity={0.5}
-              dot={false}
-              name={language === 'en' ? 'Moon' : 'Luna'}
-              strokeDasharray="4 2"
-            />
-            {objectsData.map((obj) => (
+            {!hiddenObjects.has('moon') && (
               <Line
-                key={obj.id}
                 type="monotone"
-                dataKey={obj.id}
-                stroke={obj.color}
+                dataKey="moon"
+                stroke="hsl(var(--muted-foreground))"
                 strokeWidth={2}
+                strokeOpacity={0.5}
                 dot={false}
-                name={obj.id}
+                name={language === 'en' ? 'Moon' : 'Luna'}
+                strokeDasharray="4 2"
               />
+            )}
+            {objectsData.map((obj) => (
+              !hiddenObjects.has(obj.id) && (
+                <Line
+                  key={obj.id}
+                  type="monotone"
+                  dataKey={obj.id}
+                  stroke={obj.color}
+                  strokeWidth={2}
+                  dot={false}
+                  name={obj.id}
+                />
+              )
             ))}
             <Legend 
-              wrapperStyle={{ fontSize: '11px' }}
-              iconType="line"
+              content={renderLegend}
             />
           </LineChart>
         </ResponsiveContainer>
