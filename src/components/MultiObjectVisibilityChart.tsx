@@ -16,7 +16,8 @@ import {
   parseCoordinates,
   type VisibilityResult,
 } from '@/lib/astronomy-calculations';
-import { Eye, Moon } from 'lucide-react';
+import { calculateMoonNightVisibility } from '@/lib/moon-position';
+import { Moon } from 'lucide-react';
 
 interface PlannedProject {
   id: string;
@@ -56,6 +57,12 @@ export default function MultiObjectVisibilityChart({
 }: MultiObjectVisibilityChartProps) {
   const coords = useMemo(() => parseCoordinates(coordinates), [coordinates]);
 
+  // Calculate Moon visibility
+  const moonData = useMemo(() => {
+    if (!coords) return [];
+    return calculateMoonNightVisibility(coords, date);
+  }, [coords, date]);
+
   // Calculate visibility for all objects that have coordinates in our catalog
   const objectsData = useMemo(() => {
     if (!coords) return [];
@@ -91,17 +98,19 @@ export default function MultiObjectVisibilityChart({
     return results;
   }, [plannedProjects, coords, date]);
 
-  // Build combined chart data with hourly altitude for each object
+  // Build combined chart data with hourly altitude for each object + Moon
   const chartData = useMemo(() => {
-    if (objectsData.length === 0) return [];
+    if (objectsData.length === 0 && moonData.length === 0) return [];
 
-    // Use the first object's data structure as template
-    const template = objectsData[0]?.visibility?.data || [];
-    const hourlyData = template.filter((_, i) => i % 4 === 0); // Every hour
+    // Use moon data or first object as template for time labels
+    const moonHourly = moonData.filter((_, i) => i % 4 === 0);
+    const template = objectsData[0]?.visibility?.data || moonData;
+    const hourlyData = template.filter((_, i) => i % 4 === 0);
 
     return hourlyData.map((point, idx) => {
       const dataPoint: Record<string, any> = {
         hourLabel: point.hourLabel,
+        moon: moonHourly[idx]?.altitude ?? null,
       };
 
       objectsData.forEach((obj) => {
@@ -113,7 +122,7 @@ export default function MultiObjectVisibilityChart({
 
       return dataPoint;
     });
-  }, [objectsData]);
+  }, [objectsData, moonData]);
 
   if (!coords) {
     return (
@@ -204,6 +213,17 @@ export default function MultiObjectVisibilityChart({
               strokeDasharray="2 2"
               strokeOpacity={0.5}
             />
+            {/* Moon curve - dark gray */}
+            <Line
+              type="monotone"
+              dataKey="moon"
+              stroke="hsl(var(--muted-foreground))"
+              strokeWidth={2}
+              strokeOpacity={0.5}
+              dot={false}
+              name={language === 'en' ? 'Moon' : 'Luna'}
+              strokeDasharray="4 2"
+            />
             {objectsData.map((obj) => (
               <Line
                 key={obj.id}
@@ -225,8 +245,8 @@ export default function MultiObjectVisibilityChart({
 
       <p className="text-xs text-muted-foreground text-center">
         {language === 'en'
-          ? `Altitude curves from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Objects above 30° offer better imaging conditions.`
-          : `Curvas de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Objetos sobre 30° ofrecen mejores condiciones.`}
+          ? `Altitude curves from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Gray dashed line: Moon. Objects above 30° offer better imaging conditions.`
+          : `Curvas de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea gris discontinua: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
       </p>
     </div>
   );

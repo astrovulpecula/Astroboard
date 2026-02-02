@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import {
   AreaChart,
   Area,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,8 +21,8 @@ import {
   type VisibilityResult,
   type ObserverLocation,
 } from '@/lib/astronomy-calculations';
-import { Clock, ArrowUp, Sunrise, Sunset, Calendar } from 'lucide-react';
-
+import { calculateMoonNightVisibility } from '@/lib/moon-position';
+import { Clock, ArrowUp, Sunrise, Sunset, Calendar, Moon } from 'lucide-react';
 interface VisibilityChartProps {
   objectCode: string;
   coordinates: string; // "lat, lon" format
@@ -52,10 +54,27 @@ export default function VisibilityChart({
     return calculateNightVisibility(objectCoords.ra, objectCoords.dec, coords, date);
   }, [objectCoords, coords, date]);
 
+  const moonData = useMemo(() => {
+    if (!coords) return [];
+    return calculateMoonNightVisibility(coords, date);
+  }, [coords, date]);
+
   const annualVisibility = useMemo(() => {
     if (!coords || !objectCoords) return null;
     return calculateAnnualVisibility(objectCoords.ra, objectCoords.dec, coords, date.getFullYear());
   }, [objectCoords, coords, date]);
+
+  // Preparar datos para el gráfico (cada hora) - incluyendo Luna
+  const chartData = useMemo(() => {
+    if (!visibility) return [];
+    const objectData = visibility.data.filter((_, i) => i % 4 === 0);
+    const moonHourly = moonData.filter((_, i) => i % 4 === 0);
+    
+    return objectData.map((point, idx) => ({
+      ...point,
+      moonAltitude: moonHourly[idx]?.altitude ?? null,
+    }));
+  }, [visibility, moonData]);
 
   if (!coords || !objectCoords) {
     return (
@@ -86,9 +105,6 @@ export default function VisibilityChart({
       </div>
     );
   }
-
-  // Preparar datos para el gráfico (cada hora)
-  const chartData = visibility.data.filter((_, i) => i % 4 === 0); // Cada hora
 
   // Estilo según la altitud
   const getGradientOffset = () => {
@@ -167,6 +183,15 @@ export default function VisibilityChart({
                 stroke="hsl(var(--primary))"
                 strokeWidth={1.5}
                 fill={`url(#colorAlt-${objectCode})`}
+              />
+              <Line
+                type="monotone"
+                dataKey="moonAltitude"
+                stroke="hsl(var(--muted-foreground))"
+                strokeWidth={1}
+                strokeOpacity={0.6}
+                dot={false}
+                connectNulls
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -281,7 +306,12 @@ export default function VisibilityChart({
                   tickFormatter={(value) => `${value}°`}
                 />
                 <Tooltip
-                  formatter={(value: number) => [`${value.toFixed(1)}°`, language === 'en' ? 'Altitude' : 'Altitud']}
+                  formatter={(value: number, name: string) => [
+                    `${value.toFixed(1)}°`, 
+                    name === 'moonAltitude' 
+                      ? (language === 'en' ? 'Moon' : 'Luna') 
+                      : (language === 'en' ? 'Altitude' : 'Altitud')
+                  ]}
                   labelFormatter={(label) => label}
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
@@ -321,14 +351,24 @@ export default function VisibilityChart({
                   strokeWidth={2}
                   fill={`url(#colorAltFull-${objectCode})`}
                 />
+                <Line
+                  type="monotone"
+                  dataKey="moonAltitude"
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={1.5}
+                  strokeOpacity={0.5}
+                  dot={false}
+                  name={language === 'en' ? 'Moon' : 'Luna'}
+                  connectNulls
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
             {language === 'en'
-              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Objects above 30° offer better imaging conditions.`
-              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Objetos sobre 30° ofrecen mejores condiciones.`}
+              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Gray line: Moon. Objects above 30° offer better imaging conditions.`
+              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea gris: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
           </p>
         </>
       ) : (
