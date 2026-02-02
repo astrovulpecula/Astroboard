@@ -76,9 +76,12 @@ export default function VisibilityChart({
     const objectData = visibility.data.filter((_, i) => i % 4 === 0);
     const moonHourly = moonData.filter((_, i) => i % 4 === 0);
     
-    return objectData.map((point, idx) => ({
+    // Match moon data by hourLabel for accurate alignment
+    const moonMap = new Map(moonHourly.map(m => [m.hourLabel, m.altitude]));
+    
+    return objectData.map((point) => ({
       ...point,
-      moonAltitude: moonHourly[idx]?.altitude ?? null,
+      moonAltitude: moonMap.get(point.hourLabel) ?? null,
     }));
   }, [visibility, moonData]);
 
