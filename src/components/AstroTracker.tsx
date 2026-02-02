@@ -6931,6 +6931,39 @@ export default function AstroTracker() {
                 </div>
               )}
 
+              {/* Active Projects Visibility Chart - After Carousel, Before Navigation */}
+              {(() => {
+                // Get objects with active projects
+                const activeProjectObjects = objects.filter(obj => 
+                  obj.projects.some((p: any) => p.status === "active" || p.status === "paused")
+                );
+                
+                if (activeProjectObjects.length > 0 && mainLocation?.coords) {
+                  const activeObjects = activeProjectObjects.map(obj => ({
+                    id: obj.id,
+                    objectId: obj.id,
+                    objectName: obj.commonName,
+                    signal: undefined,
+                  }));
+                  
+                  return (
+                    <div className="mb-6">
+                      <Card className="p-4">
+                        <MultiObjectVisibilityChart
+                          objects={activeObjects}
+                          coordinates={mainLocation.coords}
+                          date={new Date()}
+                          language={language}
+                          altitudeLimit={minAltitudeLimit}
+                          title={language === 'en' ? 'Night Visibility - Active Projects' : 'Visibilidad Nocturna - Proyectos Activos'}
+                        />
+                      </Card>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
               <div className="hidden md:grid md:grid-cols-5 gap-2 mb-6">
                 <button
@@ -7234,11 +7267,17 @@ export default function AstroTracker() {
                   {plannedProjects.length > 0 && mainLocation?.coords && (
                     <Card className="p-4">
                       <MultiObjectVisibilityChart
-                        plannedProjects={plannedProjects}
+                        objects={plannedProjects.map(p => ({
+                          id: p.id,
+                          objectId: p.objectId,
+                          objectName: p.objectName,
+                          signal: p.signal,
+                        }))}
                         coordinates={mainLocation.coords}
                         date={new Date()}
                         language={language}
                         altitudeLimit={minAltitudeLimit}
+                        title={language === 'en' ? 'Night Visibility - Planned Objects' : 'Visibilidad Nocturna - Objetos Planificados'}
                       />
                     </Card>
                   )}
@@ -7985,28 +8024,28 @@ export default function AstroTracker() {
                 </>
               )}
 
-              {/* SECTION: Estadísticas */}
+              {/* SECTION: Métricas */}
               {mainSection === "estadisticas" && (
                 <>
                   {/* Título de Highlights */}
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <BarChart3 className="w-6 h-6" /> Estadísticas
+                      <BarChart3 className="w-6 h-6" /> {language === 'en' ? 'Metrics' : 'Métricas'}
                     </h2>
                     <button
                       onClick={() => setShowStatsConfig(true)}
                       className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                      title="Configurar estadísticas visibles"
+                      title={language === 'en' ? 'Configure visible metrics' : 'Configurar métricas visibles'}
                     >
                       <Settings className="w-5 h-5 text-slate-500" />
                     </button>
                   </div>
 
-                  {/* Modal de configuración de estadísticas */}
-                  <Modal open={showStatsConfig} onClose={() => setShowStatsConfig(false)} title="Configurar Estadísticas">
+                  {/* Modal de configuración de métricas */}
+                  <Modal open={showStatsConfig} onClose={() => setShowStatsConfig(false)} title={language === 'en' ? 'Configure Metrics' : 'Configurar Métricas'}>
                     <div className="space-y-4">
                       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        Selecciona qué estadísticas quieres mostrar en el dashboard.
+                        {language === 'en' ? 'Select which metrics you want to show on the dashboard.' : 'Selecciona qué métricas quieres mostrar en el dashboard.'}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <label className="flex items-center gap-2 cursor-pointer">
