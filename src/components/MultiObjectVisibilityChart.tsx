@@ -17,7 +17,7 @@ import {
   type VisibilityResult,
 } from '@/lib/astronomy-calculations';
 import { calculateMoonNightVisibility } from '@/lib/moon-position';
-import { Moon } from 'lucide-react';
+import { Moon, Grid3X3 } from 'lucide-react';
 
 interface ObjectData {
   id: string;
@@ -61,6 +61,7 @@ export default function MultiObjectVisibilityChart({
   
   // Track which objects are visible in the chart (interactive legend)
   const [hiddenObjects, setHiddenObjects] = useState<Set<string>>(new Set());
+  const [showGrid, setShowGrid] = useState(true);
 
   // Calculate Moon visibility
   const moonData = useMemo(() => {
@@ -129,26 +130,6 @@ export default function MultiObjectVisibilityChart({
     });
   }, [objectsData, moonData]);
 
-  if (!coords) {
-    return (
-      <div className="text-sm text-muted-foreground text-center py-4">
-        {language === 'en'
-          ? 'Configure your main location in settings to see visibility'
-          : 'Configura tu localización principal en ajustes para ver la visibilidad'}
-      </div>
-    );
-  }
-
-  if (objectsData.length === 0) {
-    return (
-      <div className="text-sm text-muted-foreground text-center py-4">
-        {language === 'en'
-          ? 'No visibility data available for planned objects'
-          : 'Sin datos de visibilidad para los objetos planificados'}
-      </div>
-    );
-  }
-
   // Toggle object visibility on legend click
   const handleLegendClick = useCallback((dataKey: string) => {
     setHiddenObjects(prev => {
@@ -162,11 +143,30 @@ export default function MultiObjectVisibilityChart({
     });
   }, []);
 
+  // Toggle grid visibility
+  const handleGridToggle = useCallback(() => {
+    setShowGrid(prev => !prev);
+  }, []);
+
   // Custom legend with clickable items
   const renderLegend = useCallback((props: any) => {
     const { payload } = props;
     return (
-      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+      <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 mt-2">
+        {/* Grid toggle button */}
+        <button
+          type="button"
+          onClick={handleGridToggle}
+          className={`flex items-center gap-1.5 text-xs transition-opacity ${
+            !showGrid ? 'opacity-40' : 'opacity-100'
+          } hover:opacity-70`}
+        >
+          <Grid3X3 className="w-3 h-3" />
+          <span className={!showGrid ? 'line-through' : ''}>
+            {language === 'en' ? 'Grid' : 'Cuadrícula'}
+          </span>
+        </button>
+        {/* Object lines */}
         {payload?.map((entry: any, index: number) => {
           const isHidden = hiddenObjects.has(entry.dataKey);
           return (
@@ -193,9 +193,29 @@ export default function MultiObjectVisibilityChart({
         })}
       </div>
     );
-  }, [hiddenObjects, handleLegendClick]);
+  }, [hiddenObjects, handleLegendClick, showGrid, handleGridToggle, language]);
 
   const chartTitle = title || (language === 'en' ? 'Night Visibility - All Objects' : 'Visibilidad Nocturna - Todos los Objetos');
+
+  if (!coords) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-4">
+        {language === 'en'
+          ? 'Configure your main location in settings to see visibility'
+          : 'Configura tu localización principal en ajustes para ver la visibilidad'}
+      </div>
+    );
+  }
+
+  if (objectsData.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground text-center py-4">
+        {language === 'en'
+          ? 'No visibility data available for planned objects'
+          : 'Sin datos de visibilidad para los objetos planificados'}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -213,7 +233,7 @@ export default function MultiObjectVisibilityChart({
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+            {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
             <XAxis
               dataKey="hourLabel"
               tick={{ fontSize: 10 }}
