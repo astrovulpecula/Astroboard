@@ -7,10 +7,17 @@ const allowedOrigins = [
   'https://id-preview--1ce89238-42d3-4932-9266-e7e088a5bf74.lovable.app',
 ];
 
+// Pattern to match Lovable preview domains (for development/testing)
+const lovablePreviewPattern = /^https:\/\/[a-f0-9-]+\.lovableproject\.com$/;
+
 const getCorsHeaders = (origin: string | null) => {
-  const allowedOrigin = origin && allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))
-    ? origin
-    : allowedOrigins[0];
+  // Check if origin matches allowed list or Lovable preview pattern
+  const isAllowed = origin && (
+    allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/\/$/, ''))) ||
+    lovablePreviewPattern.test(origin)
+  );
+  
+  const allowedOrigin = isAllowed ? origin : allowedOrigins[0];
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
