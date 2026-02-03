@@ -1,28 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Restrict CORS to allowed origins only
-const allowedOrigins = [
-  'https://astro-capture-log.lovable.app',
-  'https://id-preview--1ce89238-42d3-4932-9266-e7e088a5bf74.lovable.app',
-];
-
-// Pattern to match Lovable preview domains (for development/testing)
-const lovablePreviewPattern = /^https:\/\/[a-f0-9-]+\.lovableproject\.com$/;
-
-const getCorsHeaders = (origin: string | null) => {
-  // Check if origin matches allowed list or Lovable preview pattern
-  const isAllowed = origin && (
-    allowedOrigins.some(allowed => origin.startsWith(allowed.replace(/\/$/, ''))) ||
-    lovablePreviewPattern.test(origin)
-  );
-  
-  const allowedOrigin = isAllowed ? origin : allowedOrigins[0];
-  
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-  };
+// CORS headers - allow all origins for this verification endpoint
+// The invitation code itself is the security mechanism
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 interface VerifyInvitationRequest {
@@ -38,8 +22,7 @@ interface VerifyInvitationResponse {
 }
 
 serve(async (req) => {
-  const origin = req.headers.get('origin');
-  const corsHeaders = getCorsHeaders(origin);
+  // Handle CORS preflight
 
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
