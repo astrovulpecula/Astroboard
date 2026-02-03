@@ -305,15 +305,17 @@ const ImageCarousel = ({
             <div className="text-white/80 text-xs">{currentImage.type}</div>
           )}
         </div>
-        <div className="absolute bottom-4 right-4 flex gap-1">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentImageIndex(i)}
-              className={`w-2 h-2 rounded-full transition-all ${i === currentImageIndex ? "bg-white" : "bg-white/50"}`}
-            />
-          ))}
-        </div>
+        {images.length > 1 && (
+          <div className="absolute bottom-4 right-4 flex gap-1">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentImageIndex(i)}
+                className={`w-2 h-2 rounded-full transition-all ${i === currentImageIndex ? "bg-white" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );
