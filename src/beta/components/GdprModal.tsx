@@ -69,33 +69,10 @@ export function GdprModal({ open, onAccept }: GdprModalProps) {
 
           <section>
             <h4 className="font-semibold text-slate-900 dark:text-white mb-2">
-              3. Tus derechos
-            </h4>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Acceso: Puedes solicitar una copia de tus datos</li>
-              <li>Rectificación: Puedes corregir datos incorrectos</li>
-              <li>Supresión: Puedes solicitar la eliminación de tus datos</li>
-              <li>Portabilidad: Puedes exportar tus datos en cualquier momento</li>
-            </ul>
-          </section>
-
-          <section>
-            <h4 className="font-semibold text-slate-900 dark:text-white mb-2">
-              4. Seguridad y confidencialidad
+              3. Período de retención
             </h4>
             <p>
-              Tus datos están protegidos con cifrado y almacenados de forma segura. 
-              No vendemos ni compartimos tus datos con terceros bajo ninguna circunstancia.
-            </p>
-          </section>
-
-          <section>
-            <h4 className="font-semibold text-slate-900 dark:text-white mb-2">
-              5. Período de retención
-            </h4>
-            <p>
-              Los datos de la beta serán eliminados al finalizar el período de prueba, 
-              a menos que decidas continuar usando la aplicación en su versión final.
+              Todos los datos recopilados durante la beta serán eliminados al finalizar el período de prueba.
             </p>
           </section>
         </div>
