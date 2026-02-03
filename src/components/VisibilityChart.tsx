@@ -196,9 +196,9 @@ export default function VisibilityChart({
               <Line
                 type="monotone"
                 dataKey="moonAltitude"
-                stroke="hsl(262, 83%, 58%)"
+                stroke="hsl(0, 0%, 85%)"
                 strokeWidth={2}
-                strokeOpacity={0.7}
+                strokeOpacity={0.8}
                 dot={false}
                 connectNulls
               />
@@ -347,25 +347,19 @@ export default function VisibilityChart({
                     strokeDasharray="6 3"
                   />
                 )}
-                <ReferenceLine
-                  y={30}
-                  stroke="hsl(var(--primary))"
-                  strokeDasharray="2 2"
-                  strokeOpacity={0.5}
-                />
                 <Area
                   type="monotone"
                   dataKey="altitude"
-                  stroke="hsl(var(--primary))"
+                  stroke="hsl(142, 76%, 36%)"
                   strokeWidth={3}
                   fill={`url(#colorAltFull-${objectCode})`}
                 />
                 <Line
                   type="monotone"
                   dataKey="moonAltitude"
-                  stroke="hsl(262, 83%, 58%)"
+                  stroke="hsl(0, 0%, 85%)"
                   strokeWidth={3}
-                  strokeOpacity={moonHidden ? 0 : 0.7}
+                  strokeOpacity={moonHidden ? 0 : 0.8}
                   dot={false}
                   name={language === 'en' ? 'Moon' : 'Luna'}
                   connectNulls
@@ -384,11 +378,11 @@ export default function VisibilityChart({
                 moonHidden ? 'opacity-40' : 'opacity-100'
               } hover:opacity-70`}
             >
-              <Moon className="w-3 h-3" style={{ color: 'hsl(262, 83%, 58%)' }} />
+              <Moon className="w-3 h-3" style={{ color: 'hsl(0, 0%, 85%)' }} />
               <span
                 className="w-4 h-0.5 rounded"
                 style={{ 
-                  backgroundColor: 'hsl(262, 83%, 58%)',
+                  backgroundColor: 'hsl(0, 0%, 85%)',
                   opacity: moonHidden ? 0.4 : 1,
                 }}
               />
@@ -400,8 +394,8 @@ export default function VisibilityChart({
 
           <p className="text-xs text-muted-foreground text-center">
             {language === 'en'
-              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Purple line: Moon. Objects above 30° offer better imaging conditions.`
-              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea morada: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
+              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} White line: Moon.`
+              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea blanca: Luna.`}
           </p>
         </>
       ) : (

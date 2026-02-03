@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   LineChart,
+  AreaChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -13,6 +15,7 @@ import {
 import { getObjectCoordinates } from '@/lib/celestial-coordinates';
 import {
   calculateNightVisibility,
+  calculateAnnualVisibility,
   parseCoordinates,
   type VisibilityResult,
 } from '@/lib/astronomy-calculations';
@@ -62,6 +65,7 @@ export default function MultiObjectVisibilityChart({
   // Track which objects are visible in the chart (interactive legend)
   const [hiddenObjects, setHiddenObjects] = useState<Set<string>>(new Set());
   const [showGrid, setShowGrid] = useState(true);
+  const [viewMode, setViewMode] = useState<'today' | 'annual'>('today');
 
   // Calculate Moon visibility
   const moonData = useMemo(() => {
@@ -103,6 +107,63 @@ export default function MultiObjectVisibilityChart({
 
     return results;
   }, [objects, coords, date]);
+
+  // Calculate annual visibility for all objects
+  const annualData = useMemo(() => {
+    if (!coords) return [];
+    
+    const results: Array<{
+      id: string;
+      name: string;
+      annual: ReturnType<typeof calculateAnnualVisibility> | null;
+      color: string;
+    }> = [];
+
+    objects.forEach((obj, idx) => {
+      const objectCoords = getObjectCoordinates(obj.objectId);
+      if (!objectCoords) return;
+
+      const annual = calculateAnnualVisibility(
+        objectCoords.ra,
+        objectCoords.dec,
+        coords,
+        date.getFullYear()
+      );
+
+      if (annual && !annual.neverRises) {
+        results.push({
+          id: obj.objectId,
+          name: obj.objectName || obj.objectId,
+          annual,
+          color: OBJECT_COLORS[idx % OBJECT_COLORS.length],
+        });
+      }
+    });
+
+    return results;
+  }, [objects, coords, date]);
+
+  // Build annual chart data
+  const annualChartData = useMemo(() => {
+    if (annualData.length === 0) return [];
+
+    const monthLabels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    return monthLabels.map((label, monthIdx) => {
+      const dataPoint: Record<string, any> = {
+        monthLabel: label,
+      };
+
+      annualData.forEach((obj) => {
+        const monthData = obj.annual?.data[monthIdx];
+        if (monthData) {
+          dataPoint[obj.id] = monthData.maxAltitude;
+        }
+      });
+
+      return dataPoint;
+    });
+  }, [annualData]);
 
   // Build combined chart data with hourly altitude for each object + Moon
   const chartData = useMemo(() => {
@@ -217,112 +278,273 @@ export default function MultiObjectVisibilityChart({
     );
   }
 
+  // Toggle component
+  const ViewToggle = () => (
+    <div className="flex items-center justify-center gap-1 p-1 rounded-lg bg-muted/50 border border-border">
+      <button
+        onClick={() => setViewMode('today')}
+        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+          viewMode === 'today'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        {language === 'en' ? 'Today' : 'Hoy'}
+      </button>
+      <button
+        onClick={() => setViewMode('annual')}
+        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+          viewMode === 'annual'
+            ? 'bg-background shadow-sm text-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        {language === 'en' ? 'Annual' : 'Anual'}
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Moon className="w-4 h-4 text-primary" />
-        <h3 className="text-sm font-semibold">
-          {chartTitle}
-        </h3>
-        <span className="text-xs text-muted-foreground">
-          ({objectsData.length} {language === 'en' ? 'objects with data' : 'objetos con datos'})
-        </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Moon className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-semibold">
+            {viewMode === 'today' 
+              ? (title || (language === 'en' ? 'Night Visibility' : 'Visibilidad Nocturna'))
+              : (language === 'en' ? 'Annual Visibility' : 'Visibilidad Anual')
+            }
+          </h3>
+          <span className="text-xs text-muted-foreground">
+            ({objectsData.length} {language === 'en' ? 'objects' : 'objetos'})
+          </span>
+        </div>
+        <ViewToggle />
       </div>
 
-      {/* Chart */}
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
-            <XAxis
-              dataKey="hourLabel"
-              tick={{ fontSize: 10 }}
-              tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
-            />
-            <YAxis
-              domain={[-10, 90]}
-              ticks={
-                altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
-                  ? [0, altitudeLimit, 30, 60, 90]
-                      .filter((v, i, arr) => arr.indexOf(v) === i)
-                      .sort((a, b) => a - b)
-                  : [0, 30, 60, 90]
-              }
-              tick={{ fontSize: 10 }}
-              tickLine={false}
-              axisLine={{ stroke: 'hsl(var(--border))' }}
-              tickFormatter={(value) => `${value}°`}
-            />
-            <Tooltip
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(1)}°`,
-                name,
-              ]}
-              labelFormatter={(label) => label}
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px',
-              }}
-            />
-            <ReferenceLine
-              y={0}
-              stroke="hsl(var(--muted-foreground))"
-              strokeDasharray="3 3"
-            />
-            {altitudeLimit !== undefined && altitudeLimit > 0 && (
-              <ReferenceLine
-                y={altitudeLimit}
-                stroke="hsl(45 93% 47%)"
-                strokeWidth={2}
-                strokeDasharray="6 3"
-              />
-            )}
-            <ReferenceLine
-              y={30}
-              stroke="hsl(var(--primary))"
-              strokeDasharray="2 2"
-              strokeOpacity={0.5}
-            />
-            {/* Moon curve - dark gray */}
-            <Line
-              type="monotone"
-              dataKey="moon"
-              stroke="hsl(262, 83%, 58%)"
-              strokeWidth={3}
-              strokeOpacity={hiddenObjects.has('moon') ? 0 : 0.7}
-              dot={false}
-              name={language === 'en' ? 'Moon' : 'Luna'}
-              strokeDasharray="4 2"
-              hide={hiddenObjects.has('moon')}
-            />
-            {objectsData.map((obj) => (
-              <Line
-                key={obj.id}
-                type="monotone"
-                dataKey={obj.id}
-                stroke={obj.color}
-                strokeWidth={3}
-                strokeOpacity={hiddenObjects.has(obj.id) ? 0 : 1}
-                dot={false}
-                name={obj.id}
-                hide={hiddenObjects.has(obj.id)}
-              />
-            ))}
-            <Legend 
-              content={renderLegend}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+      {viewMode === 'today' ? (
+        <>
+          {/* Today Chart */}
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
+                <XAxis
+                  dataKey="hourLabel"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis
+                  domain={[-10, 90]}
+                  ticks={
+                    altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
+                      ? [0, altitudeLimit, 30, 60, 90]
+                          .filter((v, i, arr) => arr.indexOf(v) === i)
+                          .sort((a, b) => a - b)
+                      : [0, 30, 60, 90]
+                  }
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickFormatter={(value) => `${value}°`}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    `${value.toFixed(1)}°`,
+                    name,
+                  ]}
+                  labelFormatter={(label) => label}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <ReferenceLine
+                  y={0}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="3 3"
+                />
+                {altitudeLimit !== undefined && altitudeLimit > 0 && (
+                  <ReferenceLine
+                    y={altitudeLimit}
+                    stroke="hsl(45 93% 47%)"
+                    strokeWidth={2}
+                    strokeDasharray="6 3"
+                  />
+                )}
+                {/* Moon curve - white */}
+                <Line
+                  type="monotone"
+                  dataKey="moon"
+                  stroke="hsl(0, 0%, 85%)"
+                  strokeWidth={3}
+                  strokeOpacity={hiddenObjects.has('moon') ? 0 : 0.8}
+                  dot={false}
+                  name={language === 'en' ? 'Moon' : 'Luna'}
+                  strokeDasharray="4 2"
+                  hide={hiddenObjects.has('moon')}
+                />
+                {objectsData.map((obj) => (
+                  <Line
+                    key={obj.id}
+                    type="monotone"
+                    dataKey={obj.id}
+                    stroke={obj.color}
+                    strokeWidth={3}
+                    strokeOpacity={hiddenObjects.has(obj.id) ? 0 : 1}
+                    dot={false}
+                    name={obj.id}
+                    hide={hiddenObjects.has(obj.id)}
+                  />
+                ))}
+                <Legend 
+                  content={renderLegend}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
 
-      <p className="text-xs text-muted-foreground text-center">
-        {language === 'en'
-          ? `Altitude curves from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} Gray dashed line: Moon. Objects above 30° offer better imaging conditions.`
-          : `Curvas de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea gris discontinua: Luna. Objetos sobre 30° ofrecen mejores condiciones.`}
-      </p>
+          <p className="text-xs text-muted-foreground text-center">
+            {language === 'en'
+              ? `Altitude curves from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} White dashed line: Moon.`
+              : `Curvas de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea blanca discontinua: Luna.`}
+          </p>
+        </>
+      ) : (
+        <>
+          {/* Annual Chart */}
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={annualChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.3} />}
+                <XAxis
+                  dataKey="monthLabel"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                />
+                <YAxis
+                  domain={[0, 90]}
+                  ticks={
+                    altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
+                      ? [0, altitudeLimit, 30, 60, 90]
+                          .filter((v, i, arr) => arr.indexOf(v) === i)
+                          .sort((a, b) => a - b)
+                      : [0, 30, 60, 90]
+                  }
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={{ stroke: 'hsl(var(--border))' }}
+                  tickFormatter={(value) => `${value}°`}
+                />
+                <Tooltip
+                  formatter={(value: number, name: string) => [
+                    `${value.toFixed(1)}°`,
+                    name,
+                  ]}
+                  labelFormatter={(label) => label}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <ReferenceLine
+                  y={0}
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeDasharray="3 3"
+                />
+                {altitudeLimit !== undefined && altitudeLimit > 0 && (
+                  <ReferenceLine
+                    y={altitudeLimit}
+                    stroke="hsl(45 93% 47%)"
+                    strokeWidth={2}
+                    strokeDasharray="6 3"
+                  />
+                )}
+                {annualData.map((obj, idx) => (
+                  <React.Fragment key={obj.id}>
+                    <defs>
+                      <linearGradient id={`colorAnnual-${obj.id}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={obj.color} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={obj.color} stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
+                    <Area
+                      type="monotone"
+                      dataKey={obj.id}
+                      stroke={obj.color}
+                      strokeWidth={2}
+                      strokeOpacity={hiddenObjects.has(obj.id) ? 0 : 1}
+                      fill={`url(#colorAnnual-${obj.id})`}
+                      fillOpacity={hiddenObjects.has(obj.id) ? 0 : 0.6}
+                      name={obj.id}
+                      hide={hiddenObjects.has(obj.id)}
+                    />
+                  </React.Fragment>
+                ))}
+                <Legend 
+                  content={(props) => {
+                    const { payload } = props;
+                    return (
+                      <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 mt-2">
+                        {/* Grid toggle button */}
+                        <button
+                          type="button"
+                          onClick={handleGridToggle}
+                          className={`flex items-center gap-1.5 text-xs transition-opacity ${
+                            !showGrid ? 'opacity-40' : 'opacity-100'
+                          } hover:opacity-70`}
+                        >
+                          <Grid3X3 className="w-3 h-3" />
+                          <span className={!showGrid ? 'line-through' : ''}>
+                            {language === 'en' ? 'Grid' : 'Cuadrícula'}
+                          </span>
+                        </button>
+                        {/* Object lines */}
+                        {payload?.map((entry: any, index: number) => {
+                          const isHidden = hiddenObjects.has(entry.dataKey);
+                          return (
+                            <button
+                              key={`item-${index}`}
+                              type="button"
+                              onClick={() => handleLegendClick(entry.dataKey)}
+                              className={`flex items-center gap-1.5 text-xs transition-opacity ${
+                                isHidden ? 'opacity-40' : 'opacity-100'
+                              } hover:opacity-70`}
+                            >
+                              <span
+                                className="w-3 h-0.5 rounded"
+                                style={{ 
+                                  backgroundColor: entry.color,
+                                  opacity: isHidden ? 0.4 : 1,
+                                }}
+                              />
+                              <span className={isHidden ? 'line-through' : ''}>
+                                {entry.value}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            {language === 'en'
+              ? `Monthly peak altitudes throughout the year.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''}`
+              : `Altitudes máximas mensuales a lo largo del año.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''}`}
+          </p>
+        </>
+      )}
     </div>
   );
 }
