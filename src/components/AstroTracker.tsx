@@ -7891,7 +7891,9 @@ export default function AstroTracker() {
                       const all = o.projects.flatMap((p: any) => p.sessions);
                       const seconds = totalExposureSec(all);
                       const nights = new Set(all.map((s: any) => s.date)).size;
-                      const displayImage = o.image || (o.projects[o.projects.length - 1] as any)?.finalImage || null;
+                      // Prioridad: imagen final del último proyecto > imagen propia del objeto
+                      const lastProjectFinal = o.projects.length > 0 ? (o.projects[o.projects.length - 1] as any)?.finalImage : null;
+                      const displayImage = lastProjectFinal || o.image || null;
                       
                       return (
                         <Card
@@ -7916,39 +7918,43 @@ export default function AstroTracker() {
                                   <Telescope className="w-10 h-10 text-muted-foreground/50" />
                                 </div>
                               )}
-                              {/* Delete button positioned on top right of image */}
-                              <button
-                                title="Eliminar"
-                                className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  delObj(o.id);
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {/* Action buttons positioned on top right of image */}
+                              <div className="absolute top-2 right-2 flex gap-1">
+                                <button
+                                  title="Editar"
+                                  className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-accent/50 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditObjectOriginalId(o.id);
+                                    setEditObjectData({
+                                      id: o.id,
+                                      commonName: o.commonName || "",
+                                      constellation: o.constellation || "",
+                                      type: o.type || "",
+                                      image: o.image || null,
+                                    });
+                                    setShowEditObjectModal(true);
+                                  }}
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                  title="Eliminar"
+                                  className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    delObj(o.id);
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </div>
                             {/* Content - text below */}
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditObjectOriginalId(o.id);
-                                      setEditObjectData({
-                                        id: o.id,
-                                        commonName: o.commonName || "",
-                                        constellation: o.constellation || "",
-                                        type: o.type || "",
-                                      });
-                                      setShowEditObjectModal(true);
-                                    }}
-                                    className="text-lg font-bold truncate hover:underline text-left"
-                                    title="Clic para editar"
-                                  >
-                                    {o.id}
-                                  </button>
+                              <div className="min-w-0">
+                                  <p className="text-lg font-bold truncate">{o.id}</p>
                                   {o.commonName && (
                                     <p className="text-sm text-muted-foreground truncate">
                                       {o.commonName}
@@ -12380,6 +12386,66 @@ export default function AstroTracker() {
               </select>
             </label>
 
+            {/* Imagen del objeto */}
+            <div className="grid gap-1">
+              <Label>Imagen del objeto</Label>
+              {editObjectData?.image ? (
+                <div className="relative">
+                  <img
+                    src={editObjectData.image}
+                    alt="Imagen del objeto"
+                    className="w-full max-h-48 object-contain rounded-xl border border-border"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 p-1 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10"
+                    onClick={() => setEditObjectData({ ...editObjectData, image: null })}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className="border-2 border-dashed border-muted-foreground/30 rounded-xl p-6 text-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                  onClick={() => document.getElementById('edit-object-image-input')?.click()}
+                >
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">Haz clic para subir una imagen</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                id="edit-object-image-input"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      const MAX = 800;
+                      let w = img.width, h = img.height;
+                      if (w > MAX || h > MAX) {
+                        const r = Math.min(MAX / w, MAX / h);
+                        w = Math.round(w * r);
+                        h = Math.round(h * r);
+                      }
+                      canvas.width = w;
+                      canvas.height = h;
+                      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+                      setEditObjectData({ ...editObjectData, image: canvas.toDataURL("image/jpeg", 0.8) });
+                    };
+                    img.src = ev.target?.result as string;
+                  };
+                  reader.readAsDataURL(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn
                 outline
@@ -12404,6 +12470,7 @@ export default function AstroTracker() {
                             commonName: editObjectData.commonName.trim(),
                             constellation: editObjectData.constellation.trim(),
                             type: editObjectData.type,
+                            image: editObjectData.image,
                           }
                         : o,
                     ),
