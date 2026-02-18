@@ -83,6 +83,8 @@ import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
+import { getObjectCoordinates } from "@/lib/celestial-coordinates";
+import { calculateAnnualVisibility, parseCoordinates } from "@/lib/astronomy-calculations";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
@@ -1485,6 +1487,59 @@ function FPlanned({
     setSelectedIndex(-1);
     // Clear custom object image when selecting a new suggestion
     setObjectImage(null);
+    
+    // Auto-calculate cenit, orto, ocaso from coordinates
+    const coords = getObjectCoordinates(obj.code || "");
+    const loc = mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null;
+    if (coords && loc) {
+      const annual = calculateAnnualVisibility(coords.ra, coords.dec, loc);
+      // Cenit = best month
+      setCenit(MONTH_OPTIONS[annual.bestMonth - 1] || "");
+      
+      if (annual.isCircumpolar) {
+        setIsCircumpolar(true);
+        setOrto("");
+        setOcaso("");
+      } else if (annual.neverRises) {
+        setIsCircumpolar(false);
+        setOrto("");
+        setOcaso("");
+      } else {
+        setIsCircumpolar(false);
+        // Orto = first month with >0 visible hours, Ocaso = last month
+        let firstVisible = -1;
+        let lastVisible = -1;
+        for (let i = 0; i < annual.data.length; i++) {
+          if (annual.data[i].visibleHours > 1) {
+            if (firstVisible === -1) firstVisible = i;
+            lastVisible = i;
+          }
+        }
+        // Handle wrap-around: find the actual start/end of visibility window
+        // Check if visibility wraps around December->January
+        const visibleFlags = annual.data.map(d => d.visibleHours > 1);
+        let startMonth = -1;
+        let endMonth = -1;
+        // Find the first non-visible month, then find start of next visible block
+        let foundGap = false;
+        for (let i = 0; i < 12; i++) {
+          if (!visibleFlags[i]) { foundGap = true; }
+          if (foundGap && visibleFlags[i] && startMonth === -1) { startMonth = i; }
+        }
+        if (startMonth === -1 && firstVisible !== -1) startMonth = firstVisible;
+        // Find end: go from startMonth forward until not visible
+        if (startMonth !== -1) {
+          for (let i = 0; i < 12; i++) {
+            const idx = (startMonth + i) % 12;
+            if (visibleFlags[idx]) endMonth = idx;
+            else if (i > 0) break;
+          }
+        }
+        
+        if (startMonth !== -1) setOrto(MONTHS[startMonth]?.value || "");
+        if (endMonth !== -1) setOcaso(MONTHS[endMonth]?.value || "");
+      }
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
