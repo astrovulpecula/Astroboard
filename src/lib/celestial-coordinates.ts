@@ -1,6 +1,8 @@
 // Catálogo de coordenadas celestes para objetos populares
 // RA en horas decimales, Dec en grados decimales
 
+import { loadICObjects, parseRA, parseDec } from './ic-data-loader';
+
 export interface CelestialCoordinates {
   code: string;
   ra: number;  // Right Ascension en horas (0-24)
@@ -149,7 +151,7 @@ export const celestialCatalog: CelestialCoordinates[] = [
   { code: "NGC7635", ra: 23.347, dec: 61.2 },   // Bubble Nebula
   { code: "NGC7662", ra: 23.433, dec: 42.55 },  // Blue Snowball
   
-  // IC Objects
+  // IC Objects (hardcoded popular ones)
   { code: "IC434", ra: 5.683, dec: -2.467 },    // Horsehead region
   { code: "IC1396", ra: 21.627, dec: 57.5 },    // Elephant Trunk
   { code: "IC1805", ra: 2.557, dec: 61.45 },    // Heart Nebula
@@ -169,20 +171,74 @@ export const celestialCatalog: CelestialCoordinates[] = [
   { code: "Abell85", ra: 0.695, dec: -9.3 },
 ];
 
+// Cache for dynamically loaded IC coordinates
+let icCoordinatesCache: CelestialCoordinates[] | null = null;
+let icLoadingPromise: Promise<CelestialCoordinates[]> | null = null;
+
 /**
- * Buscar coordenadas de un objeto por su código
+ * Load IC coordinates from the XLSX data.
+ * Call this early to pre-populate the cache so sync lookups work.
+ */
+export async function loadICCoordinates(): Promise<CelestialCoordinates[]> {
+  if (icCoordinatesCache) return icCoordinatesCache;
+  if (icLoadingPromise) return icLoadingPromise;
+
+  icLoadingPromise = (async () => {
+    try {
+      const icObjects = await loadICObjects();
+      const coords: CelestialCoordinates[] = [];
+      
+      for (const obj of icObjects) {
+        const ra = parseRA(obj.ra);
+        const dec = parseDec(obj.dec);
+        if (ra !== null && dec !== null) {
+          // Normalize: IC0001 -> IC1
+          const numPart = obj.code.replace(/^IC0*/, '');
+          coords.push({
+            code: `IC${numPart}`,
+            ra,
+            dec,
+          });
+        }
+      }
+      
+      icCoordinatesCache = coords;
+      icLoadingPromise = null;
+      return coords;
+    } catch (error) {
+      console.error('Error loading IC coordinates:', error);
+      icLoadingPromise = null;
+      return [];
+    }
+  })();
+
+  return icLoadingPromise;
+}
+
+// Pre-load IC coordinates on module import
+loadICCoordinates().catch(() => {});
+
+/**
+ * Buscar coordenadas de un objeto por su código (sync - catálogo estático + IC cacheado)
  */
 export function getObjectCoordinates(code: string): CelestialCoordinates | null {
   const normalizedCode = code.toUpperCase().replace(/\s/g, "");
   
-  // Buscar coincidencia exacta
+  // Buscar coincidencia exacta en catálogo estático
   const exact = celestialCatalog.find(
     (obj) => obj.code.toUpperCase().replace(/\s/g, "") === normalizedCode
   );
   if (exact) return exact;
   
+  // Buscar en IC cacheado (disponible una vez cargado el XLSX)
+  if (icCoordinatesCache) {
+    const icMatch = icCoordinatesCache.find(
+      (obj) => obj.code.toUpperCase().replace(/\s/g, "") === normalizedCode
+    );
+    if (icMatch) return icMatch;
+  }
+  
   // Intentar variantes comunes
-  // NGC224 -> M31
   if (normalizedCode === "NGC224") {
     return celestialCatalog.find((obj) => obj.code === "M31") || null;
   }
@@ -193,6 +249,27 @@ export function getObjectCoordinates(code: string): CelestialCoordinates | null 
       (obj) => obj.code.toUpperCase() === normalizedCode
     );
     if (messierMatch) return messierMatch;
+  }
+  
+  return null;
+}
+
+/**
+ * Buscar coordenadas de un objeto por su código (async - incluye IC del XLSX)
+ */
+export async function getObjectCoordinatesAsync(code: string): Promise<CelestialCoordinates | null> {
+  // First try the static catalog
+  const staticResult = getObjectCoordinates(code);
+  if (staticResult) return staticResult;
+  
+  // Then try IC coordinates from XLSX
+  const normalizedCode = code.toUpperCase().replace(/\s/g, "");
+  if (normalizedCode.startsWith("IC")) {
+    const icCoords = await loadICCoordinates();
+    const match = icCoords.find(
+      (obj) => obj.code.toUpperCase().replace(/\s/g, "") === normalizedCode
+    );
+    if (match) return match;
   }
   
   return null;
