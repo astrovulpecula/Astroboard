@@ -17,8 +17,7 @@ export async function loadCelestialObjects(): Promise<CelestialObject[]> {
   loadingPromise = (async () => {
     try {
       // Load existing CSV objects (Messier + NGC)
-      const basePath = import.meta.env.PROD ? '/Astroboard' : '';
-      const response = await fetch(`${basePath}/data/celestial-objects.csv`);
+      const response = await fetch(`/data/celestial-objects.csv`);
       const csvText = await response.text();
       
       const lines = csvText.split('\n');
