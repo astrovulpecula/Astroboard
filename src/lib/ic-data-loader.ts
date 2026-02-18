@@ -54,8 +54,7 @@ export async function loadICObjects(): Promise<ICObject[]> {
 
   loadingPromise = (async () => {
     try {
-      const basePath = import.meta.env.PROD ? '/Astroboard' : '';
-      const response = await fetch(`${basePath}/data/ic-objects.xlsx`);
+      const response = await fetch(`/data/ic-objects.xlsx`);
       const arrayBuffer = await response.arrayBuffer();
       
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
