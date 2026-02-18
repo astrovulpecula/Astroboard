@@ -576,7 +576,7 @@ const Modal = ({
       onClick={onClose}
     >
       <div
-        className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"} max-h-[90vh] overflow-y-auto my-4`}
+        className={`w-full ${wide ? "max-w-3xl" : "max-w-xl"} my-4`}
         onClick={(e) => e.stopPropagation()}
       >
         <Card className="p-4 md:p-5">
