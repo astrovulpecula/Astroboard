@@ -1490,11 +1490,19 @@ function FPlanned({
     
     // Auto-calculate cenit, orto, ocaso from coordinates
     const coords = getObjectCoordinates(obj.code || "");
-    const loc = mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null;
-    if (coords && loc) {
+    if (coords) {
+      // Cenit: month when object is highest at midnight (based on RA only)
+      // Object transits at midnight when Sun's RA is opposite (RA + 12h)
+      // Sun RA ~0h at March equinox (~month 3), advances ~2h/month
+      // Best month = ((RA + 12) mod 24) / 2 + 3, adjusted to 1-12
+      const cenitMonth = Math.round(((((coords.ra + 12) % 24) / 2) + 2) % 12) + 1;
+      setCenit(MONTH_OPTIONS[cenitMonth - 1] || "");
+      
+      // For orto/ocaso, use observer location or default (40.4°N, -3.7°W = Madrid)
+      const loc = (mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null) 
+        || { latitude: 40.4168, longitude: -3.7038 };
+      
       const annual = calculateAnnualVisibility(coords.ra, coords.dec, loc);
-      // Cenit = best month
-      setCenit(MONTH_OPTIONS[annual.bestMonth - 1] || "");
       
       if (annual.isCircumpolar) {
         setIsCircumpolar(true);
@@ -1506,28 +1514,19 @@ function FPlanned({
         setOcaso("");
       } else {
         setIsCircumpolar(false);
-        // Orto = first month with >0 visible hours, Ocaso = last month
-        let firstVisible = -1;
-        let lastVisible = -1;
-        for (let i = 0; i < annual.data.length; i++) {
-          if (annual.data[i].visibleHours > 1) {
-            if (firstVisible === -1) firstVisible = i;
-            lastVisible = i;
-          }
-        }
-        // Handle wrap-around: find the actual start/end of visibility window
-        // Check if visibility wraps around December->January
         const visibleFlags = annual.data.map(d => d.visibleHours > 1);
         let startMonth = -1;
         let endMonth = -1;
-        // Find the first non-visible month, then find start of next visible block
         let foundGap = false;
         for (let i = 0; i < 12; i++) {
           if (!visibleFlags[i]) { foundGap = true; }
           if (foundGap && visibleFlags[i] && startMonth === -1) { startMonth = i; }
         }
-        if (startMonth === -1 && firstVisible !== -1) startMonth = firstVisible;
-        // Find end: go from startMonth forward until not visible
+        if (startMonth === -1) {
+          // All months visible or no gap found - find first visible
+          const firstVisible = visibleFlags.indexOf(true);
+          if (firstVisible !== -1) startMonth = firstVisible;
+        }
         if (startMonth !== -1) {
           for (let i = 0; i < 12; i++) {
             const idx = (startMonth + i) % 12;
