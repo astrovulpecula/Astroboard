@@ -153,6 +153,26 @@ const formatDateDisplay = (dateStr: string, format: string = "DD/MM/YYYY") => {
       return `${day}/${month}/${year}`;
   }
 };
+
+// Helper to parse date strings in DD/MM/YYYY or ISO format consistently
+const parseDateSafe = (dateStr: string): Date | null => {
+  if (!dateStr) return null;
+  let date: Date;
+  if (dateStr.includes("-")) {
+    date = new Date(dateStr + "T00:00:00");
+  } else if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      const [first, second, third] = parts;
+      date = new Date(`${third.length === 2 ? "20" + third : third}-${second.padStart(2, "0")}-${first.padStart(2, "0")}`);
+    } else {
+      date = new Date(dateStr);
+    }
+  } else {
+    date = new Date(dateStr);
+  }
+  return isNaN(date.getTime()) ? null : date;
+};
 const mean = (s: any) => {
   if (!s) return null;
   const a = [s.snrR, s.snrG, s.snrB].filter((v: any) => Number.isFinite(v));
@@ -9556,14 +9576,18 @@ export default function AstroTracker() {
                 const getEarliestSessionDate = (project: any): number => {
                   if (project.sessions && project.sessions.length > 0) {
                     const sessionDates = project.sessions
-                      .map((s: any) => s.date ? new Date(s.date).getTime() : Infinity)
-                      .filter((d: number) => d !== Infinity && !isNaN(d));
+                      .map((s: any) => {
+                        const d = parseDateSafe(s.date);
+                        return d ? d.getTime() : Infinity;
+                      })
+                      .filter((d: number) => d !== Infinity);
                     if (sessionDates.length > 0) {
                       return Math.min(...sessionDates);
                     }
                   }
                   // Fallback to createdAt if no valid session dates
-                  return new Date(project.createdAt || 0).getTime();
+                  const fallback = parseDateSafe(project.createdAt);
+                  return fallback ? fallback.getTime() : 0;
                 };
                 
                 // Sort by earliest session date (oldest first)
@@ -9654,19 +9678,19 @@ export default function AstroTracker() {
                 const projectsWithFinalImages = obj.projects
                   .filter((proj: any) => proj.images?.finalProject)
                   .map((proj: any) => {
-                    // Get the earliest session date
+                    // Get the earliest session date using safe parser
                     let earliestDate: Date | null = null;
                     if (proj.sessions && proj.sessions.length > 0) {
                       const validDates = proj.sessions
-                        .map((s: any) => s.date ? new Date(s.date) : null)
-                        .filter((d: Date | null) => d && !isNaN(d.getTime()));
+                        .map((s: any) => parseDateSafe(s.date))
+                        .filter((d: Date | null): d is Date => d !== null);
                       if (validDates.length > 0) {
                         earliestDate = validDates.reduce((min: Date, d: Date) => d < min ? d : min, validDates[0]);
                       }
                     }
                     // Fallback to createdAt
                     if (!earliestDate) {
-                      earliestDate = new Date(proj.createdAt || 0);
+                      earliestDate = parseDateSafe(proj.createdAt) || new Date(0);
                     }
                     return {
                       ...proj,
