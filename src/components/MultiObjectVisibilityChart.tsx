@@ -157,7 +157,7 @@ export default function MultiObjectVisibilityChart({
       annualData.forEach((obj) => {
         const monthData = obj.annual?.data[monthIdx];
         if (monthData) {
-          dataPoint[obj.id] = monthData.maxAltitude;
+          dataPoint[obj.id] = monthData.midnightAltitude;
         }
       });
 
@@ -427,14 +427,8 @@ export default function MultiObjectVisibilityChart({
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                 />
                 <YAxis
-                  domain={[0, 90]}
-                  ticks={
-                    altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
-                      ? [0, altitudeLimit, 30, 60, 90]
-                          .filter((v, i, arr) => arr.indexOf(v) === i)
-                          .sort((a, b) => a - b)
-                      : [0, 30, 60, 90]
-                  }
+                  domain={[-90, 90]}
+                  ticks={[-90, -60, -30, 0, 30, 60, 90]}
                   tick={{ fontSize: 10 }}
                   tickLine={false}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
@@ -466,6 +460,19 @@ export default function MultiObjectVisibilityChart({
                     strokeDasharray="6 3"
                   />
                 )}
+                {/* Línea vertical del mes actual */}
+                <ReferenceLine
+                  x={['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'][new Date().getMonth()]}
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  label={{
+                    value: language === 'en' ? 'Now' : 'Hoy',
+                    position: 'top',
+                    fontSize: 10,
+                    fill: 'hsl(var(--primary))',
+                  }}
+                />
                 {annualData.map((obj, idx) => (
                   <React.Fragment key={obj.id}>
                     <defs>

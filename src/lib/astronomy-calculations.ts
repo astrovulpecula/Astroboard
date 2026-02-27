@@ -325,6 +325,7 @@ export interface AnnualVisibilityDataPoint {
   month: number;
   monthLabel: string;
   maxAltitude: number;
+  midnightAltitude: number;
   visibleHours: number;
   transitTime: string;
 }
@@ -362,6 +363,10 @@ export function calculateAnnualVisibility(
     const date = new Date(year, month, 15);
     const visibility = calculateNightVisibility(ra, dec, observer, date);
     
+    // Calcular altitud a medianoche (00:00 del día 16)
+    const midnight = new Date(year, month, 16, 0, 0, 0);
+    const midnightResult = calculateAltAz(ra, dec, observer, midnight);
+    
     // Contar horas visibles (altitud > 0)
     const visiblePoints = visibility.data.filter(d => d.altitude > 0);
     const visibleHours = (visiblePoints.length * 15) / 60; // 15 min por punto
@@ -370,12 +375,13 @@ export function calculateAnnualVisibility(
       month: month + 1,
       monthLabel: monthLabels[month],
       maxAltitude: visibility.transitAltitude,
+      midnightAltitude: parseFloat(midnightResult.altitude.toFixed(1)),
       visibleHours,
       transitTime: formatTransitTime(visibility.transitTime)
     });
     
-    if (visibility.transitAltitude > bestAltitude) {
-      bestAltitude = visibility.transitAltitude;
+    if (midnightResult.altitude > bestAltitude) {
+      bestAltitude = midnightResult.altitude;
       bestMonth = month + 1;
     }
   }
