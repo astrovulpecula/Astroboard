@@ -417,10 +417,10 @@ export default function VisibilityChart({
                   <ArrowUp className="w-4 h-4 text-primary" />
                   <div>
                     <div className="text-xs text-muted-foreground">
-                      {language === 'en' ? 'Peak Altitude' : 'Altitud pico'}
+                      {language === 'en' ? 'Peak Alt. (midnight)' : 'Altitud pico (00:00)'}
                     </div>
                     <div className="font-semibold">
-                      {Math.max(...annualVisibility.data.map(d => d.maxAltitude)).toFixed(0)}°
+                      {Math.max(...annualVisibility.data.map(d => d.midnightAltitude)).toFixed(0)}°
                     </div>
                   </div>
                 </div>
@@ -433,14 +433,14 @@ export default function VisibilityChart({
                 )}
               </div>
 
-              {/* Gráfico Anual - Lineal */}
+              {/* Gráfico Anual - Altitud a medianoche */}
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={annualVisibility.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id={`colorAltAnnual-${objectCode}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -451,11 +451,8 @@ export default function VisibilityChart({
                       axisLine={{ stroke: 'hsl(var(--border))' }}
                     />
                     <YAxis
-                      domain={[0, 90]}
-                      ticks={altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
-                        ? [0, altitudeLimit, 30, 60, 90].filter((v, i, arr) => arr.indexOf(v) === i).sort((a, b) => a - b)
-                        : [0, 30, 60, 90]
-                      }
+                      domain={[-90, 90]}
+                      ticks={[-90, -60, -30, 0, 30, 60, 90]}
                       tick={{ fontSize: 10 }}
                       tickLine={false}
                       axisLine={{ stroke: 'hsl(var(--border))' }}
@@ -464,13 +461,32 @@ export default function VisibilityChart({
                     <Tooltip
                       formatter={(value: number, name: string) => [
                         `${value.toFixed(1)}°`,
-                        language === 'en' ? 'Max Altitude' : 'Altitud máx.'
+                        language === 'en' ? 'Altitude at midnight' : 'Altitud a medianoche'
                       ]}
                       labelFormatter={(label) => label}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
+                      }}
+                    />
+                    <ReferenceLine
+                      y={0}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.6}
+                    />
+                    {/* Línea vertical del mes actual */}
+                    <ReferenceLine
+                      x={annualVisibility.data[new Date().getMonth()]?.monthLabel}
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 3"
+                      label={{
+                        value: language === 'en' ? 'Now' : 'Hoy',
+                        position: 'top',
+                        fontSize: 10,
+                        fill: 'hsl(var(--primary))',
                       }}
                     />
                     {altitudeLimit !== undefined && altitudeLimit > 0 && (
@@ -483,7 +499,7 @@ export default function VisibilityChart({
                     )}
                     <Area
                       type="monotone"
-                      dataKey="maxAltitude"
+                      dataKey="midnightAltitude"
                       stroke="hsl(var(--primary))"
                       strokeWidth={2}
                       fill={`url(#colorAltAnnual-${objectCode})`}
@@ -494,8 +510,8 @@ export default function VisibilityChart({
 
               <p className="text-xs text-muted-foreground text-center">
                 {language === 'en'
-                  ? `Maximum altitude per month throughout the year.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''}`
-                  : `Altitud máxima por mes a lo largo del año.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''}`}
+                  ? `Altitude at midnight (00:00) per month.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''}`
+                  : `Altitud a medianoche (00:00) por mes.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''}`}
               </p>
             </>
           )}
