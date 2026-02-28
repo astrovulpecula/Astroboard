@@ -336,7 +336,7 @@ export default function MultiObjectVisibilityChart({
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                 />
                 <YAxis
-                  domain={[-10, 90]}
+                  domain={[0, 90]}
                   ticks={
                     altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
                       ? [0, altitudeLimit, 30, 60, 90]
@@ -427,8 +427,8 @@ export default function MultiObjectVisibilityChart({
                   axisLine={{ stroke: 'hsl(var(--border))' }}
                 />
                 <YAxis
-                  domain={[-90, 90]}
-                  ticks={[-90, -60, -30, 0, 30, 60, 90]}
+                  domain={[0, 90]}
+                  ticks={[0, 30, 60, 90]}
                   tick={{ fontSize: 10 }}
                   tickLine={false}
                   axisLine={{ stroke: 'hsl(var(--border))' }}
