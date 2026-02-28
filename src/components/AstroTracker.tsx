@@ -1402,6 +1402,54 @@ const calculateVisibleMonths = (orto: string, ocaso: string): number => {
   }
 };
 
+const calculateRiseSetMonthsFromAnnual = (
+  annual: ReturnType<typeof calculateAnnualVisibility>
+): { riseMonthValue: string; setMonthValue: string } => {
+  if (annual.isCircumpolar || annual.neverRises) {
+    return { riseMonthValue: "", setMonthValue: "" };
+  }
+
+  const altitudes = annual.data.map((point) => point.midnightAltitude);
+  let riseMonth = -1;
+  let setMonth = -1;
+
+  for (let month = 0; month < 12; month++) {
+    const prevAltitude = altitudes[(month + 11) % 12];
+    const currentAltitude = altitudes[month];
+
+    if (riseMonth === -1 && prevAltitude <= 0 && currentAltitude > 0) {
+      riseMonth = month;
+    }
+
+    if (setMonth === -1 && prevAltitude >= 0 && currentAltitude < 0) {
+      setMonth = month;
+    }
+  }
+
+  if (riseMonth === -1) {
+    riseMonth = altitudes.findIndex((altitude) => altitude > 0);
+  }
+
+  if (setMonth === -1) {
+    if (riseMonth !== -1) {
+      for (let step = 1; step <= 12; step++) {
+        const idx = (riseMonth + step) % 12;
+        if (altitudes[idx] < 0) {
+          setMonth = idx;
+          break;
+        }
+      }
+    } else {
+      setMonth = altitudes.findIndex((altitude) => altitude < 0);
+    }
+  }
+
+  return {
+    riseMonthValue: riseMonth !== -1 ? MONTHS[riseMonth]?.value || "" : "",
+    setMonthValue: setMonth !== -1 ? MONTHS[setMonth]?.value || "" : "",
+  };
+};
+
 function FPlanned({
   onSubmit,
   locations = [],
@@ -1430,6 +1478,7 @@ function FPlanned({
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const suggestionsRef = React.useRef<HTMLDivElement>(null);
 
   // Check if the object already exists in the Objects section
   const existingObject = useMemo(() => {
@@ -1511,19 +1560,15 @@ function FPlanned({
     // Auto-calculate cenit, orto, ocaso from coordinates
     const coords = getObjectCoordinates(obj.code || "");
     if (coords) {
-      // Cenit: month when object is highest at midnight (based on RA only)
-      // Object transits at midnight when Sun's RA is opposite (RA + 12h)
-      // Sun RA ~0h at March equinox (~month 3), advances ~2h/month
-      // Best month = ((RA + 12) mod 24) / 2 + 3, adjusted to 1-12
-      const cenitMonth = Math.round(((((coords.ra + 12) % 24) / 2) + 2) % 12) + 1;
-      setCenit(MONTH_OPTIONS[cenitMonth - 1] || "");
-      
-      // For orto/ocaso, use observer location or default (40.4°N, -3.7°W = Madrid)
-      const loc = (mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null) 
+      // For cenit/orto/ocaso, use observer location or default (40.4°N, -3.7°W = Madrid)
+      const loc = (mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null)
         || { latitude: 40.4168, longitude: -3.7038 };
-      
+
       const annual = calculateAnnualVisibility(coords.ra, coords.dec, loc);
-      
+
+      // Cenit = mejor mes de la curva anual (altitud a medianoche)
+      setCenit(MONTH_OPTIONS[annual.bestMonth - 1] || "");
+
       if (annual.isCircumpolar) {
         setIsCircumpolar(true);
         setOrto("");
@@ -1534,30 +1579,15 @@ function FPlanned({
         setOcaso("");
       } else {
         setIsCircumpolar(false);
-        const visibleFlags = annual.data.map(d => d.visibleHours > 1);
-        let startMonth = -1;
-        let endMonth = -1;
-        let foundGap = false;
-        for (let i = 0; i < 12; i++) {
-          if (!visibleFlags[i]) { foundGap = true; }
-          if (foundGap && visibleFlags[i] && startMonth === -1) { startMonth = i; }
-        }
-        if (startMonth === -1) {
-          // All months visible or no gap found - find first visible
-          const firstVisible = visibleFlags.indexOf(true);
-          if (firstVisible !== -1) startMonth = firstVisible;
-        }
-        if (startMonth !== -1) {
-          for (let i = 0; i < 12; i++) {
-            const idx = (startMonth + i) % 12;
-            if (visibleFlags[idx]) endMonth = idx;
-            else if (i > 0) break;
-          }
-        }
-        
-        if (startMonth !== -1) setOrto(MONTHS[startMonth]?.value || "");
-        if (endMonth !== -1) setOcaso(MONTHS[endMonth]?.value || "");
+        const { riseMonthValue, setMonthValue } = calculateRiseSetMonthsFromAnnual(annual);
+        setOrto(riseMonthValue);
+        setOcaso(setMonthValue);
       }
+    } else {
+      setCenit("");
+      setIsCircumpolar(false);
+      setOrto("");
+      setOcaso("");
     }
   };
 
@@ -1580,9 +1610,10 @@ function FPlanned({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (inputRef.current && !inputRef.current.contains(e.target as Node)) {
-        setShowSuggestions(false);
-      }
+      const target = e.target as Node;
+      if (inputRef.current?.contains(target)) return;
+      if (suggestionsRef.current?.contains(target)) return;
+      setShowSuggestions(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -1693,7 +1724,7 @@ function FPlanned({
           autoComplete="off"
         />
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
+          <div ref={suggestionsRef} className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50">
             {suggestions.map((obj, idx) => (
               <button
                 key={obj.code}
