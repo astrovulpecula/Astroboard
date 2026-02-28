@@ -305,6 +305,7 @@ export default function VisibilityChart({
                 />
                 <YAxis
                   domain={[0, 90]}
+                  allowDataOverflow
                   ticks={altitudeLimit && altitudeLimit > 0 && ![0, 30, 60, 90].includes(altitudeLimit)
                     ? [0, altitudeLimit, 30, 60, 90].filter((v, i, arr) => arr.indexOf(v) === i).sort((a, b) => a - b)
                     : [0, 30, 60, 90]
@@ -452,6 +453,7 @@ export default function VisibilityChart({
                     />
                     <YAxis
                       domain={[0, 90]}
+                      allowDataOverflow
                       ticks={[0, 30, 60, 90]}
                       tick={{ fontSize: 10 }}
                       tickLine={false}
