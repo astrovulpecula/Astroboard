@@ -83,7 +83,7 @@ import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
-import { getObjectCoordinates } from "@/lib/celestial-coordinates";
+import { getObjectCoordinatesAsync } from "@/lib/celestial-coordinates";
 import { calculateAnnualVisibility, parseCoordinates } from "@/lib/astronomy-calculations";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
@@ -1546,8 +1546,10 @@ function FPlanned({
     }
   };
 
-  const handleSelectSuggestion = (obj: any) => {
-    setObjectId(obj.code || "");
+  const handleSelectSuggestion = async (obj: any) => {
+    const selectedCode = obj.code || "";
+
+    setObjectId(selectedCode);
     setObjectName(obj.nameEsp || "");
     setConstellation(obj.constellation || "");
     setObjectType(obj.objectType || "");
@@ -1556,9 +1558,9 @@ function FPlanned({
     setSelectedIndex(-1);
     // Clear custom object image when selecting a new suggestion
     setObjectImage(null);
-    
+
     // Auto-calculate cenit, orto, ocaso from coordinates
-    const coords = getObjectCoordinates(obj.code || "");
+    const coords = await getObjectCoordinatesAsync(selectedCode);
     if (coords) {
       // For cenit/orto/ocaso, use observer location or default (40.4°N, -3.7°W = Madrid)
       const loc = (mainLocation?.coords ? parseCoordinates(mainLocation.coords) : null)
@@ -1591,6 +1593,37 @@ function FPlanned({
     }
   };
 
+  const handleCodeBlur = async () => {
+    const trimmedCode = objectId.trim();
+    if (!trimmedCode) return;
+
+    // If metadata is already populated, don't override manual edits.
+    if (objectName || constellation || objectType) return;
+
+    const normalized = trimmedCode.toLowerCase();
+    const exactSuggestion = suggestions.find(
+      (obj) => (obj.code || "").toLowerCase() === normalized
+    );
+
+    if (exactSuggestion) {
+      await handleSelectSuggestion(exactSuggestion);
+      return;
+    }
+
+    try {
+      const results = await searchCelestialObjects(trimmedCode, 50);
+      const exactMatch = results.find(
+        (obj) => (obj.code || "").toLowerCase() === normalized
+      );
+
+      if (exactMatch) {
+        await handleSelectSuggestion(exactMatch);
+      }
+    } catch (error) {
+      console.error("Error matching celestial object on blur:", error);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || suggestions.length === 0) return;
 
@@ -1600,9 +1633,17 @@ function FPlanned({
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelectedIndex(prev => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === "Enter" && selectedIndex >= 0) {
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      handleSelectSuggestion(suggestions[selectedIndex]);
+      if (selectedIndex >= 0) {
+        void handleSelectSuggestion(suggestions[selectedIndex]);
+      } else {
+        const normalized = objectId.trim().toLowerCase();
+        const exactSuggestion = suggestions.find(
+          (obj) => (obj.code || "").toLowerCase() === normalized
+        );
+        void handleSelectSuggestion(exactSuggestion || suggestions[0]);
+      }
     } else if (e.key === "Escape") {
       setShowSuggestions(false);
     }
@@ -1718,6 +1759,7 @@ function FPlanned({
           ref={inputRef}
           value={objectId} 
           onChange={handleIdChange}
+          onBlur={() => { void handleCodeBlur(); }}
           onKeyDown={handleKeyDown}
           className={INPUT_CLS} 
           placeholder="M31, NGC1234, etc." 
