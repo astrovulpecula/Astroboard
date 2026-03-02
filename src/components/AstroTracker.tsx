@@ -96,6 +96,7 @@ import PHD2Charts from "@/components/PHD2Charts";
 import VisibilityChart from "@/components/VisibilityChart";
 import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
 import { Eye } from "lucide-react";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -7930,14 +7931,15 @@ export default function AstroTracker() {
                               <span className="text-xs text-muted-foreground ml-1">({allCompletedWithImages.length})</span>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-4">
-                              <div className="relative">
-                                <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-700 -translate-y-1/2 z-0" />
-                                <div
-                                  className="relative z-10 flex items-start overflow-x-auto pb-2"
-                                  style={{
-                                    justifyContent: allCompletedWithImages.length === 1 ? 'center' : 'space-between',
-                                  }}
-                                >
+                              <ScrollArea className="w-full">
+                                <div className="relative">
+                                  <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-700 -translate-y-1/2 z-0" />
+                                  <div
+                                    className="relative z-10 flex items-start gap-0 pb-2 w-max min-w-full"
+                                    style={{
+                                      justifyContent: allCompletedWithImages.length === 1 ? 'center' : 'flex-start',
+                                    }}
+                                  >
                                   {allCompletedWithImages.map((proj: any, idx: number) => {
                                     let timeDiffLabel = '';
                                     if (idx > 0) {
@@ -7995,6 +7997,8 @@ export default function AstroTracker() {
                                   })}
                                 </div>
                               </div>
+                              <ScrollBar orientation="horizontal" />
+                            </ScrollArea>
                             </CollapsibleContent>
                           </Collapsible>
                         </Card>
