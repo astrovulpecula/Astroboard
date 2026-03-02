@@ -10068,7 +10068,7 @@ export default function AstroTracker() {
                               </div>
                             )}
                             <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                              {p.sessions.length} sesión(es)
+                              {p.sessions.length} sesión(es) · {hh(totalExposureSec(p.sessions))}
                             </div>
                             <div className="mt-2">
                               <select
