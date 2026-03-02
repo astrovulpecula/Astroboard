@@ -4892,6 +4892,7 @@ export default function AstroTracker() {
   const [objectsSectionExpanded, setObjectsSectionExpanded] = useState(true);
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
+  const [globalTimelineExpanded, setGlobalTimelineExpanded] = useState(true);
   const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
   const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
@@ -7885,6 +7886,122 @@ export default function AstroTracker() {
               {mainSection === "objetos" && (
                 <>
 
+                  {/* Global Timeline - Completed projects across all objects */}
+                  {(() => {
+                    const allCompletedWithImages: any[] = [];
+                    objects.forEach((obj: any) => {
+                      obj.projects
+                        .filter((p: any) => p.status === "completed" && p.images?.finalProject)
+                        .forEach((p: any) => {
+                          let earliestDate: Date | null = null;
+                          if (p.sessions && p.sessions.length > 0) {
+                            const validDates = p.sessions
+                              .map((s: any) => parseDateSafe(s.date))
+                              .filter((d: Date | null): d is Date => d !== null);
+                            if (validDates.length > 0) {
+                              earliestDate = validDates.reduce((min: Date, d: Date) => d < min ? d : min, validDates[0]);
+                            }
+                          }
+                          if (!earliestDate) {
+                            earliestDate = parseDateSafe(p.completedDate || p.createdAt) || new Date(0);
+                          }
+                          allCompletedWithImages.push({
+                            ...p,
+                            objectId: obj.id,
+                            objectName: obj.commonName || obj.id,
+                            earliestDate,
+                          });
+                        });
+                    });
+                    allCompletedWithImages.sort((a, b) => a.earliestDate.getTime() - b.earliestDate.getTime());
+
+                    if (allCompletedWithImages.length === 0) return null;
+
+                    return (
+                      <div className="mb-6">
+                        <Card className="p-4 md:p-6">
+                          <Collapsible open={globalTimelineExpanded} onOpenChange={setGlobalTimelineExpanded}>
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                              <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                              <Clock className="w-5 h-5 text-primary" />
+                              <h3 className="text-lg font-semibold">
+                                {language === 'en' ? 'Timeline' : 'Línea temporal'}
+                              </h3>
+                              <span className="text-xs text-muted-foreground ml-1">({allCompletedWithImages.length})</span>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-4">
+                              <div className="relative">
+                                <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-200 dark:bg-slate-700 -translate-y-1/2 z-0" />
+                                <div
+                                  className="relative z-10 flex items-start overflow-x-auto pb-2"
+                                  style={{
+                                    justifyContent: allCompletedWithImages.length === 1 ? 'center' : 'space-between',
+                                  }}
+                                >
+                                  {allCompletedWithImages.map((proj: any, idx: number) => {
+                                    let timeDiffLabel = '';
+                                    if (idx > 0) {
+                                      const prevDate = allCompletedWithImages[idx - 1].earliestDate;
+                                      const currDate = proj.earliestDate;
+                                      const diffDays = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+                                      if (diffDays >= 365) {
+                                        const years = Math.floor(diffDays / 365);
+                                        const months = Math.floor((diffDays % 365) / 30);
+                                        timeDiffLabel = months > 0 ? `${years}a ${months}m` : `${years}a`;
+                                      } else if (diffDays >= 30) {
+                                        const months = Math.floor(diffDays / 30);
+                                        const days = diffDays % 30;
+                                        timeDiffLabel = days > 0 ? `${months}m ${days}d` : `${months}m`;
+                                      } else {
+                                        timeDiffLabel = `${diffDays}d`;
+                                      }
+                                    }
+                                    return (
+                                      <React.Fragment key={`${proj.objectId}-${proj.id}`}>
+                                        {idx > 0 && (
+                                          <div className="flex-1 flex items-center justify-center self-center -mx-2 min-w-[40px]">
+                                            <div className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                                              {timeDiffLabel}
+                                            </div>
+                                          </div>
+                                        )}
+                                        <div
+                                          className="flex flex-col items-center flex-shrink-0 cursor-pointer"
+                                          style={{ maxWidth: '120px', minWidth: '80px' }}
+                                          onClick={() => {
+                                            setSelectedObjectId(proj.objectId);
+                                            setSelectedProjectId(proj.id);
+                                            setView("project");
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                          }}
+                                        >
+                                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden group border-2 border-primary bg-background shadow-md">
+                                            <img
+                                              src={proj.images.finalProject}
+                                              alt={proj.objectName}
+                                              className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                                            />
+                                          </div>
+                                          <div className="w-3 h-3 rounded-full bg-primary mt-2 mb-1 shadow-sm" />
+                                          <div className="text-xs text-muted-foreground text-center font-medium">
+                                            {formatDateDisplay(proj.earliestDate.toISOString().slice(0, 10), dateFormat)}
+                                          </div>
+                                          <div className="text-xs text-center text-slate-600 dark:text-slate-400 truncate w-full mt-0.5">
+                                            {proj.objectName}
+                                          </div>
+                                        </div>
+                                      </React.Fragment>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </Card>
+                      </div>
+                    );
+                  })()}
+
                   {/* Objects Section Title and Controls */}
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2">
@@ -10069,6 +10186,9 @@ export default function AstroTracker() {
                             )}
                             <div className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                               {p.sessions.length} sesión(es)
+                              {p.sessions.length > 0 && (
+                                <span className="ml-2">· {formatHoursToHHMM(totalExposureSec(p.sessions) / 3600)}h</span>
+                              )}
                             </div>
                             <div className="mt-2">
                               <select
