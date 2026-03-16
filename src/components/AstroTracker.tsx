@@ -341,7 +341,7 @@ const ImageCarousel = ({
 
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; title: string }) => (
   <div className="flex items-center gap-2 mb-3">
-    {Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
+    {Icon && <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />}
     <h3 className="text-base md:text-lg font-semibold tracking-tight">{title}</h3>
   </div>
 );
