@@ -508,7 +508,7 @@ const ObjectThumbnail = ({
         />
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
           <label
-            className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition"
+            className="p-2 bg-background/90 rounded-lg cursor-pointer hover:bg-background transition"
             onClick={(e) => e.stopPropagation()}
           >
             <Upload className="w-4 h-4" />
