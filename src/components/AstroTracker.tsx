@@ -98,7 +98,7 @@ import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart"
 import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
-const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
+const INPUT_CLS = "border border-border rounded-xl px-3 py-2 bg-secondary/50 text-sm md:text-base focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground";
 const num = (v: any, d = 0) => (Number.isFinite(+v) ? +v : d);
 const toISODate = (d: string) => {
   if (!/^\d{2}\/\d{2}\/\d{2,4}$/.test(d)) return d;
