@@ -357,17 +357,14 @@ const Btn = ({
   outline?: boolean;
   type?: "button" | "submit" | "reset";
 }) => {
-  const isAstro = typeof window !== "undefined" && document.documentElement.getAttribute("data-theme") === "astro";
   return (
     <button
       type={type}
       onClick={onClick}
-      className={`inline-flex items-center gap-1 md:gap-2 rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-sm md:text-base transition ${
+      className={`inline-flex items-center gap-1 md:gap-2 rounded-xl px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base font-medium transition-all duration-200 ${
         outline
-          ? "border hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800"
-          : isAstro
-            ? "astro-btn"
-            : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+          ? "border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30"
+          : "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20"
       }`}
     >
       {children}
