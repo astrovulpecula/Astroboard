@@ -98,7 +98,7 @@ import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart"
 import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
-const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
+const INPUT_CLS = "border border-border rounded-xl px-3 py-2 bg-secondary/50 text-sm md:text-base focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all placeholder:text-muted-foreground";
 const num = (v: any, d = 0) => (Number.isFinite(+v) ? +v : d);
 const toISODate = (d: string) => {
   if (!/^\d{2}\/\d{2}\/\d{2,4}$/.test(d)) return d;
@@ -240,7 +240,7 @@ const sample = [
 ];
 
 const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200 border-slate-300/60 dark:border-slate-700/60 ${className}`}>
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border-border bg-secondary/60 backdrop-blur-sm ${className}`}>
     {children}
   </span>
 );
@@ -255,12 +255,8 @@ const Card = ({
   onClick?: () => void;
 }) => (
   <div
-    className={`rounded-2xl shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`}
+    className={`glass-card rounded-2xl p-3 md:p-4 transition-all duration-300 ${className} ${onClick ? "cursor-pointer hover:scale-[1.01]" : ""}`}
     data-card
-    style={{
-      border: "1px solid var(--card-border, rgb(226 232 240))",
-      background: "var(--card-bg, rgba(255, 255, 255, 0.7))",
-    }}
     onClick={onClick}
   >
     {children}
@@ -345,7 +341,7 @@ const ImageCarousel = ({
 
 const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; title: string }) => (
   <div className="flex items-center gap-2 mb-3">
-    {Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
+    {Icon && <Icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />}
     <h3 className="text-base md:text-lg font-semibold tracking-tight">{title}</h3>
   </div>
 );
@@ -361,17 +357,14 @@ const Btn = ({
   outline?: boolean;
   type?: "button" | "submit" | "reset";
 }) => {
-  const isAstro = typeof window !== "undefined" && document.documentElement.getAttribute("data-theme") === "astro";
   return (
     <button
       type={type}
       onClick={onClick}
-      className={`inline-flex items-center gap-1 md:gap-2 rounded-xl px-2 md:px-3 py-1.5 md:py-2 text-sm md:text-base transition ${
+      className={`inline-flex items-center gap-1 md:gap-2 rounded-xl px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base font-medium transition-all duration-200 ${
         outline
-          ? "border hover:bg-slate-50 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800"
-          : isAstro
-            ? "astro-btn"
-            : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+          ? "border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30"
+          : "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20"
       }`}
     >
       {children}
@@ -391,7 +384,7 @@ const IconBtn = ({
   <button
     title={title}
     onClick={onClick}
-    className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+    className="p-2 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30 transition-all duration-200"
   >
     {children}
   </button>
@@ -511,18 +504,18 @@ const ObjectThumbnail = ({
         <img
           src={displayImage}
           alt={objectId}
-          className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+          className="w-24 h-24 rounded-xl object-cover border border-border"
         />
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
           <label
-            className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg cursor-pointer hover:bg-white dark:hover:bg-slate-900 transition"
+            className="p-2 bg-background/90 rounded-lg cursor-pointer hover:bg-background transition"
             onClick={(e) => e.stopPropagation()}
           >
             <Upload className="w-4 h-4" />
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
           <button
-            className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition"
+            className="p-2 bg-background/90 rounded-lg hover:bg-background transition"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(objectId);
@@ -592,7 +585,7 @@ const Modal = ({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-black/30 backdrop-blur-sm p-2 md:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 grid place-items-center bg-black/50 backdrop-blur-md p-2 md:p-4 overflow-y-auto"
       onClick={onClose}
     >
       <div
@@ -6609,55 +6602,38 @@ export default function AstroTracker() {
           --gradient-start: #ffa07a;
           --gradient-mid: #ff6b4a;
           --gradient-end: #1e3a8a;
-          --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
-          --card-border: rgba(255, 160, 122, 0.3);
         }
         [data-theme="astro"] .astro-bg {
-          background: linear-gradient(135deg, #ffe4d6 0%, #ffa07a 25%, #ff6b4a 50%, #3b5998 75%, #1e3a8a 100%);
-        }
-        [data-theme="astro"] [data-card] {
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
-          border: none !important;
+          background: linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%);
         }
         [data-theme="astro"] .astro-btn {
-          background: linear-gradient(135deg, #ffa07a 0%, #ff6b4a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 65%), hsl(330 70% 55%));
           color: white;
           border: none;
         }
         [data-theme="astro"] .astro-btn:hover {
-          background: linear-gradient(135deg, #ff8f69 0%, #ff5a39 100%);
+          opacity: 0.9;
         }
         [data-theme="astro"] .astro-text {
-          background: linear-gradient(135deg, #ffa07a 0%, #1e3a8a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 70%), hsl(330 70% 60%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-        }
-        [data-theme="astro"] .astro-border {
-          border-color: rgba(255, 160, 122, 0.4);
         }
         [data-theme="astro"] h1, 
         [data-theme="astro"] h2, 
         [data-theme="astro"] h3, 
         [data-theme="astro"] h4 {
-          background: linear-gradient(135deg, #ff6b4a 0%, #1e3a8a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 70%), hsl(330 70% 60%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-        [data-theme="light"] {
-          --card-bg: rgba(255, 255, 255, 0.7);
-          --card-border: rgb(226 232 240);
-        }
-        [data-theme="light"].dark {
-          --card-bg: transparent;
-          --card-border: rgba(255, 255, 255, 0.2);
-        }
       `}</style>
       <div
-        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
+        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : ""}`}
       >
-        <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-border/50 pt-[env(safe-area-inset-top)] md:pt-0">
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
               <button
@@ -6971,15 +6947,15 @@ export default function AstroTracker() {
 
                 return (
                   <div className="mb-4">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                    <h2 className="text-3xl md:text-4xl font-extrabold mb-2 gradient-text">
                       {greeting}{displayName ? `, ${displayName}` : ''}
                     </h2>
                     {(objects.length > 0 || plannedProjects.length > 0) && (
                       <div className="space-y-1">
-                        <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                        <p className="text-muted-foreground text-lg md:text-xl">
                           {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
                         </p>
-                        <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
+                        <p className="text-muted-foreground/70 text-base md:text-lg">
                           {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
                           {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
                         </p>
@@ -6994,28 +6970,28 @@ export default function AstroTracker() {
                 <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
+                    className="glass-card gradient-border rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
-                        <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      <div className="p-3 rounded-xl bg-primary/20">
+                        <Calendar className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1 truncate">
+                        <h3 className="text-lg font-bold mb-1 truncate">
                           {t('nextEphemeris')}
                         </h3>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2 truncate">
+                        <p className="text-sm text-primary/80 mb-2 truncate">
                           {formatSpanishDate(nextEphemeris.date)}
                         </p>
-                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2">
+                        <p className="text-base font-semibold text-foreground mb-1 line-clamp-2">
                           {language === 'en' ? nextEphemeris.eventEN : nextEphemeris.eventES}
                         </p>
                         {nextEphemeris.notes && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-sm text-muted-foreground">
                             {nextEphemeris.notes}
                           </p>
                         )}
-                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-primary/15 text-xs font-medium text-primary">
                           {nextEphemeris.category}
                         </div>
                       </div>
@@ -13020,7 +12996,7 @@ export default function AstroTracker() {
         {/* Mobile Bottom Navigation Bar - Only visible on mobile when in objects view */}
         {view === "objects" && (
           <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-            <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-lg">
+            <div className="bg-background/90 backdrop-blur-xl border-t border-border/50 shadow-2xl shadow-primary/5">
               <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
                 <button
                   onClick={() => setMainSection("pronostico")}
