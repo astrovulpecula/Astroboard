@@ -125,10 +125,10 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
           {mode === 'reset' && (
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+              <h2 className="text-xl font-semibold text-foreground mb-2">
                 Recuperar contraseña
               </h2>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
               </p>
             </div>
