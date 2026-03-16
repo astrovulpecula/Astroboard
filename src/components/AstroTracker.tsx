@@ -12996,7 +12996,7 @@ export default function AstroTracker() {
         {/* Mobile Bottom Navigation Bar - Only visible on mobile when in objects view */}
         {view === "objects" && (
           <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-            <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-lg">
+            <div className="bg-background/90 backdrop-blur-xl border-t border-border/50 shadow-2xl shadow-primary/5">
               <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
                 <button
                   onClick={() => setMainSection("pronostico")}
