@@ -515,7 +515,7 @@ const ObjectThumbnail = ({
             <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
           </label>
           <button
-            className="p-2 bg-white/90 dark:bg-slate-900/90 rounded-lg hover:bg-white dark:hover:bg-slate-900 transition"
+            className="p-2 bg-background/90 rounded-lg hover:bg-background transition"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(objectId);
