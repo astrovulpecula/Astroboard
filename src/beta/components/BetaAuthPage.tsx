@@ -239,7 +239,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
           {mode === 'signin' && (
             <button
               onClick={() => { setMode('reset'); setError(null); setSuccess(null); }}
-              className="w-full mt-4 text-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+              className="w-full mt-4 text-center text-sm text-muted-foreground hover:text-foreground transition"
             >
               ¿Has olvidado tu contraseña?
             </button>
