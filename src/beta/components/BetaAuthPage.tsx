@@ -93,7 +93,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
           {mode === 'reset' ? (
             <button
               onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 text-sm"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Volver a iniciar sesión
