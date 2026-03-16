@@ -99,13 +99,13 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
               Volver a iniciar sesión
             </button>
           ) : (
-            <div className="flex rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 mb-6">
+            <div className="flex rounded-xl bg-secondary/50 p-1 mb-6">
               <button
                 onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
                   mode === 'signin'
-                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground'
                 }`}
               >
                 Iniciar sesión
@@ -114,8 +114,8 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
                 onClick={() => { setMode('signup'); setError(null); setSuccess(null); }}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
                   mode === 'signup'
-                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground'
                 }`}
               >
                 Registrarse
