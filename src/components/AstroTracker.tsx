@@ -6970,28 +6970,28 @@ export default function AstroTracker() {
                 <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
+                    className="glass-card gradient-border rounded-2xl p-6 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
-                        <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                      <div className="p-3 rounded-xl bg-primary/20">
+                        <Calendar className="w-6 h-6 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1 truncate">
+                        <h3 className="text-lg font-bold mb-1 truncate">
                           {t('nextEphemeris')}
                         </h3>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2 truncate">
+                        <p className="text-sm text-primary/80 mb-2 truncate">
                           {formatSpanishDate(nextEphemeris.date)}
                         </p>
-                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2">
+                        <p className="text-base font-semibold text-foreground mb-1 line-clamp-2">
                           {language === 'en' ? nextEphemeris.eventEN : nextEphemeris.eventES}
                         </p>
                         {nextEphemeris.notes && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
+                          <p className="text-sm text-muted-foreground">
                             {nextEphemeris.notes}
                           </p>
                         )}
-                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-primary/15 text-xs font-medium text-primary">
                           {nextEphemeris.category}
                         </div>
                       </div>
