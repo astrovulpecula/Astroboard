@@ -203,14 +203,14 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
             {/* Success */}
             {success && (
-              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm">
                 {success}
               </div>
             )}
 
             {/* Error */}
             {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
                 {error}
               </div>
             )}
