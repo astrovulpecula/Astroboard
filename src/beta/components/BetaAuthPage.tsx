@@ -253,7 +253,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Astroboard Beta • {new Date().getFullYear()}
         </p>
       </div>
