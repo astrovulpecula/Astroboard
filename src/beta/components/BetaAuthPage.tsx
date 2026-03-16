@@ -246,7 +246,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
           )}
 
           {mode === 'signup' && (
-            <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-4 text-center text-xs text-muted-foreground">
               Solo puedes registrarte si tienes un código de invitación válido.
             </p>
           )}
