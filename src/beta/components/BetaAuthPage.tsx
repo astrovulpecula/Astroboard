@@ -81,8 +81,8 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             alt="Astroboard" 
             className="h-16 mx-auto mb-4"
           />
-          <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm">
-            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
+            <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
             Beta Cerrada
           </div>
         </div>
