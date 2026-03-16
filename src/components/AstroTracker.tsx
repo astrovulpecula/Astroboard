@@ -504,7 +504,7 @@ const ObjectThumbnail = ({
         <img
           src={displayImage}
           alt={objectId}
-          className="w-24 h-24 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+          className="w-24 h-24 rounded-xl object-cover border border-border"
         />
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-2">
           <label
