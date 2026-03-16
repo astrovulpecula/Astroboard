@@ -240,7 +240,7 @@ const sample = [
 ];
 
 const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200 border-slate-300/60 dark:border-slate-700/60 ${className}`}>
+  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium text-secondary-foreground border-border bg-secondary/60 backdrop-blur-sm ${className}`}>
     {children}
   </span>
 );
