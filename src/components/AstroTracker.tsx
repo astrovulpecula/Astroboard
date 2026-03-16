@@ -255,12 +255,8 @@ const Card = ({
   onClick?: () => void;
 }) => (
   <div
-    className={`rounded-2xl shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`}
+    className={`glass-card rounded-2xl p-3 md:p-4 transition-all duration-300 ${className} ${onClick ? "cursor-pointer hover:scale-[1.01]" : ""}`}
     data-card
-    style={{
-      border: "1px solid var(--card-border, rgb(226 232 240))",
-      background: "var(--card-bg, rgba(255, 255, 255, 0.7))",
-    }}
     onClick={onClick}
   >
     {children}
