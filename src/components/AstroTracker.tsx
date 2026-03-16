@@ -384,7 +384,7 @@ const IconBtn = ({
   <button
     title={title}
     onClick={onClick}
-    className="p-2 rounded-xl border bg-white/80 hover:bg-white dark:bg-slate-900/70 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 transition"
+    className="p-2 rounded-xl border border-border bg-secondary/30 hover:bg-secondary/60 hover:border-primary/30 transition-all duration-200"
   >
     {children}
   </button>
