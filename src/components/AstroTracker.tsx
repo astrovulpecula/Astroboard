@@ -6602,55 +6602,38 @@ export default function AstroTracker() {
           --gradient-start: #ffa07a;
           --gradient-mid: #ff6b4a;
           --gradient-end: #1e3a8a;
-          --card-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
-          --card-border: rgba(255, 160, 122, 0.3);
         }
         [data-theme="astro"] .astro-bg {
-          background: linear-gradient(135deg, #ffe4d6 0%, #ffa07a 25%, #ff6b4a 50%, #3b5998 75%, #1e3a8a 100%);
-        }
-        [data-theme="astro"] [data-card] {
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 160, 122, 0.3) 100%);
-          border: none !important;
+          background: linear-gradient(135deg, #0a0e1a 0%, #1a1040 50%, #0a0e1a 100%);
         }
         [data-theme="astro"] .astro-btn {
-          background: linear-gradient(135deg, #ffa07a 0%, #ff6b4a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 65%), hsl(330 70% 55%));
           color: white;
           border: none;
         }
         [data-theme="astro"] .astro-btn:hover {
-          background: linear-gradient(135deg, #ff8f69 0%, #ff5a39 100%);
+          opacity: 0.9;
         }
         [data-theme="astro"] .astro-text {
-          background: linear-gradient(135deg, #ffa07a 0%, #1e3a8a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 70%), hsl(330 70% 60%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-        }
-        [data-theme="astro"] .astro-border {
-          border-color: rgba(255, 160, 122, 0.4);
         }
         [data-theme="astro"] h1, 
         [data-theme="astro"] h2, 
         [data-theme="astro"] h3, 
         [data-theme="astro"] h4 {
-          background: linear-gradient(135deg, #ff6b4a 0%, #1e3a8a 100%);
+          background: linear-gradient(135deg, hsl(270 60% 70%), hsl(330 70% 60%));
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
-        [data-theme="light"] {
-          --card-bg: rgba(255, 255, 255, 0.7);
-          --card-border: rgb(226 232 240);
-        }
-        [data-theme="light"].dark {
-          --card-bg: transparent;
-          --card-border: rgba(255, 255, 255, 0.2);
-        }
       `}</style>
       <div
-        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
+        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : ""}`}
       >
-        <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
+        <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/70 border-b border-border/50 pt-[env(safe-area-inset-top)] md:pt-0">
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
               <button
