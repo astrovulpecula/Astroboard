@@ -6947,15 +6947,15 @@ export default function AstroTracker() {
 
                 return (
                   <div className="mb-4">
-                    <h2 className="text-3xl md:text-4xl font-bold mb-2">
+                    <h2 className="text-3xl md:text-4xl font-extrabold mb-2 gradient-text">
                       {greeting}{displayName ? `, ${displayName}` : ''}
                     </h2>
                     {(objects.length > 0 || plannedProjects.length > 0) && (
                       <div className="space-y-1">
-                        <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
+                        <p className="text-muted-foreground text-lg md:text-xl">
                           {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
                         </p>
-                        <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
+                        <p className="text-muted-foreground/70 text-base md:text-lg">
                           {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
                           {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
                         </p>
