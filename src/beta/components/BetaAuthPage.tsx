@@ -88,7 +88,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
         </div>
 
         {/* Card */}
-        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-slate-200 dark:border-slate-700">
+        <div className="glass-card rounded-2xl shadow-xl p-6 md:p-8">
           {/* Tabs or Back button */}
           {mode === 'reset' ? (
             <button
