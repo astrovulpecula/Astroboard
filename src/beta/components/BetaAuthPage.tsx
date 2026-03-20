@@ -72,7 +72,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
      document.documentElement.getAttribute('data-theme') === 'dark');
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -81,31 +81,31 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             alt="Astroboard" 
             className="h-16 mx-auto mb-4"
           />
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm">
-            <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+          <div className="inline-flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 px-3 py-1 rounded-full text-sm">
+            <span className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
             Beta Cerrada
           </div>
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-2xl shadow-xl p-6 md:p-8">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 md:p-8 border border-slate-200 dark:border-slate-700">
           {/* Tabs or Back button */}
           {mode === 'reset' ? (
             <button
               onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm"
+              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               Volver a iniciar sesión
             </button>
           ) : (
-            <div className="flex rounded-xl bg-secondary/50 p-1 mb-6">
+            <div className="flex rounded-xl bg-slate-100 dark:bg-slate-700/50 p-1 mb-6">
               <button
                 onClick={() => { setMode('signin'); setError(null); setSuccess(null); }}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
                   mode === 'signin'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground'
+                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Iniciar sesión
@@ -114,8 +114,8 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
                 onClick={() => { setMode('signup'); setError(null); setSuccess(null); }}
                 className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition ${
                   mode === 'signup'
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground'
+                    ? 'bg-white dark:bg-slate-600 shadow-sm text-slate-900 dark:text-white'
+                    : 'text-slate-600 dark:text-slate-400'
                 }`}
               >
                 Registrarse
@@ -125,10 +125,10 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
           {mode === 'reset' && (
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-foreground mb-2">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
                 Recuperar contraseña
               </h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
                 Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
               </p>
             </div>
@@ -138,17 +138,17 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             {/* Invitation Code (signup only) */}
             {mode === 'signup' && (
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Código de invitación
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="text"
                     value={invitationCode}
                     onChange={(e) => setInvitationCode(e.target.value)}
                     placeholder="Introduce tu código"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-secondary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                   />
                 </div>
@@ -157,17 +157,17 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-secondary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
               </div>
@@ -176,24 +176,24 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             {/* Password (not for reset mode) */}
             {mode !== 'reset' && (
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Contraseña
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-border bg-secondary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                    className="w-full pl-10 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     minLength={6}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -203,14 +203,14 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
 
             {/* Success */}
             {success && (
-              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm">
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 text-sm">
                 {success}
               </div>
             )}
 
             {/* Error */}
             {error && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm">
+              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
                 {error}
               </div>
             )}
@@ -219,7 +219,7 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
             <button
               type="submit"
               disabled={loading || !!success}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+              className="w-full py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -239,21 +239,21 @@ export function BetaAuthPage({ onSignIn, onSignUp }: BetaAuthPageProps) {
           {mode === 'signin' && (
             <button
               onClick={() => { setMode('reset'); setError(null); setSuccess(null); }}
-              className="w-full mt-4 text-center text-sm text-muted-foreground hover:text-foreground transition"
+              className="w-full mt-4 text-center text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
             >
               ¿Has olvidado tu contraseña?
             </button>
           )}
 
           {mode === 'signup' && (
-            <p className="mt-4 text-center text-xs text-muted-foreground">
+            <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
               Solo puedes registrarte si tienes un código de invitación válido.
             </p>
           )}
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
           Astroboard Beta • {new Date().getFullYear()}
         </p>
       </div>
