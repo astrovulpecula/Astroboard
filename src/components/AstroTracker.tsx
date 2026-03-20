@@ -3558,7 +3558,7 @@ const ExposureChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[
   return (
     <Card className="p-4 h-80">
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="85%">
         <BarChart data={d} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis
