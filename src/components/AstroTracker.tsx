@@ -8045,78 +8045,74 @@ export default function AstroTracker() {
                       return (
                         <Card
                           key={o.id}
-                          className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                          className="cursor-pointer hover:shadow-md transition-shadow overflow-hidden flex flex-col h-full"
                           onClick={() => {
                             setSelectedObjectId(o.id);
                             setView("projects");
                           }}
                         >
-                          <div className="space-y-3">
-                            {/* Thumbnail - image on top */}
-                            <div className="relative">
-                              {displayImage ? (
-                                <img
-                                  src={displayImage}
-                                  alt={o.id}
-                                  className="w-full h-40 rounded-xl object-cover border border-border"
-                                />
-                              ) : (
-                                <div className="w-full h-40 rounded-xl border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                                  <Telescope className="w-10 h-10 text-muted-foreground/50" />
-                                </div>
+                          {/* Fixed aspect-ratio image container */}
+                          <div className="relative aspect-[4/3] w-full overflow-hidden">
+                            {displayImage ? (
+                              <img
+                                src={displayImage}
+                                alt={o.id}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full border-b border-border flex items-center justify-center bg-muted/30">
+                                <Telescope className="w-10 h-10 text-muted-foreground/50" />
+                              </div>
+                            )}
+                            {/* Action buttons */}
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              <button
+                                title="Editar"
+                                className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-accent/50 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditObjectOriginalId(o.id);
+                                  setEditObjectData({
+                                    id: o.id,
+                                    commonName: o.commonName || "",
+                                    constellation: o.constellation || "",
+                                    type: o.type || "",
+                                    image: o.image || null,
+                                  });
+                                  setShowEditObjectModal(true);
+                                }}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                title="Eliminar"
+                                className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  delObj(o.id);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          {/* Content */}
+                          <div className="p-4 flex flex-col flex-1 space-y-2">
+                            <div className="min-w-0">
+                              <p className="text-lg font-bold truncate">{o.id}</p>
+                              {o.commonName && (
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {o.commonName}
+                                </p>
                               )}
-                              {/* Action buttons positioned on top right of image */}
-                              <div className="absolute top-2 right-2 flex gap-1">
-                                <button
-                                  title="Editar"
-                                  className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-accent/50 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditObjectOriginalId(o.id);
-                                    setEditObjectData({
-                                      id: o.id,
-                                      commonName: o.commonName || "",
-                                      constellation: o.constellation || "",
-                                      type: o.type || "",
-                                      image: o.image || null,
-                                    });
-                                    setShowEditObjectModal(true);
-                                  }}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </button>
-                                <button
-                                  title="Eliminar"
-                                  className="p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    delObj(o.id);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
                             </div>
-                            {/* Content - text below */}
-                            <div className="space-y-2">
-                              <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                  <p className="text-lg font-bold truncate">{o.id}</p>
-                                  {o.commonName && (
-                                    <p className="text-sm text-muted-foreground truncate">
-                                      {o.commonName}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {o.constellation && <Badge>{o.constellation}</Badge>}
-                                {o.type && <Badge>{o.type}</Badge>}
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
-                              </p>
+                            <div className="flex flex-wrap gap-2">
+                              {o.constellation && <Badge>{o.constellation}</Badge>}
+                              {o.type && <Badge>{o.type}</Badge>}
                             </div>
+                            <p className="text-xs text-muted-foreground mt-auto pt-1">
+                              {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
+                            </p>
                           </div>
                         </Card>
                       );
