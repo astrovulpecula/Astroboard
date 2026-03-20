@@ -8097,20 +8097,20 @@ export default function AstroTracker() {
                             </div>
                           </div>
                           {/* Content */}
-                          <div className="p-4 flex flex-col flex-1 space-y-2">
+                          <div className="p-3 flex flex-col flex-1 space-y-1.5">
                             <div className="min-w-0">
-                              <p className="text-lg font-bold truncate">{o.id}</p>
+                              <p className="text-sm font-bold truncate">{o.id}</p>
                               {o.commonName && (
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className="text-xs text-muted-foreground truncate">
                                   {o.commonName}
                                 </p>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {o.constellation && <Badge>{o.constellation}</Badge>}
-                              {o.type && <Badge>{o.type}</Badge>}
+                            <div className="flex flex-wrap gap-1">
+                              {o.constellation && <Badge className="text-[10px] px-1.5 py-0">{o.constellation}</Badge>}
+                              {o.type && <Badge className="text-[10px] px-1.5 py-0">{o.type}</Badge>}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-auto pt-1">
+                            <p className="text-[11px] text-muted-foreground mt-auto pt-0.5">
                               {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
                             </p>
                           </div>
