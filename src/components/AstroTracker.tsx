@@ -4970,7 +4970,7 @@ export default function AstroTracker() {
   };
 
   // Refs for debounced cloud sync - declared before useEffect that uses them
-  const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cloudSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
   
   // Track the loaded cloud data to prevent overwriting with empty state
@@ -8052,7 +8052,7 @@ export default function AstroTracker() {
                           }}
                         >
                           {/* Fixed aspect-ratio image container */}
-                          <div className="relative aspect-[4/3] w-full overflow-hidden">
+                          <div className="relative aspect-[3/2] w-full overflow-hidden">
                             {displayImage ? (
                               <img
                                 src={displayImage}
@@ -8097,20 +8097,20 @@ export default function AstroTracker() {
                             </div>
                           </div>
                           {/* Content */}
-                          <div className="p-4 flex flex-col flex-1 space-y-2">
+                          <div className="p-3 flex flex-col flex-1 space-y-1.5">
                             <div className="min-w-0">
-                              <p className="text-lg font-bold truncate">{o.id}</p>
+                              <p className="text-sm font-bold truncate">{o.id}</p>
                               {o.commonName && (
-                                <p className="text-sm text-muted-foreground truncate">
+                                <p className="text-xs text-muted-foreground truncate">
                                   {o.commonName}
                                 </p>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {o.constellation && <Badge>{o.constellation}</Badge>}
-                              {o.type && <Badge>{o.type}</Badge>}
+                            <div className="flex flex-wrap gap-1">
+                              {o.constellation && <Badge className="text-[10px] px-1.5 py-0">{o.constellation}</Badge>}
+                              {o.type && <Badge className="text-[10px] px-1.5 py-0">{o.type}</Badge>}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-auto pt-1">
+                            <p className="text-[11px] text-muted-foreground mt-auto pt-0.5">
                               {o.projects.length} proy. · {nights} noche(s) · {hh(seconds)}
                             </p>
                           </div>
@@ -8132,7 +8132,7 @@ export default function AstroTracker() {
                               </h4>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {activeObjects.map(renderObjectCard)}
                               </div>
                             </CollapsibleContent>
@@ -8151,7 +8151,7 @@ export default function AstroTracker() {
                               </h4>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {archivedObjects.map(renderObjectCard)}
                               </div>
                             </CollapsibleContent>
