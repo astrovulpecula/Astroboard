@@ -3722,7 +3722,7 @@ const FitsHumidityChart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Humedad media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgHumidity.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="80%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
