@@ -24,7 +24,7 @@ interface UseUsageMetricsReturn {
 export function useUsageMetrics(betaUser: BetaUser | null): UseUsageMetricsReturn {
   const sessionId = useRef(generateSessionId());
   const lastPageView = useRef<string | null>(null);
-  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const trackEvent = useCallback(async (
     eventType: string, 

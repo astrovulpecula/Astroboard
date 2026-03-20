@@ -4970,7 +4970,7 @@ export default function AstroTracker() {
   };
 
   // Refs for debounced cloud sync - declared before useEffect that uses them
-  const cloudSyncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cloudSyncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSyncDataRef = useRef<{ objects: any[]; planned: any[]; settings: any } | null>(null);
   
   // Track the loaded cloud data to prevent overwriting with empty state

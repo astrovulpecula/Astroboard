@@ -63,7 +63,7 @@ export function useCloudSync(): UseCloudSyncReturn {
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   
-  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const isCloudEnabled = !!(
     betaUser && 
