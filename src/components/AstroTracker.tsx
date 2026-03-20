@@ -8151,7 +8151,7 @@ export default function AstroTracker() {
                               </h4>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="mt-3">
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {archivedObjects.map(renderObjectCard)}
                               </div>
                             </CollapsibleContent>
