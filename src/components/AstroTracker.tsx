@@ -8052,7 +8052,7 @@ export default function AstroTracker() {
                           }}
                         >
                           {/* Fixed aspect-ratio image container */}
-                          <div className="relative aspect-[4/3] w-full overflow-hidden">
+                          <div className="relative aspect-[3/2] w-full overflow-hidden">
                             {displayImage ? (
                               <img
                                 src={displayImage}
