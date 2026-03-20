@@ -3478,7 +3478,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         % medio de iluminación:{" "}
         <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="80%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
