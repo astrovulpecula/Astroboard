@@ -640,6 +640,7 @@ const WeatherCard = ({
 }) => {
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -651,7 +652,7 @@ const WeatherCard = ({
         }
         const [lat, lon] = coords;
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=3`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability,windspeed_10m,cloudcover&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=3`
         );
         if (!response.ok) throw new Error('Weather API error');
         const data = await response.json();
@@ -686,6 +687,22 @@ const WeatherCard = ({
     );
   }
 
+  // Get today's hourly data
+  const now = new Date();
+  const currentHour = now.getHours();
+  const todayStr = now.toISOString().split('T')[0];
+  const hourlyToday = weather.hourly?.time
+    ?.map((t: string, i: number) => ({
+      time: t,
+      temp: weather.hourly.temperature_2m[i],
+      code: weather.hourly.weathercode[i],
+      precip: weather.hourly.precipitation_probability[i],
+      wind: weather.hourly.windspeed_10m[i],
+      clouds: weather.hourly.cloudcover[i],
+    }))
+    .filter((h: any) => h.time.startsWith(todayStr))
+    ?? [];
+
   return (
     <Card className="p-6">
       <div className="flex items-start gap-4">
@@ -717,26 +734,78 @@ const WeatherCard = ({
             </div>
           </div>
 
-          {/* 3-day Forecast */}
-          <div className="grid grid-cols-3 gap-2">
-            {weather.daily.time.slice(0, 3).map((date: string, i: number) => {
-              const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
-              return (
-                <div key={i} className="text-center p-2 rounded-xl bg-muted/50">
-                  <p className="text-xs font-medium mb-1">{dayName}</p>
-                  <div className="text-xl mb-1">
-                    {getWeatherIcon(weather.daily.weathercode[i])}
-                  </div>
-                  <p className="text-xs font-semibold">
-                    {Math.round(weather.daily.temperature_2m_max[i])}° / {Math.round(weather.daily.temperature_2m_min[i])}°
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    💧 {weather.daily.precipitation_probability_max[i]}%
-                  </p>
-                </div>
-              );
-            })}
+          {/* Toggle: Hourly / Daily */}
+          <div className="flex gap-1 mb-3 p-1 rounded-lg bg-muted/50">
+            <button
+              onClick={() => setViewMode('hourly')}
+              className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${
+                viewMode === 'hourly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              ⏱ Hoy por horas
+            </button>
+            <button
+              onClick={() => setViewMode('daily')}
+              className={`flex-1 text-xs font-medium py-1.5 px-3 rounded-md transition-colors ${
+                viewMode === 'daily' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              📅 3 días
+            </button>
           </div>
+
+          {viewMode === 'hourly' ? (
+            <div className="overflow-x-auto -mx-2 px-2">
+              <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+                {hourlyToday.map((h: any, i: number) => {
+                  const hour = new Date(h.time).getHours();
+                  const isPast = hour < currentHour;
+                  const isCurrent = hour === currentHour;
+                  return (
+                    <div
+                      key={i}
+                      className={`text-center p-2 rounded-xl min-w-[56px] flex-shrink-0 transition-colors ${
+                        isCurrent
+                          ? 'bg-primary/20 ring-1 ring-primary/40'
+                          : isPast
+                          ? 'bg-muted/30 opacity-50'
+                          : 'bg-muted/50'
+                      }`}
+                    >
+                      <p className="text-[10px] font-medium mb-1">
+                        {isCurrent ? 'Ahora' : `${String(hour).padStart(2, '0')}:00`}
+                      </p>
+                      <div className="text-base mb-1">{getWeatherIcon(h.code)}</div>
+                      <p className="text-xs font-semibold">{Math.round(h.temp)}°</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">💧{h.precip}%</p>
+                      <p className="text-[10px] text-muted-foreground">☁️{h.clouds}%</p>
+                      <p className="text-[10px] text-muted-foreground">💨{Math.round(h.wind)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {weather.daily.time.slice(0, 3).map((date: string, i: number) => {
+                const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
+                return (
+                  <div key={i} className="text-center p-2 rounded-xl bg-muted/50">
+                    <p className="text-xs font-medium mb-1">{dayName}</p>
+                    <div className="text-xl mb-1">
+                      {getWeatherIcon(weather.daily.weathercode[i])}
+                    </div>
+                    <p className="text-xs font-semibold">
+                      {Math.round(weather.daily.temperature_2m_max[i])}° / {Math.round(weather.daily.temperature_2m_min[i])}°
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      💧 {weather.daily.precipitation_probability_max[i]}%
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </Card>
