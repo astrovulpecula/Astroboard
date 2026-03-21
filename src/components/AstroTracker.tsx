@@ -3478,7 +3478,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         % medio de iluminación:{" "}
         <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3525,7 +3525,7 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
   return (
     <Card className="p-4 h-80">
       <SectionTitle icon={Star} title="Lights aceptados vs rechazados" />
-      <ResponsiveContainer width="100%" height="90%">
+      <ResponsiveContainer width="100%" height="85%">
         <BarChart data={d} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="sesion" tickMargin={8} stroke="#ffffff" />
@@ -3607,7 +3607,7 @@ const FitsMpsasChart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         MPSAS medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgMpsas.toFixed(2)}</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3662,7 +3662,7 @@ const FitsTemperatureChart = ({ sessions }: { sessions: any[] }) => {
           Temp. ambiente media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgAmbient.toFixed(1)}°C</span>
         </div>
       )}
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3722,7 +3722,7 @@ const FitsHumidityChart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Humedad media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgHumidity.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3774,7 +3774,7 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Viento medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgWind.toFixed(1)} m/s</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3834,7 +3834,7 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Enfoque medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgFocus.toFixed(0)}</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3886,7 +3886,7 @@ const PHD2P50Chart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Promedio P50: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP50.toFixed(2)} arcsec</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3937,7 +3937,7 @@ const PHD2P68Chart = ({ sessions }: { sessions: any[] }) => {
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Promedio P68: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP68.toFixed(2)} arcsec</span>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
