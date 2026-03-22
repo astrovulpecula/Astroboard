@@ -352,7 +352,7 @@ const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; 
 
 const SESSION_CHART_CARD_CLASS = "p-4 flex min-h-[28rem] flex-col sm:min-h-[32rem] lg:min-h-[36rem]";
 
-const SessionChartArea = ({ children }: { children: React.ReactNode }) => (
+const SessionChartArea = ({ children }: { children: React.ReactElement }) => (
   <div className="mt-4 h-[18rem] min-h-0 sm:h-[22rem] lg:h-[28rem] xl:h-[30rem]">
     <ResponsiveContainer width="100%" height="100%">
       {children}
