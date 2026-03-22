@@ -350,6 +350,16 @@ const SectionTitle = ({ icon: Icon, title }: { icon?: React.ComponentType<any>; 
   </div>
 );
 
+const SESSION_CHART_CARD_CLASS = "p-4 flex min-h-[28rem] flex-col sm:min-h-[32rem] lg:min-h-[36rem]";
+
+const SessionChartArea = ({ children }: { children: React.ReactNode }) => (
+  <div className="mt-4 h-[18rem] min-h-0 sm:h-[22rem] lg:h-[28rem] xl:h-[30rem]">
+    <ResponsiveContainer width="100%" height="100%">
+      {children}
+    </ResponsiveContainer>
+  </div>
+);
+
 const Btn = ({
   children,
   onClick,
@@ -641,6 +651,19 @@ const WeatherCard = ({
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
+  const hourlyScrollRef = useRef<HTMLDivElement | null>(null);
+  const currentHourCardRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollHourlyForecast = useCallback((direction: 'left' | 'right') => {
+    const container = hourlyScrollRef.current;
+    if (!container) return;
+
+    const scrollAmount = Math.max(container.clientWidth * 0.85, 240);
+    container.scrollBy({
+      left: direction === 'right' ? scrollAmount : -scrollAmount,
+      behavior: 'smooth',
+    });
+  }, []);
 
   useEffect(() => {
     const fetchWeather = async () => {
@@ -666,6 +689,33 @@ const WeatherCard = ({
     fetchWeather();
   }, [location.coords]);
 
+  // Get today's hourly data
+  const now = new Date();
+  const currentHour = now.getHours();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const hourlyToday = weather?.hourly?.time
+    ?.map((t: string, i: number) => ({
+      time: t,
+      temp: weather?.hourly?.temperature_2m?.[i],
+      code: weather?.hourly?.weathercode?.[i],
+      precip: weather?.hourly?.precipitation_probability?.[i],
+      wind: weather?.hourly?.windspeed_10m?.[i],
+      clouds: weather?.hourly?.cloudcover?.[i],
+    }))
+    .filter((h: any) => h.time.startsWith(todayStr))
+    ?? [];
+
+  useEffect(() => {
+    if (viewMode !== 'hourly') return;
+
+    const container = hourlyScrollRef.current;
+    const activeCard = currentHourCardRef.current;
+    if (!container || !activeCard) return;
+
+    const targetScroll = Math.max(activeCard.offsetLeft - 12, 0);
+    container.scrollTo({ left: targetScroll, behavior: 'smooth' });
+  }, [viewMode, currentHour, hourlyToday.length, location.coords]);
+
   if (loading) {
     return (
       <Card className="p-6">
@@ -686,22 +736,6 @@ const WeatherCard = ({
       </Card>
     );
   }
-
-  // Get today's hourly data
-  const now = new Date();
-  const currentHour = now.getHours();
-  const todayStr = now.toISOString().split('T')[0];
-  const hourlyToday = weather.hourly?.time
-    ?.map((t: string, i: number) => ({
-      time: t,
-      temp: weather.hourly.temperature_2m[i],
-      code: weather.hourly.weathercode[i],
-      precip: weather.hourly.precipitation_probability[i],
-      wind: weather.hourly.windspeed_10m[i],
-      clouds: weather.hourly.cloudcover[i],
-    }))
-    .filter((h: any) => h.time.startsWith(todayStr))
-    ?? [];
 
   return (
     <Card className="p-6 overflow-hidden">
@@ -755,8 +789,32 @@ const WeatherCard = ({
           </div>
 
           {viewMode === 'hourly' ? (
-            <div className="overflow-x-auto -mx-2 px-2">
-              <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+            <div>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-[11px] text-muted-foreground">
+                  Empieza en la hora actual. Usa las flechas o desplázate para ver el resto del día.
+                </p>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => scrollHourlyForecast('left')}
+                    aria-label="Ver horas anteriores"
+                    className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollHourlyForecast('right')}
+                    aria-label="Ver horas siguientes"
+                    className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div ref={hourlyScrollRef} className="overflow-x-auto pb-3 scroll-smooth">
+                <div className="flex w-max snap-x snap-mandatory gap-2 pr-2">
                 {hourlyToday.map((h: any, i: number) => {
                   const hour = new Date(h.time).getHours();
                   const isPast = hour < currentHour;
@@ -764,7 +822,8 @@ const WeatherCard = ({
                   return (
                     <div
                       key={i}
-                      className={`text-center p-2 rounded-xl min-w-[56px] flex-shrink-0 transition-colors ${
+                      ref={isCurrent ? currentHourCardRef : undefined}
+                      className={`min-w-[64px] shrink-0 snap-start rounded-xl p-2 text-center transition-colors ${
                         isCurrent
                           ? 'bg-primary/20 ring-1 ring-primary/40'
                           : isPast
@@ -783,6 +842,7 @@ const WeatherCard = ({
                     </div>
                   );
                 })}
+                </div>
               </div>
             </div>
           ) : (
@@ -3407,7 +3467,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   }, [data]);
   if (!data.length) return null;
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <div className="flex items-center justify-between mb-2">
         <SectionTitle icon={Star} title="SNR (media) vs acumulado" />
         <RadioGroup value={xAxisMode} onValueChange={(v) => setXAxisMode(v as "lights" | "hours")} className="flex gap-4">
@@ -3421,7 +3481,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
           </div>
         </RadioGroup>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis 
@@ -3442,7 +3502,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
           />
           <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3469,7 +3529,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   }, [data]);
   if (!data.length) return null;
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <div className="flex items-center justify-between mb-2">
         <SectionTitle icon={Star} title="SNR por canal (R/G/B) vs acumulado" />
         <RadioGroup value={xAxisMode} onValueChange={(v) => setXAxisMode(v as "lights" | "hours")} className="flex gap-4">
@@ -3483,7 +3543,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
           </div>
         </RadioGroup>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis 
@@ -3507,7 +3567,7 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
           <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2.5} dot name="B" />
           <Legend />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3541,13 +3601,13 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
 
   if (!data.length) return null;
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         % medio de iluminación:{" "}
         <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3565,7 +3625,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             name="Iluminación lunar"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3592,9 +3652,9 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
   );
   if (!d.length) return null;
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Star} title="Lights aceptados vs rechazados" />
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <BarChart data={d} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="sesion" tickMargin={8} stroke="#ffffff" />
@@ -3604,7 +3664,7 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
           <Bar dataKey="aceptados" fill="#22c55e" name="Aceptados" />
           <Bar dataKey="rechazados" fill="#ef4444" name="Rechazados" />
         </BarChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3625,9 +3685,9 @@ const ExposureChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[
   );
   if (!d.length) return null;
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Calendar} title="Exposición por noche (horas)" />
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <BarChart data={d} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis
@@ -3644,7 +3704,7 @@ const ExposureChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessions: any[
           />
           <Bar dataKey="horas" fill="#3b82f6" />
         </BarChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3671,12 +3731,12 @@ const FitsMpsasChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Gauge} title="Calidad del cielo (MPSAS) por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         MPSAS medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgMpsas.toFixed(2)}</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3695,7 +3755,7 @@ const FitsMpsasChart = ({ sessions }: { sessions: any[] }) => {
             name="MPSAS"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3724,14 +3784,14 @@ const FitsTemperatureChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Thermometer} title="Temperatura por sesión" />
       {avgAmbient !== null && (
         <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
           Temp. ambiente media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgAmbient.toFixed(1)}°C</span>
         </div>
       )}
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3759,7 +3819,7 @@ const FitsTemperatureChart = ({ sessions }: { sessions: any[] }) => {
             name="Cielo"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3786,12 +3846,12 @@ const FitsHumidityChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Droplets} title="Humedad por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Humedad media: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgHumidity.toFixed(1)}%</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3810,7 +3870,7 @@ const FitsHumidityChart = ({ sessions }: { sessions: any[] }) => {
             name="Humedad"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3838,12 +3898,12 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Wind} title="Viento por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Viento medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgWind.toFixed(1)} m/s</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3871,7 +3931,7 @@ const FitsWindChart = ({ sessions }: { sessions: any[] }) => {
             name="Racha"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3898,12 +3958,12 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Target} title="Posición de enfoque por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Enfoque medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgFocus.toFixed(0)}</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3922,7 +3982,7 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
             name="Enfoque"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -3950,12 +4010,12 @@ const PHD2P50Chart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Target} title="RMS típico (P50) por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Promedio P50: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP50.toFixed(2)} arcsec</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -3974,7 +4034,7 @@ const PHD2P50Chart = ({ sessions }: { sessions: any[] }) => {
             name="P50"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
@@ -4001,12 +4061,12 @@ const PHD2P68Chart = ({ sessions }: { sessions: any[] }) => {
   if (!data.length) return null;
 
   return (
-    <Card className="p-4 h-80">
+    <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Target} title="P68 (≈1σ) por sesión" />
       <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
         Promedio P68: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP68.toFixed(2)} arcsec</span>
       </div>
-      <ResponsiveContainer width="100%" height="85%">
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -4025,7 +4085,7 @@ const PHD2P68Chart = ({ sessions }: { sessions: any[] }) => {
             name="P68"
           />
         </LineChart>
-      </ResponsiveContainer>
+      </SessionChartArea>
     </Card>
   );
 };
