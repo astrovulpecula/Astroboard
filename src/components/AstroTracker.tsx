@@ -704,7 +704,7 @@ const WeatherCard = ({
     ?? [];
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 overflow-hidden">
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-xl bg-blue-500/20">
           <CloudSun className="w-6 h-6 text-blue-600 dark:text-blue-400" />
