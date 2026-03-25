@@ -4337,7 +4337,7 @@ const generatePDFReport = async (
     completed: "Completado",
   };
 
-  const finalImage = (proj as any).finalImage || obj.image || '';
+  const finalImage = (proj as any)?.images?.finalProject || obj.image || '';
 
   const sessionDataWithSNR = proj.sessions.map((s: any, i: number) => {
     const snrMean = mean(s);
@@ -4371,8 +4371,12 @@ const generatePDFReport = async (
     : '-';
   
   const totalSessions = proj.sessions.length;
-  const telescope = (proj as any).telescope || '-';
-  const camera = (proj as any).camera || '-';
+  const telescope = (proj as any)?.equipment?.telescope || '-';
+  const camera = (proj as any)?.equipment?.camera || '-';
+  
+  // Get unique filters used across all sessions
+  const usedFilters = [...new Set(proj.sessions.map((s: any) => s.filter).filter(Boolean))];
+  const mainFilter = usedFilters.length > 0 ? usedFilters.join(', ') : '-';
 
   // Determinar tema
   const isDark = config.theme === 'dark';
@@ -4394,7 +4398,7 @@ const generatePDFReport = async (
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https:;">
   <title>Reporte - ${escapeHtml(obj.id)} - ${escapeHtml(proj.name)}</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -4498,6 +4502,17 @@ const generatePDFReport = async (
     }
   }
 
+  // Sección de equipo
+  if (config.includeStats.telescope || config.includeStats.camera) {
+    html += `<div class="section">
+      <h2 class="section-title">Equipo</h2>
+      <div class="grid">`;
+    if (config.includeStats.telescope && telescope !== '-') html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
+    if (config.includeStats.camera && camera !== '-') html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
+    if (usedFilters.length > 0) html += `<div class="card"><div class="card-label">Filtros usados</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainFilter)}</div></div>`;
+    html += `</div></div>`;
+  }
+
   // Estadísticas
   if (Object.values(config.includeStats).some((v: any) => v)) {
     html += `<div class="section">
@@ -4512,11 +4527,22 @@ const generatePDFReport = async (
     if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
     if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
     if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
-    if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
-    if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
     if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainLocation.name)}</div>${mainLocation.coords ? `<div class="card-subtitle">${escapeHtml(mainLocation.coords)}</div>` : ''}</div>`;
     if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${escapeHtml(mainLocation.bortle)}</div></div>`;
     
+    html += `</div></div>`;
+  }
+
+  // Horas por filtro (highlights)
+  if (Object.keys(filterHours).length > 0) {
+    html += `<div class="section">
+      <h2 class="section-title">Horas por Filtro</h2>
+      <div class="grid">`;
+    Object.entries(filterHours)
+      .sort(([, a], [, b]) => b - a)
+      .forEach(([filterName, seconds]) => {
+        html += `<div class="card"><div class="card-label">${escapeHtml(filterName)} total</div><div class="card-value">${hh(seconds)}</div></div>`;
+      });
     html += `</div></div>`;
   }
 
@@ -4855,7 +4881,7 @@ const generatePDFReport = async (
       const usableWidth = pageWidth - (margin * 2);
       
       // Get all sections that should not be split
-      const sections = reportElement.querySelectorAll('.section, .header');
+      const sections = reportElement.querySelectorAll('.section, .header, .footer');
       const sectionsArray = Array.from(sections);
       
       let currentY = margin;
