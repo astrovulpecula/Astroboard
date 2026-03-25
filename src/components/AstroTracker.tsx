@@ -4430,7 +4430,7 @@ const generatePDFReport = async (
     thead { background: ${isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(226, 232, 240, 0.8)'}; }
     th { padding: 0.75rem 0.5rem; text-align: left; font-weight: 600; color: ${theme.textAccent}; font-size: 0.8rem; word-spacing: 0.15em; }
     td { padding: 0.75rem 0.5rem; border-top: 1px solid ${theme.border}; color: ${theme.textPrimary}; }
-    .footer { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid ${theme.border}; text-align: center; color: ${theme.textSecondary}; font-size: 0.875rem; }
+    .footer { margin-top: 3rem; padding: 2rem 1rem; border-top: 1px solid ${theme.border}; text-align: center; color: ${theme.textSecondary}; font-size: 0.875rem; page-break-inside: avoid; break-inside: avoid; min-height: 80px; overflow: visible; }
   </style>
 </head>
 <body>
