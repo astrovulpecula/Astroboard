@@ -4881,7 +4881,7 @@ const generatePDFReport = async (
       const usableWidth = pageWidth - (margin * 2);
       
       // Get all sections that should not be split
-      const sections = reportElement.querySelectorAll('.section, .header');
+      const sections = reportElement.querySelectorAll('.section, .header, .footer');
       const sectionsArray = Array.from(sections);
       
       let currentY = margin;
