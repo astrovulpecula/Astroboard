@@ -4422,8 +4422,9 @@ const generatePDFReport = async (
     .status-active { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4); }
     .status-paused { background: rgba(234, 179, 8, 0.2); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); }
     .status-completed { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); }
-    .chart-container { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 320px; page-break-inside: avoid; break-inside: avoid; }
+    .chart-container { background: ${theme.cardBg}; border: 1px solid ${theme.border}; border-radius: 0.75rem; padding: 1.5rem; margin-top: 1rem; height: 340px; page-break-inside: avoid; break-inside: avoid; }
     .chart-section { page-break-inside: avoid; break-inside: avoid; }
+    .filter-img-container img { width: 100%; max-height: 500px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border}; }
     canvas { max-width: 100%; }
     table { width: 100%; border-collapse: collapse; background: ${theme.cardBg}; border-radius: 0.75rem; overflow: hidden; margin-top: 1rem; font-size: 0.85rem; }
     thead { background: ${isDark ? 'rgba(30, 41, 59, 0.8)' : 'rgba(226, 232, 240, 0.8)'}; }
