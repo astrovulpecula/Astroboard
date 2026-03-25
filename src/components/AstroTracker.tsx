@@ -4445,11 +4445,48 @@ const generatePDFReport = async (
     </div>
     `;
 
-  // Imágenes de filtros (inicial y final)
+  // ======== SECTION 1: Estadísticas del Proyecto (includes filter hours) ========
+  if (Object.values(config.includeStats).some((v: any) => v)) {
+    html += `<div class="section">
+      <h2 class="section-title">Estadísticas del Proyecto</h2>
+      <div class="grid">`;
+    
+    if (config.includeStats.status) html += `<div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>`;
+    if (config.includeStats.nights) html += `<div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>`;
+    if (config.includeStats.sessions) html += `<div class="card"><div class="card-label">Sesiones</div><div class="card-value">${totalSessions}</div></div>`;
+    if (config.includeStats.activeTime) html += `<div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>`;
+    if (config.includeStats.totalLights) html += `<div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>`;
+    if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
+    if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
+    if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
+    if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainLocation.name)}</div>${mainLocation.coords ? `<div class="card-subtitle">${escapeHtml(mainLocation.coords)}</div>` : ''}</div>`;
+    if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${escapeHtml(mainLocation.bortle)}</div></div>`;
+    
+    // Filter hours cards inside stats section
+    Object.entries(filterHours)
+      .sort(([, a], [, b]) => b - a)
+      .forEach(([filterName, seconds]) => {
+        html += `<div class="card"><div class="card-label">${escapeHtml(filterName)}</div><div class="card-value">${hh(seconds)}</div></div>`;
+      });
+    
+    html += `</div></div>`;
+  }
+
+  // ======== SECTION 2: Equipo ========
+  if (config.includeStats.telescope || config.includeStats.camera) {
+    html += `<div class="section">
+      <h2 class="section-title">Equipo</h2>
+      <div class="grid">`;
+    if (config.includeStats.telescope && telescope !== '-') html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
+    if (config.includeStats.camera && camera !== '-') html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
+    if (usedFilters.length > 0) html += `<div class="card"><div class="card-label">Filtros usados</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainFilter)}</div></div>`;
+    html += `</div></div>`;
+  }
+
+  // ======== SECTION 3: Imágenes de filtros ========
   if (config.includeFilterImages) {
     const filterImages: Record<string, {filter: string; initial?: string; final?: string}> = {};
     
-    // Recopilar imágenes iniciales y finales por filtro
     Object.entries(proj.images || {}).forEach(([key, src]) => {
       if (key.startsWith('initial') && key !== 'initialProject' && src) {
         const filterName = key.replace('initial', '');
@@ -4467,87 +4504,77 @@ const generatePDFReport = async (
     if (filterImagesArray.length > 0) {
       html += `
       <div class="section">
-        <h2 class="section-title">Imágenes de Filtros</h2>
-        <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-top: 1rem;">`;
+        <h2 class="section-title">Imágenes de Filtros</h2>`;
       
       filterImagesArray.forEach((item) => {
         html += `
-          <div class="card">
-            <h3 style="font-size: 1.2rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1.5rem; text-align: center;">${escapeHtml(item.filter)}</h3>
-            <div style="display: flex; flex-direction: column; gap: 1.5rem; align-items: center;">`;
+        <div style="margin-bottom: 2rem; page-break-inside: avoid; break-inside: avoid;">
+          <h3 style="font-size: 1.2rem; font-weight: 600; color: ${theme.textAccent}; margin-bottom: 1rem; text-align: center;">${escapeHtml(item.filter)}</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">`;
         
         if (item.initial) {
           html += `
-              <div style="width: 100%; text-align: center;">
-                <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Inicial</p>
-                <img src="${escapeHtml(item.initial)}" alt="Imagen inicial ${escapeHtml(item.filter)}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
-              </div>`;
+            <div class="filter-img-container" style="text-align: center;">
+              <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Inicial</p>
+              <img src="${escapeHtml(item.initial)}" alt="Imagen inicial ${escapeHtml(item.filter)}" />
+            </div>`;
         }
         
         if (item.final) {
           html += `
-              <div style="width: 100%; text-align: center;">
-                <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Final</p>
-                <img src="${escapeHtml(item.final)}" alt="Imagen final ${escapeHtml(item.filter)}" style="max-width: 100%; max-height: 300px; object-fit: contain; border-radius: 0.75rem; border: 2px solid ${theme.border};" />
-              </div>`;
+            <div class="filter-img-container" style="text-align: center;">
+              <p style="font-size: 0.85rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem; font-weight: 600;">Final</p>
+              <img src="${escapeHtml(item.final)}" alt="Imagen final ${escapeHtml(item.filter)}" />
+            </div>`;
         }
         
         html += `
-            </div>
-          </div>`;
+          </div>
+        </div>`;
       });
       
-      html += `
-        </div>
-      </div>`;
+      html += `</div>`;
     }
   }
 
-  // Sección de equipo
-  if (config.includeStats.telescope || config.includeStats.camera) {
-    html += `<div class="section">
-      <h2 class="section-title">Equipo</h2>
-      <div class="grid">`;
-    if (config.includeStats.telescope && telescope !== '-') html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
-    if (config.includeStats.camera && camera !== '-') html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
-    if (usedFilters.length > 0) html += `<div class="card"><div class="card-label">Filtros usados</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainFilter)}</div></div>`;
-    html += `</div></div>`;
-  }
+  // ======== SECTION 4: ALL Charts ========
 
-  // Estadísticas
-  if (Object.values(config.includeStats).some((v: any) => v)) {
-    html += `<div class="section">
-      <h2 class="section-title">Estadísticas del Proyecto</h2>
-      <div class="grid">`;
-    
-    if (config.includeStats.status) html += `<div class="card"><div class="card-label">Estado</div><div class="card-value"><span class="status-badge status-${proj.status || 'active'}">${statusLabels[proj.status || 'active']}</span></div></div>`;
-    if (config.includeStats.nights) html += `<div class="card"><div class="card-label">Noches</div><div class="card-value">${nights}</div></div>`;
-    if (config.includeStats.sessions) html += `<div class="card"><div class="card-label">Sesiones</div><div class="card-value">${totalSessions}</div></div>`;
-    if (config.includeStats.activeTime) html += `<div class="card"><div class="card-label">Tiempo Activo</div><div class="card-value">${diffDays} día${diffDays !== 1 ? 's' : ''}</div></div>`;
-    if (config.includeStats.totalLights) html += `<div class="card"><div class="card-label">Lights Totales</div><div class="card-value">${totalLights}</div></div>`;
-    if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
-    if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
-    if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
-    if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainLocation.name)}</div>${mainLocation.coords ? `<div class="card-subtitle">${escapeHtml(mainLocation.coords)}</div>` : ''}</div>`;
-    if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${escapeHtml(mainLocation.bortle)}</div></div>`;
-    
-    html += `</div></div>`;
-  }
+  // Prepare additional chart data
+  const exposurePerNight = proj.sessions.map((s: any, i: number) => ({
+    date: formatDateDisplay(s.date, dateFormat),
+    hours: ((s.lights || 0) * (s.exposureSec || 0)) / 3600,
+  }));
 
-  // Horas por filtro (highlights)
-  if (Object.keys(filterHours).length > 0) {
-    html += `<div class="section">
-      <h2 class="section-title">Horas por Filtro</h2>
-      <div class="grid">`;
-    Object.entries(filterHours)
-      .sort(([, a], [, b]) => b - a)
-      .forEach(([filterName, seconds]) => {
-        html += `<div class="card"><div class="card-label">${escapeHtml(filterName)} total</div><div class="card-value">${hh(seconds)}</div></div>`;
-      });
-    html += `</div></div>`;
-  }
+  const moonIlluminationData = proj.sessions.map((s: any, i: number) => {
+    const moonData = calculateMoonPhase(s.date);
+    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination };
+  });
 
-  // Gráfica de progreso acumulado
+  const mpsasData = proj.sessions.map((s: any, i: number) => ({
+    session: i + 1,
+    date: formatDateDisplay(s.date, dateFormat),
+    mpsas: s.fitsAnalysis?.averages?.mpsas ?? null,
+  })).filter((d: any) => d.mpsas !== null);
+
+  const temperatureData = proj.sessions.map((s: any, i: number) => ({
+    session: i + 1,
+    date: formatDateDisplay(s.date, dateFormat),
+    temp: s.fitsAnalysis?.averages?.ambientTemp ?? null,
+  })).filter((d: any) => d.temp !== null);
+
+  const humidityData = proj.sessions.map((s: any, i: number) => ({
+    session: i + 1,
+    date: formatDateDisplay(s.date, dateFormat),
+    humidity: s.fitsAnalysis?.averages?.humidity ?? null,
+  })).filter((d: any) => d.humidity !== null);
+
+  const windData = proj.sessions.map((s: any, i: number) => ({
+    session: i + 1,
+    date: formatDateDisplay(s.date, dateFormat),
+    wind: s.fitsAnalysis?.averages?.wind ?? null,
+  })).filter((d: any) => d.wind !== null);
+
+  // Progress chart
   if (config.includeCharts.progressChart) {
     html += `
     <div class="section">
@@ -4558,7 +4585,7 @@ const generatePDFReport = async (
     </div>`;
   }
 
-  // Gráfica de exposición por filtro
+  // Filter exposure chart
   if (config.includeCharts.filterChart && Object.keys(filterHours).length > 0) {
     html += `
     <div class="section">
@@ -4569,18 +4596,80 @@ const generatePDFReport = async (
     </div>`;
   }
 
-  // Gráfica de lights por sesión
+  // Lights per session
   if (config.includeCharts.lightsChart) {
     html += `
     <div class="section">
-      <h2 class="section-title">Iluminación por Sesión</h2>
+      <h2 class="section-title">Lights por Sesión</h2>
       <div class="chart-container">
         <canvas id="lightsChart"></canvas>
       </div>
     </div>`;
   }
 
-  // Gráfica de SNR medio
+  // Exposure per night
+  html += `
+  <div class="section">
+    <h2 class="section-title">Exposición por Noche</h2>
+    <div class="chart-container">
+      <canvas id="exposureNightChart"></canvas>
+    </div>
+  </div>`;
+
+  // Moon illumination
+  html += `
+  <div class="section">
+    <h2 class="section-title">Iluminación Lunar por Sesión</h2>
+    <div class="chart-container">
+      <canvas id="moonChart"></canvas>
+    </div>
+  </div>`;
+
+  // Sky quality (MPSAS)
+  if (mpsasData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Calidad del Cielo (MPSAS)</h2>
+      <div class="chart-container">
+        <canvas id="mpsasChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Temperature
+  if (temperatureData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Temperatura por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="temperatureChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Humidity
+  if (humidityData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Humedad por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="humidityChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Wind
+  if (windData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Viento por Sesión</h2>
+      <div class="chart-container">
+        <canvas id="windChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // SNR Mean
   if (config.includeCharts.snrMeanChart && snrMeanData.length > 0) {
     html += `
     <div class="section">
@@ -4591,7 +4680,7 @@ const generatePDFReport = async (
     </div>`;
   }
 
-  // Gráfica de SNR RGB
+  // SNR RGB
   if (config.includeCharts.snrRGBChart && snrRGBData.length > 0) {
     html += `
     <div class="section">
@@ -4602,7 +4691,7 @@ const generatePDFReport = async (
     </div>`;
   }
 
-  // Tabla de sesiones
+  // Session table
   if (config.includeTable) {
     html += `
     <div class="section">
@@ -4646,7 +4735,6 @@ const generatePDFReport = async (
     const gridColor = '${theme.gridColor}';
     const accentColor = '${theme.textAccent}';
     
-    // Función para calcular min y max con margen
     const getYAxisRange = (data) => {
       const values = data.filter(v => v != null && !isNaN(v));
       if (values.length === 0) return { min: 0, max: 10 };
@@ -4659,189 +4747,126 @@ const generatePDFReport = async (
         max: max + margin
       };
     };
+
+    const makeLineChart = (id, labels, data, label, color, bgColor) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const range = getYAxisRange(data);
+      new Chart(el.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label, data, borderColor: color, backgroundColor: bgColor, tension: 0.4, fill: true }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+          scales: {
+            y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+            x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+          }
+        }
+      });
+    };
+
+    const makeBarChart = (id, labels, data, label, color) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const range = getYAxisRange(data);
+      new Chart(el.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label, data, backgroundColor: color }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: false,
+          plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+          scales: {
+            y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+            x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+          }
+        }
+      });
+    };
     
     ${config.includeCharts.progressChart ? `
-    const progressData = ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))};
-    const progressRange = getYAxisRange(progressData);
-    const progressCtx = document.getElementById('progressChart').getContext('2d');
-    new Chart(progressCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
-        datasets: [{
-          label: 'Horas acumuladas',
-          data: progressData,
-          borderColor: accentColor,
-          backgroundColor: '${isDark ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)'}',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
-        scales: {
-          y: { 
-            min: progressRange.min,
-            max: progressRange.max,
-            ticks: { color: chartColor, font: { size: 10 } }, 
-            grid: { color: gridColor } 
-          },
-          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
-        }
-      }
-    });` : ''}
+    makeLineChart('progressChart', ${JSON.stringify(chartDataByDate.map((d: any) => d.date))}, ${JSON.stringify(chartDataByDate.map((d: any) => d.hours))}, 'Horas acumuladas', accentColor, '${isDark ? 'rgba(96, 165, 250, 0.1)' : 'rgba(59, 130, 246, 0.1)'}');
+    ` : ''}
 
     ${config.includeCharts.filterChart && filterData.length > 0 ? `
-    const filterChartData = ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))};
-    const filterRange = getYAxisRange(filterChartData);
-    const filterCtx = document.getElementById('filterChart').getContext('2d');
-    new Chart(filterCtx, {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(filterData.map((d: any) => d.filter))},
-        datasets: [{
-          label: 'Horas',
-          data: filterChartData,
-          backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'],
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { 
-            min: filterRange.min,
-            max: filterRange.max,
-            ticks: { color: chartColor, font: { size: 10 } }, 
-            grid: { color: gridColor } 
-          },
-          x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }
-        }
+    {
+      const el = document.getElementById('filterChart');
+      if (el) {
+        const d = ${JSON.stringify(filterData.map((d: any) => parseFloat(d.hours)))};
+        const range = getYAxisRange(d);
+        new Chart(el.getContext('2d'), {
+          type: 'bar',
+          data: { labels: ${JSON.stringify(filterData.map((d: any) => d.filter))}, datasets: [{ label: 'Horas', data: d, backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'] }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+        });
       }
-    });` : ''}
+    }
+    ` : ''}
 
     ${config.includeCharts.lightsChart ? `
-    const lightsData = ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))};
-    const lightsRange = getYAxisRange(lightsData);
-    const lightsCtx = document.getElementById('lightsChart').getContext('2d');
-    new Chart(lightsCtx, {
-      type: 'bar',
-      data: {
-        labels: ${JSON.stringify(chartDataByDate.map((d: any) => d.date))},
-        datasets: [{
-          label: 'Lights por sesión',
-          data: lightsData,
-          backgroundColor: '#a78bfa',
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
-        scales: {
-          y: { 
-            min: lightsRange.min,
-            max: lightsRange.max,
-            ticks: { color: chartColor, font: { size: 10 } }, 
-            grid: { color: gridColor } 
-          },
-          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
-        }
-      }
-    });` : ''}
+    makeBarChart('lightsChart', ${JSON.stringify(chartDataByDate.map((d: any) => d.date))}, ${JSON.stringify(proj.sessions.map((s: any) => s.lights || 0))}, 'Lights por sesión', '#a78bfa');
+    ` : ''}
+
+    // Exposure per night
+    makeBarChart('exposureNightChart', ${JSON.stringify(exposurePerNight.map((d: any) => d.date))}, ${JSON.stringify(exposurePerNight.map((d: any) => parseFloat(d.hours.toFixed(2))))}, 'Horas por noche', '#fb923c');
+
+    // Moon illumination
+    makeLineChart('moonChart', ${JSON.stringify(moonIlluminationData.map((d: any) => d.date))}, ${JSON.stringify(moonIlluminationData.map((d: any) => d.illumination))}, 'Iluminación %', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
+
+    ${mpsasData.length > 0 ? `
+    makeLineChart('mpsasChart', ${JSON.stringify(mpsasData.map((d: any) => d.date))}, ${JSON.stringify(mpsasData.map((d: any) => d.mpsas))}, 'MPSAS', '#34d399', 'rgba(52, 211, 153, 0.1)');
+    ` : ''}
+
+    ${temperatureData.length > 0 ? `
+    makeLineChart('temperatureChart', ${JSON.stringify(temperatureData.map((d: any) => d.date))}, ${JSON.stringify(temperatureData.map((d: any) => d.temp))}, 'Temperatura °C', '#f87171', 'rgba(248, 113, 113, 0.1)');
+    ` : ''}
+
+    ${humidityData.length > 0 ? `
+    makeLineChart('humidityChart', ${JSON.stringify(humidityData.map((d: any) => d.date))}, ${JSON.stringify(humidityData.map((d: any) => d.humidity))}, 'Humedad %', '#38bdf8', 'rgba(56, 189, 248, 0.1)');
+    ` : ''}
+
+    ${windData.length > 0 ? `
+    makeLineChart('windChart', ${JSON.stringify(windData.map((d: any) => d.date))}, ${JSON.stringify(windData.map((d: any) => d.wind))}, 'Viento km/h', '#a78bfa', 'rgba(167, 139, 250, 0.1)');
+    ` : ''}
 
     ${config.includeCharts.snrMeanChart && snrMeanData.length > 0 ? `
-    const snrMeanChartData = ${JSON.stringify(snrMeanData.map((d: any) => d.snr))};
-    const snrMeanRange = getYAxisRange(snrMeanChartData);
-    const snrMeanCtx = document.getElementById('snrMeanChart').getContext('2d');
-    new Chart(snrMeanCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(snrMeanData.map((d: any) => d.date))},
-        datasets: [{
-          label: 'SNR Medio',
-          data: snrMeanChartData,
-          borderColor: '#34d399',
-          backgroundColor: 'rgba(52, 211, 153, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
-        scales: {
-          y: { 
-            min: snrMeanRange.min,
-            max: snrMeanRange.max,
-            ticks: { color: chartColor, font: { size: 10 } }, 
-            grid: { color: gridColor } 
-          },
-          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
-        }
-      }
-    });` : ''}
+    makeLineChart('snrMeanChart', ${JSON.stringify(snrMeanData.map((d: any) => d.date))}, ${JSON.stringify(snrMeanData.map((d: any) => d.snr))}, 'SNR Medio', '#34d399', 'rgba(52, 211, 153, 0.1)');
+    ` : ''}
 
     ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
-    const snrRGBAllValues = [
-      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrR))}.filter(v => v != null),
-      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrG))}.filter(v => v != null),
-      ...${JSON.stringify(snrRGBData.map((d: any) => d.snrB))}.filter(v => v != null)
-    ];
-    const snrRGBRange = getYAxisRange(snrRGBAllValues);
-    const snrRGBCtx = document.getElementById('snrRGBChart').getContext('2d');
-    new Chart(snrRGBCtx, {
-      type: 'line',
-      data: {
-        labels: ${JSON.stringify(snrRGBData.map((d: any) => d.date))},
-        datasets: [
-          {
-            label: 'SNR R',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrR))},
-            borderColor: '#f87171',
-            backgroundColor: 'rgba(248, 113, 113, 0.1)',
-            tension: 0.4
+    {
+      const el = document.getElementById('snrRGBChart');
+      if (el) {
+        const allVals = [...${JSON.stringify(snrRGBData.map((d: any) => d.snrR))}.filter(v=>v!=null),...${JSON.stringify(snrRGBData.map((d: any) => d.snrG))}.filter(v=>v!=null),...${JSON.stringify(snrRGBData.map((d: any) => d.snrB))}.filter(v=>v!=null)];
+        const range = getYAxisRange(allVals);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(snrRGBData.map((d: any) => d.date))},
+            datasets: [
+              { label: 'SNR R', data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrR))}, borderColor: '#f87171', backgroundColor: 'rgba(248, 113, 113, 0.1)', tension: 0.4 },
+              { label: 'SNR G', data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrG))}, borderColor: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.1)', tension: 0.4 },
+              { label: 'SNR B', data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrB))}, borderColor: '#60a5fa', backgroundColor: 'rgba(96, 165, 250, 0.1)', tension: 0.4 }
+            ]
           },
-          {
-            label: 'SNR G',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrG))},
-            borderColor: '#4ade80',
-            backgroundColor: 'rgba(74, 222, 128, 0.1)',
-            tension: 0.4
-          },
-          {
-            label: 'SNR B',
-            data: ${JSON.stringify(snrRGBData.map((d: any) => d.snrB))},
-            borderColor: '#60a5fa',
-            backgroundColor: 'rgba(96, 165, 250, 0.1)',
-            tension: 0.4
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+            scales: {
+              y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+              x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+            }
           }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
-        scales: {
-          y: { 
-            min: snrRGBRange.min,
-            max: snrRGBRange.max,
-            ticks: { color: chartColor, font: { size: 10 } }, 
-            grid: { color: gridColor } 
-          },
-          x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
-        }
+        });
       }
-    });` : ''}
+    }
+    ` : ''}
   </script>
 </body>
 </html>`;
