@@ -4502,6 +4502,17 @@ const generatePDFReport = async (
     }
   }
 
+  // Sección de equipo
+  if (config.includeStats.telescope || config.includeStats.camera) {
+    html += `<div class="section">
+      <h2 class="section-title">Equipo</h2>
+      <div class="grid">`;
+    if (config.includeStats.telescope && telescope !== '-') html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
+    if (config.includeStats.camera && camera !== '-') html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
+    if (usedFilters.length > 0) html += `<div class="card"><div class="card-label">Filtros usados</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainFilter)}</div></div>`;
+    html += `</div></div>`;
+  }
+
   // Estadísticas
   if (Object.values(config.includeStats).some((v: any) => v)) {
     html += `<div class="section">
@@ -4516,11 +4527,22 @@ const generatePDFReport = async (
     if (config.includeStats.totalExposure) html += `<div class="card"><div class="card-label">Exposición Total</div><div class="card-value">${hh(totalSeconds)}</div></div>`;
     if (config.includeStats.goal && goalHours > 0) html += `<div class="card"><div class="card-label">Objetivo</div><div class="card-value">${currentHours}h / ${goalHours}h</div><div class="card-subtitle">${((parseFloat(currentHours) / goalHours) * 100).toFixed(0)}% completado</div></div>`;
     if (config.includeStats.avgSNR && avgSNR !== '-') html += `<div class="card"><div class="card-label">SNR Medio</div><div class="card-value">${avgSNR}</div></div>`;
-    if (config.includeStats.telescope) html += `<div class="card"><div class="card-label">Telescopio</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(telescope)}</div></div>`;
-    if (config.includeStats.camera) html += `<div class="card"><div class="card-label">Cámara</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(camera)}</div></div>`;
     if (config.includeStats.location && mainLocation?.name) html += `<div class="card"><div class="card-label">Localización</div><div class="card-value" style="font-size: 1rem;">${escapeHtml(mainLocation.name)}</div>${mainLocation.coords ? `<div class="card-subtitle">${escapeHtml(mainLocation.coords)}</div>` : ''}</div>`;
     if (config.includeStats.bortle && mainLocation?.bortle) html += `<div class="card"><div class="card-label">Bortle</div><div class="card-value">${escapeHtml(mainLocation.bortle)}</div></div>`;
     
+    html += `</div></div>`;
+  }
+
+  // Horas por filtro (highlights)
+  if (Object.keys(filterHours).length > 0) {
+    html += `<div class="section">
+      <h2 class="section-title">Horas por Filtro</h2>
+      <div class="grid">`;
+    Object.entries(filterHours)
+      .sort(([, a], [, b]) => b - a)
+      .forEach(([filterName, seconds]) => {
+        html += `<div class="card"><div class="card-label">${escapeHtml(filterName)} total</div><div class="card-value">${hh(seconds)}</div></div>`;
+      });
     html += `</div></div>`;
   }
 
