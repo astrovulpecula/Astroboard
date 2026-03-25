@@ -4371,8 +4371,12 @@ const generatePDFReport = async (
     : '-';
   
   const totalSessions = proj.sessions.length;
-  const telescope = (proj as any).telescope || '-';
-  const camera = (proj as any).camera || '-';
+  const telescope = (proj as any)?.equipment?.telescope || '-';
+  const camera = (proj as any)?.equipment?.camera || '-';
+  
+  // Get unique filters used across all sessions
+  const usedFilters = [...new Set(proj.sessions.map((s: any) => s.filter).filter(Boolean))];
+  const mainFilter = usedFilters.length > 0 ? usedFilters.join(', ') : '-';
 
   // Determinar tema
   const isDark = config.theme === 'dark';
