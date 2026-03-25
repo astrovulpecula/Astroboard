@@ -4337,7 +4337,7 @@ const generatePDFReport = async (
     completed: "Completado",
   };
 
-  const finalImage = (proj as any).finalImage || obj.image || '';
+  const finalImage = (proj as any)?.images?.finalProject || obj.image || '';
 
   const sessionDataWithSNR = proj.sessions.map((s: any, i: number) => {
     const snrMean = mean(s);
