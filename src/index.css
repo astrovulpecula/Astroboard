@@ -248,6 +248,84 @@
     background-position: center;
     height: 1px;
   }
+
+  /* Section header bar — small left accent line, instrument-style */
+  .section-bar {
+    @apply flex items-center gap-3;
+  }
+  .section-bar::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 1.1em;
+    border-radius: 2px;
+    background: var(--gradient-aurora);
+  }
+
+  /* Aurora hairline divider for hero sections */
+  .aurora-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--primary) / 0.5) 30%,
+      hsl(var(--accent-magenta) / 0.5) 70%,
+      transparent 100%
+    );
+  }
+
+  /* Small label tag for metrics ("LIVE", "RMS", "FWHM"...) */
+  .data-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+}
+
+/* =========================================================================
+   Silent overrides — replace glassmorphism patterns inherited from older
+   AstroTracker markup with the new solid surface language. Dark mode only.
+   ========================================================================= */
+@layer utilities {
+  .dark .backdrop-blur,
+  .dark .backdrop-blur-sm,
+  .dark .backdrop-blur-md,
+  .dark .backdrop-blur-lg {
+    backdrop-filter: none;
+  }
+
+  .dark .bg-slate-900\/30,
+  .dark .bg-slate-900\/40,
+  .dark .bg-slate-900\/50,
+  .dark .bg-slate-900\/60,
+  .dark .bg-slate-900\/70,
+  .dark .bg-slate-900\/90,
+  .dark .bg-slate-950\/60 {
+    background-color: hsl(var(--surface-sunken)) !important;
+  }
+
+  .dark .bg-slate-800\/50,
+  .dark .bg-slate-800\/60,
+  .dark .bg-slate-700\/50 {
+    background-color: hsl(var(--surface-elevated)) !important;
+  }
+
+  .dark .bg-slate-500\/10 {
+    background-color: hsl(var(--surface-card)) !important;
+  }
+
+  /* Generic white-overlay patterns become sunken surface in dark */
+  .dark .bg-white\/10,
+  .dark .bg-white\/20,
+  .dark .bg-white\/50,
+  .dark .bg-white\/60,
+  .dark .bg-white\/80,
+  .dark .bg-white\/90 {
+    background-color: hsl(var(--surface-card)) !important;
+  }
 }
 
 /* Mobile safe area for bottom navigation */
