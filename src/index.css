@@ -2,101 +2,159 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* =========================================================================
+   AstroBoard — Design System
+   "Nocturno moderno" · Expresivo pero controlado
+   Paleta: navy profundo + acentos púrpura/magenta quirúrgicos
+   Tipografía: Space Grotesk (display) · Inter (body) · JetBrains Mono (data)
+   ========================================================================= */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ---- Surface system (light — fallback) ---- */
+    --background: 220 25% 98%;
+    --foreground: 224 35% 8%;
+
+    --surface-base: 220 25% 98%;
+    --surface-card: 0 0% 100%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 220 20% 95%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 35% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 224 35% 8%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* ---- Brand accents ---- */
+    --primary: 263 75% 58%;          /* púrpura */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 280 80% 65%;     /* magenta-púrpura */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --accent-magenta: 295 80% 60%;
+    --accent-cyan: 195 90% 60%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 224 35% 12%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted: 220 20% 94%;
+    --muted-foreground: 224 12% 42%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: 263 60% 95%;
+    --accent-foreground: 263 75% 30%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    --success: 152 65% 42%;
+    --warning: 38 92% 55%;
 
+    --border: 224 20% 88%;
+    --border-strong: 224 20% 78%;
+    --input: 224 20% 88%;
+    --ring: 263 75% 58%;
+
+    --radius: 0.625rem;
+
+    /* ---- Gradients (used on hero / CTAs only) ---- */
+    --gradient-primary: linear-gradient(135deg, hsl(263 75% 58%) 0%, hsl(295 80% 60%) 100%);
+    --gradient-aurora: linear-gradient(135deg, hsl(263 75% 58%) 0%, hsl(280 80% 65%) 50%, hsl(295 80% 60%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(220 25% 98%) 0%, hsl(220 25% 96%) 100%);
+
+    /* ---- Elevation (3 levels, subtle, no glassmorphism) ---- */
+    --shadow-sm: 0 1px 2px 0 hsl(224 30% 10% / 0.05);
+    --shadow-md: 0 4px 12px -2px hsl(224 30% 10% / 0.08), 0 2px 4px -2px hsl(224 30% 10% / 0.04);
+    --shadow-lg: 0 16px 40px -8px hsl(224 30% 10% / 0.12), 0 4px 12px -4px hsl(224 30% 10% / 0.06);
+    --shadow-glow: 0 0 32px -4px hsl(263 75% 58% / 0.35);
+
+    /* ---- Motion ---- */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --duration-slow: 280ms;
+
+    /* ---- Sidebar ---- */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
+    --sidebar-primary: 263 75% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 263 75% 58%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    
-    --card-bg: rgba(255, 255, 255, 0.7);
-    --card-border: rgb(226 232 240);
+    /* legacy */
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --card-border: hsl(224 20% 88%);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 0 0% 100%;
+    /* ---- Surface system (dark — primary aesthetic) ---- */
+    --background: 230 35% 6%;            /* navy casi negro */
+    --foreground: 220 20% 96%;
 
-    --card: 0 0% 0% / 0;
-    --card-foreground: 0 0% 100%;
+    --surface-base: 230 35% 6%;
+    --surface-card: 230 30% 9%;          /* tarjeta, sólida */
+    --surface-elevated: 230 28% 12%;     /* modal / popover */
+    --surface-sunken: 230 40% 4%;        /* fondo más profundo */
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 0 0% 100%;
+    --card: 230 30% 9%;
+    --card-foreground: 220 20% 96%;
 
-    --primary: 0 0% 100%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --popover: 230 28% 12%;
+    --popover-foreground: 220 20% 96%;
 
-    --secondary: 0 0% 100% / 0.05;
-    --secondary-foreground: 0 0% 100%;
+    /* ---- Brand accents (dark) ---- */
+    --primary: 270 85% 70%;              /* púrpura luminoso */
+    --primary-foreground: 230 35% 6%;
+    --primary-glow: 290 90% 72%;
 
-    --muted: 0 0% 100% / 0.1;
-    --muted-foreground: 0 0% 100% / 0.7;
+    --accent-magenta: 300 90% 68%;
+    --accent-cyan: 195 95% 65%;
 
-    --accent: 0 0% 100% / 0.1;
-    --accent-foreground: 0 0% 100%;
+    --secondary: 230 25% 14%;
+    --secondary-foreground: 220 20% 96%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
+    --muted: 230 22% 13%;
+    --muted-foreground: 220 12% 65%;
 
-    --border: 0 0% 100% / 0.2;
-    --input: 0 0% 100% / 0.1;
-    --ring: 0 0% 100% / 0.5;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    
-    --card-bg: transparent;
-    --card-border: rgba(255, 255, 255, 0.2);
+    --accent: 263 40% 22%;
+    --accent-foreground: 270 85% 80%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 220 20% 96%;
+
+    --success: 152 60% 50%;
+    --warning: 38 92% 60%;
+
+    /* hairline borders sutiles */
+    --border: 230 20% 18%;
+    --border-strong: 230 20% 26%;
+    --input: 230 22% 14%;
+    --ring: 270 85% 70%;
+
+    /* ---- Gradients ---- */
+    --gradient-primary: linear-gradient(135deg, hsl(270 85% 65%) 0%, hsl(295 85% 65%) 100%);
+    --gradient-aurora: linear-gradient(135deg, hsl(255 85% 60%) 0%, hsl(275 85% 65%) 45%, hsl(300 90% 65%) 100%);
+    --gradient-surface: linear-gradient(180deg, hsl(230 35% 7%) 0%, hsl(230 35% 5%) 100%);
+
+    /* ---- Elevation (oscuro, contraste real) ---- */
+    --shadow-sm: 0 1px 2px 0 hsl(230 50% 2% / 0.4);
+    --shadow-md: 0 6px 16px -4px hsl(230 50% 2% / 0.5), 0 2px 6px -2px hsl(230 50% 2% / 0.35);
+    --shadow-lg: 0 24px 48px -12px hsl(230 50% 2% / 0.6), 0 8px 16px -6px hsl(230 50% 2% / 0.4);
+    --shadow-glow: 0 0 40px -6px hsl(270 85% 65% / 0.45);
+
+    --sidebar-background: 230 35% 6%;
+    --sidebar-foreground: 220 15% 88%;
+    --sidebar-primary: 270 85% 70%;
+    --sidebar-primary-foreground: 230 35% 6%;
+    --sidebar-accent: 230 25% 14%;
+    --sidebar-accent-foreground: 220 20% 96%;
+    --sidebar-border: 230 20% 18%;
+    --sidebar-ring: 270 85% 70%;
+
+    --card-bg: hsl(230 30% 9%);
+    --card-border: hsl(230 20% 18%);
   }
 }
 
@@ -105,12 +163,103 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.005em;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-feature-settings: 'ss01';
+  }
+
+  .font-mono, code, pre, kbd, samp,
+  [class*="tabular-nums"] {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-feature-settings: 'zero', 'ss01';
+  }
+
+  /* Numbers always tabular for clean alignment in data UIs */
+  .num, .data-num {
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+}
+
+/* =========================================================================
+   Component utilities
+   ========================================================================= */
+@layer components {
+  /* Hairline 1px border (looks crisper than default) */
+  .border-hairline {
+    border-width: 1px;
+    border-color: hsl(var(--border));
+  }
+
+  /* Surfaces */
+  .surface-card {
+    background-color: hsl(var(--surface-card));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+  }
+
+  .surface-elevated {
+    background-color: hsl(var(--surface-elevated));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Hero gradient text */
+  .text-gradient-aurora {
+    background: var(--gradient-aurora);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Subtle accent glow for primary CTA only */
+  .glow-primary {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Tick separator (instrument-like) */
+  .tick-divider {
+    background-image: linear-gradient(
+      to right,
+      hsl(var(--border)) 0,
+      hsl(var(--border)) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+    background-size: 8px 1px;
+    background-repeat: repeat-x;
+    background-position: center;
+    height: 1px;
   }
 }
 
 /* Mobile safe area for bottom navigation */
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Smooth, consistent transitions */
+button, a, [role="button"] {
+  transition: background-color var(--duration-base) var(--ease-out),
+              border-color var(--duration-base) var(--ease-out),
+              color var(--duration-base) var(--ease-out),
+              box-shadow var(--duration-base) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
