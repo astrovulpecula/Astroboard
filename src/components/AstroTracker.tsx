@@ -240,7 +240,7 @@ const sample = [
 ];
 
 const Badge = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs text-slate-700 dark:text-slate-200 border-slate-300/60 dark:border-slate-700/60 ${className}`}>
+  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium tracking-wide text-foreground/80 border-border bg-surface-sunken/60 ${className}`}>
     {children}
   </span>
 );
@@ -255,11 +255,12 @@ const Card = ({
   onClick?: () => void;
 }) => (
   <div
-    className={`rounded-2xl shadow-sm p-3 md:p-4 ${className} ${onClick ? "cursor-pointer transition hover:shadow" : ""}`}
+    className={`rounded-xl p-3 md:p-4 transition-[border-color,box-shadow,transform] duration-200 ease-out ${className} ${onClick ? "cursor-pointer hover:border-border-strong hover:shadow-elev-md hover:-translate-y-px" : ""}`}
     data-card
     style={{
       border: "1px solid var(--card-border, rgb(226 232 240))",
       background: "var(--card-bg, rgba(255, 255, 255, 0.7))",
+      boxShadow: "var(--shadow-sm)",
     }}
     onClick={onClick}
   >
