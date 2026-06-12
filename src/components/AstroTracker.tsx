@@ -9245,13 +9245,13 @@ export default function AstroTracker() {
               {mainSection === "galeria" && (
                 <div className="space-y-6">
                   <h2 className="text-2xl font-bold flex items-center gap-2">
-                    <ImageIcon className="w-6 h-6" /> Galería de Valoraciones
+                    <ImageIcon className="w-6 h-6" /> {t('galleryTitle')}
                   </h2>
                   {objects.length === 0 ? (
                     <Card className="p-8 text-center">
                       <ImageIcon className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No gallery images yet. Rate your photos to see them here.' : 'No hay imágenes en la galería todavía. Valora tus fotos para verlas aquí.'}
+                        {t('noGalleryImages')}
                       </p>
                     </Card>
                   ) : (
@@ -9283,13 +9283,13 @@ export default function AstroTracker() {
                             // Generate a readable title based on keyName
                             let title = keyName;
                             if (keyName === "finalProject") {
-                              title = "Imagen final del proyecto";
+                              title = t('imageFinalProject');
                             } else if (keyName.startsWith("initial")) {
-                              title = `Imagen inicial ${keyName.replace("initial", "")}`;
+                              title = `${t('imageInitialPrefix')} ${keyName.replace("initial", "")}`;
                             } else if (keyName.startsWith("final")) {
-                              title = `Imagen final ${keyName.replace("final", "")}`;
+                              title = `${t('imageFinalPrefix')} ${keyName.replace("final", "")}`;
                             } else if (keyName === "panelSchema") {
-                              title = "Esquema de paneles";
+                              title = t('panelSchemaTitle');
                             }
                             
                             allRatedImages.push({
