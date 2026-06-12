@@ -2623,6 +2623,7 @@ function FSession({
   telescopes?: { name: string; focalLength: string }[];
 }) {
   const init = initial || {};
+  const { t } = useLanguage();
 
   // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
@@ -2688,11 +2689,11 @@ function FSession({
     >
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Fecha</Label>
+          <Label>{t('sessionFormDate')}</Label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>Filtro</Label>
+          <Label>{t('sessionFormFilter')}</Label>
           <div className="grid gap-2">
             {/* Botones de filtros predeterminados */}
             <div className="flex flex-wrap gap-2">
@@ -2729,7 +2730,7 @@ function FSession({
               }}
               className={INPUT_CLS}
             >
-              <option value="">Seleccionar otro filtro...</option>
+              <option value="">{t('sessionFormSelectOtherFilter')}</option>
               {availableFilters
                 .filter((f) => !predefinedFilters.includes(f))
                 .map((f) => (
@@ -2737,7 +2738,7 @@ function FSession({
                     {f}
                   </option>
                 ))}
-              <option value="custom">+ Añadir filtro personalizado</option>
+              <option value="custom">{t('sessionFormAddCustomFilter')}</option>
             </select>
 
             {/* Input para filtro personalizado */}
@@ -2749,14 +2750,14 @@ function FSession({
                   setFilter(e.target.value);
                 }}
                 className={INPUT_CLS}
-                placeholder="Nombre del nuevo filtro..."
+                placeholder={t('sessionFormNewFilterPlaceholder')}
                 autoFocus
               />
             )}
           </div>
         </label>
         <label className="grid gap-1">
-          <Label>Lights</Label>
+          <Label>{t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -2766,7 +2767,7 @@ function FSession({
           />
         </label>
         <label className="grid gap-1">
-          <Label>Exposición por light (s)</Label>
+          <Label>{t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -2779,9 +2780,9 @@ function FSession({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Cámara</Label>
+          <Label>{t('sessionFormCamera')}</Label>
           <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-            <option value="">Seleccionar cámara</option>
+            <option value="">{t('sessionFormSelectCamera')}</option>
             {cameras
               .filter((c) => c.trim() !== "")
               .map((c) => (
@@ -2793,7 +2794,7 @@ function FSession({
         </label>
 
         <label className="grid gap-1">
-          <Label>Telescopio</Label>
+          <Label>{t('sessionFormTelescope')}</Label>
           <select
             value={telescope}
             onChange={(e) => {
@@ -2802,7 +2803,7 @@ function FSession({
             }}
             className={INPUT_CLS}
           >
-            <option value="">Seleccionar telescopio...</option>
+            <option value="">{t('sessionFormSelectTelescope')}</option>
             {telescopes
               ?.filter((t) => t.name.trim())
               .map((t) => (
@@ -2810,7 +2811,7 @@ function FSession({
                   {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
                 </option>
               ))}
-            <option value="Otro">+ Añadir nuevo telescopio</option>
+            <option value="Otro">{t('sessionFormAddNewTelescope')}</option>
           </select>
           {showCustomTelescope && (
             <input
@@ -2820,7 +2821,7 @@ function FSession({
                 setTelescope(e.target.value);
               }}
               className={`${INPUT_CLS} mt-2`}
-              placeholder="Nombre del nuevo telescopio..."
+              placeholder={t('sessionFormNewTelescopePlaceholder')}
             />
           )}
         </label>
@@ -2830,49 +2831,49 @@ function FSession({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm">
             <Moon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-            <span className="text-slate-600 dark:text-slate-400">Fase lunar:</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('sessionFormMoonPhaseLabel')}</span>
             <span className="font-medium text-slate-900 dark:text-slate-100">
-              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% {t('sessionFormIllumination')})
             </span>
           </div>
         </div>
       )}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
-          <Label>SNR - R</Label>
+          <Label>{t('sessionFormSnrR')}</Label>
           <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - G</Label>
+          <Label>{t('sessionFormSnrG')}</Label>
           <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - B</Label>
+          <Label>{t('sessionFormSnrB')}</Label>
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} />
         </label>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Lights aceptados</Label>
+          <Label>{t('sessionFormLightsAccepted')}</Label>
           <input
             type="number"
             value={acceptedLights}
             min={0}
             onChange={(e) => setAcceptedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
         <label className="grid gap-1">
-          <Label>Lights rechazados</Label>
+          <Label>{t('sessionFormLightsRejected')}</Label>
           <input
             type="number"
             value={rejectedLights}
             min={0}
             onChange={(e) => setRejectedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
       </div>
@@ -2884,15 +2885,15 @@ function FSession({
       <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
 
       <label className="grid gap-1">
-        <Label>Notas</Label>
+        <Label>{t('sessionFormNotes')}</Label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} />
       </label>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
         <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Tiempo total: <b>{hh(lights * exposureSec)}</b>
+          {t('sessionFormTotalTime')}: <b>{hh(lights * exposureSec)}</b>
         </div>
         <Btn type="submit">
-          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('sessionFormSave')}
         </Btn>
       </div>
     </form>
