@@ -7431,10 +7431,10 @@ export default function AstroTracker() {
                         <Card className="p-8 text-center">
                           <CloudSun className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                           <p className="text-muted-foreground mb-4">
-                            No tienes localizaciones configuradas para ver el pronóstico
+                            {t('noLocationsConfigured')}
                           </p>
                           <Btn onClick={() => setMainSection("configuracion")}>
-                            <Settings className="w-4 h-4" /> Configurar localizaciones
+                            <Settings className="w-4 h-4" /> {t('configureLocations')}
                           </Btn>
                         </Card>
                       );
@@ -7452,14 +7452,14 @@ export default function AstroTracker() {
                     };
 
                     const getWeatherDescription = (code: number) => {
-                      if (code === 0) return "Cielo despejado";
-                      if (code <= 3) return "Parcialmente nublado";
-                      if (code <= 48) return "Nublado";
-                      if (code <= 67) return "Lluvia";
-                      if (code <= 77) return "Nieve";
-                      if (code <= 82) return "Chubascos";
-                      if (code >= 95) return "Tormenta";
-                      return "Variable";
+                      if (code === 0) return t('weatherClear');
+                      if (code <= 3) return t('weatherPartlyCloudy');
+                      if (code <= 48) return t('weatherCloudy');
+                      if (code <= 67) return t('weatherRain');
+                      if (code <= 77) return t('weatherSnow');
+                      if (code <= 82) return t('weatherShowers');
+                      if (code >= 95) return t('weatherStorm');
+                      return t('weatherVariable');
                     };
 
                     return (
