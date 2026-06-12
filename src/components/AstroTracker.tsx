@@ -5633,6 +5633,7 @@ export default function AstroTracker() {
     
     if (saved) {
       setShowSettings(false);
+      setMainSection("dashboard");
     } else {
       toast({
         title: "Error de almacenamiento",
