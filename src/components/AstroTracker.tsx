@@ -11702,7 +11702,7 @@ export default function AstroTracker() {
             );
           })()}
         </Modal>
-        <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
+        <Modal open={mSes} onClose={() => setMSes(false)} title={t('newSessionTitle')} wide>
           <FSession
             onSubmit={addSes}
             availableFilters={availableFilters}
@@ -11711,7 +11711,7 @@ export default function AstroTracker() {
             projectEquipment={(proj as any)?.equipment}
           />
         </Modal>
-        <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title="Nueva sesión (Automatizada)" wide>
+        <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title={t('newSessionAutoTitle')} wide>
           <FSessionAutomated
             onSubmit={addSes}
             availableFilters={availableFilters}
@@ -11720,7 +11720,7 @@ export default function AstroTracker() {
             projectEquipment={(proj as any)?.equipment}
           />
         </Modal>
-        <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
+        <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
           {editSes && (
             <FSession
               initial={editSes}
@@ -11735,7 +11735,7 @@ export default function AstroTracker() {
             />
           )}
         </Modal>
-        <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
+        <Modal open={show} onClose={() => setShow(false)} title={t('newTabTitle')}>
           <form
             className="grid gap-3"
             onSubmit={(e) => {
@@ -11744,29 +11744,29 @@ export default function AstroTracker() {
             }}
           >
             <label className="grid gap-1">
-              <Label>Nombre</Label>
+              <Label>{t('newTabName')}</Label>
               <input
                 value={tabName}
                 onChange={(e) => setTabName(e.target.value)}
                 className={INPUT_CLS}
-                placeholder="Luminancia, SHO..."
+                placeholder={t('newTabPlaceholder')}
               />
             </label>
             <div className="flex items-center justify-between mt-2">
               <div />
               <div className="flex items-center gap-2">
                 <Btn outline onClick={() => setShow(false)}>
-                  Cancelar
+                  {t('cancel')}
                 </Btn>
                 <Btn type="submit">
-                  <Plus className="w-4 h-4" /> Crear
+                  <Plus className="w-4 h-4" /> {t('create')}
                 </Btn>
               </div>
             </div>
           </form>
         </Modal>
 
-        <Modal open={showEditPanels} onClose={() => setShowEditPanels(false)} title="Editar cantidad de paneles">
+        <Modal open={showEditPanels} onClose={() => setShowEditPanels(false)} title={t('editPanelsTitle')}>
           <form
             className="grid gap-4"
             onSubmit={(e) => {
@@ -11775,7 +11775,7 @@ export default function AstroTracker() {
             }}
           >
             <label className="grid gap-1">
-              <Label>Número de Paneles/Teselas</Label>
+              <Label>{t('panelsCountLabel')}</Label>
               <input
                 type="number"
                 min={1}
@@ -11788,15 +11788,15 @@ export default function AstroTracker() {
             <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 {editNumPanels < Object.keys((proj as any)?.panels || {}).length
-                  ? "⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados."
-                  : "ℹ️ Los nuevos paneles se crearán vacíos sin sesiones."}
+                  ? t('panelsReduceWarning')
+                  : t('panelsIncreaseInfo')}
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn outline onClick={() => setShowEditPanels(false)}>
-                Cancelar
+                {t('cancel')}
               </Btn>
-              <Btn type="submit">Actualizar</Btn>
+              <Btn type="submit">{t('update')}</Btn>
             </div>
           </form>
         </Modal>
