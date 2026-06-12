@@ -11028,10 +11028,10 @@ export default function AstroTracker() {
               {/* Header */}
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  Proyectos ONP y SNP
+                  {t('onpSnpProjectsTitle')}
                 </h1>
                 <p className="text-slate-600 dark:text-slate-400">
-                  Todos tus proyectos organizados por tipo: One-Night Projects (ONP) y Several-Nights Projects (SNP)
+                  {t('onpSnpDescription')}
                 </p>
               </div>
 
@@ -11082,7 +11082,7 @@ export default function AstroTracker() {
                             <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">One-Night Projects (ONP)</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('onpFull')}</div>
                             <div className="text-2xl font-bold">{onpProjects.length}</div>
                           </div>
                         </div>
@@ -11094,7 +11094,7 @@ export default function AstroTracker() {
                             <Telescope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Several-Nights Projects (SNP)</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('snpFull')}</div>
                             <div className="text-2xl font-bold">{snpProjects.length}</div>
                           </div>
                         </div>
@@ -11106,7 +11106,7 @@ export default function AstroTracker() {
                       <div>
                         <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
                           <Telescope className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                          One-Night Projects (ONP)
+                          {t('onpFull')}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {onpProjects.map((proj) => (
@@ -11124,11 +11124,11 @@ export default function AstroTracker() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                                <Badge>{proj.status === "active" ? t('statusActive') : proj.status === "completed" ? t('statusCompleted') : t('statusPaused')}</Badge>
                               </div>
                               <div className="mt-3 flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">
-                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? t('sessionWord') : t('sessionsWord')}
                                 </span>
                                 <span className="font-medium">
                                   {formatHoursToHHMM(proj.totalHours)} h
@@ -11145,7 +11145,7 @@ export default function AstroTracker() {
                       <div>
                         <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
                           <Telescope className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                          Several-Nights Projects (SNP)
+                          {t('snpFull')}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {snpProjects.map((proj) => (
@@ -11163,11 +11163,11 @@ export default function AstroTracker() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                                <Badge>{proj.status === "active" ? t('statusActive') : proj.status === "completed" ? t('statusCompleted') : t('statusPaused')}</Badge>
                               </div>
                               <div className="mt-3 flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">
-                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? t('sessionWord') : t('sessionsWord')}
                                 </span>
                                 <span className="font-medium">
                                   {formatHoursToHHMM(proj.totalHours)} h
@@ -11183,7 +11183,7 @@ export default function AstroTracker() {
                       <Card className="p-8 text-center">
                         <Telescope className="w-12 h-12 mx-auto mb-3 text-slate-400" />
                         <p className="text-slate-600 dark:text-slate-400">
-                          No hay proyectos aún
+                          {t('noProjectsYet')}
                         </p>
                       </Card>
                     )}
