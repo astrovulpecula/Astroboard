@@ -2,7 +2,7 @@ import { CloudSun, Calendar, Telescope, BarChart3, Image as ImageIcon, Home, Set
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
-export type MainSection = "dashboard" | "pronostico" | "planificacion" | "objetos" | "estadisticas" | "galeria";
+export type MainSection = "dashboard" | "pronostico" | "planificacion" | "objetos" | "estadisticas" | "galeria" | "configuracion";
 
 interface AppSidebarProps {
   mainSection: MainSection;
