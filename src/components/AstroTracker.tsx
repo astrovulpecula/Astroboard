@@ -7137,7 +7137,7 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title="Configuración" onClick={() => setMainSection("configuracion")}>
+              <IconBtn title={t('settings')} onClick={() => setMainSection("configuracion")}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
@@ -7266,7 +7266,7 @@ export default function AstroTracker() {
                           date={new Date()}
                           language={language}
                           altitudeLimit={minAltitudeLimit}
-                          title={language === 'en' ? 'Night Visibility - Active Projects' : 'Visibilidad Nocturna - Proyectos Activos'}
+                          title={t('nightVisibilityActiveProjects')}
                         />
                       </Card>
                     );
