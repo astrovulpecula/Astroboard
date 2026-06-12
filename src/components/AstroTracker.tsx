@@ -7193,9 +7193,77 @@ export default function AstroTracker() {
                 );
               })()}
 
-              {/* Dashboard grid: ephemeris + visible + carousel */}
-              <div className="grid gap-4 lg:grid-cols-3 mb-6">
-                <div className="space-y-4 flex flex-col">
+              {/* Row 1: Visible objects + Night visibility chart */}
+              <div className="grid gap-4 lg:grid-cols-2 mb-4">
+                {/* Currently visible objects indicator */}
+                {plannedProjects.length > 0 ? (() => {
+                  const currentMonth = new Date().getMonth() + 1;
+                  const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                  const currentMonthName = language === 'en' ? MONTH_NAMES_EN[currentMonth - 1] : MONTH_NAMES_ES[currentMonth - 1];
+
+                  const visibleNow = plannedProjects.filter(planned => {
+                    if (planned.isCircumpolar) return true;
+                    if (!planned.orto || !planned.ocaso) return false;
+                    const ortoNum = parseInt(planned.orto);
+                    const ocasoNum = parseInt(planned.ocaso);
+                    if (ortoNum <= ocasoNum) {
+                      return currentMonth >= ortoNum && currentMonth <= ocasoNum;
+                    } else {
+                      return currentMonth >= ortoNum || currentMonth <= ocasoNum;
+                    }
+                  });
+
+                  if (visibleNow.length === 0) {
+                    return (
+                      <div className="p-4 rounded-xl bg-muted/50 border border-border overflow-hidden flex items-center">
+                        <p className="text-sm text-muted-foreground break-words">
+                          {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden flex items-center">
+                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
+                        🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
+                      </p>
+                    </div>
+                  );
+                })() : <div />}
+
+                {/* Active Projects Visibility Chart */}
+                {(() => {
+                  const activeProjectObjects = objects.filter(obj =>
+                    obj.projects.some((p: any) => p.status === "active" || p.status === "paused")
+                  );
+                  if (activeProjectObjects.length > 0 && mainLocation?.coords) {
+                    const activeObjects = activeProjectObjects.map(obj => ({
+                      id: obj.id,
+                      objectId: obj.id,
+                      objectName: obj.commonName,
+                      signal: undefined,
+                    }));
+                    return (
+                      <Card className="p-4">
+                        <MultiObjectVisibilityChart
+                          objects={activeObjects}
+                          coordinates={mainLocation.coords}
+                          date={new Date()}
+                          language={language}
+                          altitudeLimit={minAltitudeLimit}
+                          title={language === 'en' ? 'Night Visibility - Active Projects' : 'Visibilidad Nocturna - Proyectos Activos'}
+                        />
+                      </Card>
+                    );
+                  }
+                  return <div />;
+                })()}
+              </div>
+
+              {/* Row 2: Ephemeris + Carousel */}
+              <div className="grid gap-4 lg:grid-cols-2 mb-6">
               {/* Next Ephemeris Card */}
               {nextEphemeris && (
                   <div 
@@ -7229,51 +7297,8 @@ export default function AstroTracker() {
                 </div>
               )}
 
-              {/* Currently visible objects indicator - shows right after ephemeris */}
-              {plannedProjects.length > 0 && (() => {
-                const currentMonth = new Date().getMonth() + 1; // 1-12
-                const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-                const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                const currentMonthName = language === 'en' ? MONTH_NAMES_EN[currentMonth - 1] : MONTH_NAMES_ES[currentMonth - 1];
-                
-                const visibleNow = plannedProjects.filter(planned => {
-                  if (planned.isCircumpolar) return true;
-                  if (!planned.orto || !planned.ocaso) return false;
-                  
-                  const ortoNum = parseInt(planned.orto);
-                  const ocasoNum = parseInt(planned.ocaso);
-                  
-                  if (ortoNum <= ocasoNum) {
-                    return currentMonth >= ortoNum && currentMonth <= ocasoNum;
-                  } else {
-                    // Crosses year boundary
-                    return currentMonth >= ortoNum || currentMonth <= ocasoNum;
-                  }
-                });
-                
-                if (visibleNow.length === 0) {
-                  return (
-                    <div className="p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
-                      <p className="text-sm text-muted-foreground break-words">
-                        {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
-                      </p>
-                    </div>
-                  );
-                }
-                
-                return (
-                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
-                    <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
-                      🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
-                    </p>
-                  </div>
-                );
-              })()}
-                </div>
-
-              {/* Image Carousel - Before Navigation Buttons */}
+              {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
-                <div className="lg:col-span-2">
                   <ImageCarousel
                     images={dashboardCarouselImages}
                     square
@@ -7284,42 +7309,8 @@ export default function AstroTracker() {
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                   />
-                </div>
               )}
               </div>
-
-              {/* Active Projects Visibility Chart - After Carousel, Before Navigation */}
-              {(() => {
-                // Get objects with active projects
-                const activeProjectObjects = objects.filter(obj => 
-                  obj.projects.some((p: any) => p.status === "active" || p.status === "paused")
-                );
-                
-                if (activeProjectObjects.length > 0 && mainLocation?.coords) {
-                  const activeObjects = activeProjectObjects.map(obj => ({
-                    id: obj.id,
-                    objectId: obj.id,
-                    objectName: obj.commonName,
-                    signal: undefined,
-                  }));
-                  
-                  return (
-                    <div className="mb-6">
-                      <Card className="p-4">
-                        <MultiObjectVisibilityChart
-                          objects={activeObjects}
-                          coordinates={mainLocation.coords}
-                          date={new Date()}
-                          language={language}
-                          altitudeLimit={minAltitudeLimit}
-                          title={language === 'en' ? 'Night Visibility - Active Projects' : 'Visibilidad Nocturna - Proyectos Activos'}
-                        />
-                      </Card>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
                 </>
               )}
 
