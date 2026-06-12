@@ -315,6 +315,26 @@ export const translations = {
     exitConfirmDescription: "Puedes descargar tu archivo JSON para guardar todos los cambios.",
     exitDownload: "Descargar",
     exitClose: "Cerrar sin descargar",
+
+    // Settings page extras
+    generalSettings: "Configuración General",
+    signOut: "Cerrar sesión",
+    remove: "Eliminar",
+    minAltitudeLimit: "Límite mínimo de altitud",
+    minAltitudeDescription: "Objetos bajo esta altitud pueden tener mala visibilidad. Pon 0 para desactivar.",
+    focalLengthPlaceholder: "Distancia focal (mm)",
+    cameraPlaceholderExample: "Ej: ZWO ASI294MC Pro",
+    telescopePlaceholderExample: "Ej: Sky-Watcher 80ED",
+    guideTelescopePlaceholderExample: "Ej: Sky-Watcher 50mm",
+    guideCameraPlaceholderExample: "Ej: ZWO ASI120MM Mini",
+    mountPlaceholderExample: "Ej: Sky-Watcher EQ6-R Pro",
+    mainLocationNamePlaceholder: "Ej: Observatorio de Sierra Nevada",
+    otherLocationNamePlaceholder: "Ej: Observatorio Los Molinos",
+    coordsPlaceholder: "Coordenadas Google (Ej: 37.0644, -3.1706)",
+    dateFormatDay: "Día/Mes/Año",
+    dateFormatMonth: "Mes/Día/Año",
+    dateFormatYear: "Año/Mes/Día",
+    nightVisibilityActiveProjects: "Visibilidad Nocturna - Proyectos Activos",
   },
   en: {
     // General
@@ -630,6 +650,26 @@ export const translations = {
     exitConfirmDescription: "You can download your JSON file to save all changes.",
     exitDownload: "Download",
     exitClose: "Close without downloading",
+
+    // Settings page extras
+    generalSettings: "General Settings",
+    signOut: "Sign out",
+    remove: "Remove",
+    minAltitudeLimit: "Minimum Altitude Limit",
+    minAltitudeDescription: "Objects below this altitude may have poor visibility. Set to 0 to disable.",
+    focalLengthPlaceholder: "Focal length (mm)",
+    cameraPlaceholderExample: "E.g.: ZWO ASI294MC Pro",
+    telescopePlaceholderExample: "E.g.: Sky-Watcher 80ED",
+    guideTelescopePlaceholderExample: "E.g.: Sky-Watcher 50mm",
+    guideCameraPlaceholderExample: "E.g.: ZWO ASI120MM Mini",
+    mountPlaceholderExample: "E.g.: Sky-Watcher EQ6-R Pro",
+    mainLocationNamePlaceholder: "E.g.: Sierra Nevada Observatory",
+    otherLocationNamePlaceholder: "E.g.: Los Molinos Observatory",
+    coordsPlaceholder: "Google coordinates (E.g.: 37.0644, -3.1706)",
+    dateFormatDay: "Day/Month/Year",
+    dateFormatMonth: "Month/Day/Year",
+    dateFormatYear: "Year/Month/Day",
+    nightVisibilityActiveProjects: "Night Visibility - Active Projects",
   }
 } as const;
 
