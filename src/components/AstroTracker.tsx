@@ -7133,6 +7133,9 @@ export default function AstroTracker() {
         <main className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-6">
           {view === "objects" && (
             <div className="grid gap-4" key="view-objects">
+              {/* ===== DASHBOARD SECTION ===== */}
+              {mainSection === "dashboard" && (
+                <>
               {/* Saludo personalizado con fase lunar */}
               {(() => {
                 const now = new Date();
@@ -7189,12 +7192,14 @@ export default function AstroTracker() {
                 );
               })()}
 
+              {/* Dashboard grid: ephemeris + visible + carousel */}
+              <div className="grid gap-4 lg:grid-cols-3 mb-6">
+                <div className="space-y-4 flex flex-col">
               {/* Next Ephemeris Card */}
               {nextEphemeris && (
-                <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
+                    className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden h-full"
                   >
                     <div className="flex items-start gap-4">
                       <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
@@ -7220,7 +7225,6 @@ export default function AstroTracker() {
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
               )}
 
@@ -7248,7 +7252,7 @@ export default function AstroTracker() {
                 
                 if (visibleNow.length === 0) {
                   return (
-                    <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
                       <p className="text-sm text-muted-foreground break-words">
                         {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
                       </p>
@@ -7257,19 +7261,21 @@ export default function AstroTracker() {
                 }
                 
                 return (
-                  <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
                     <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
                       🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
                     </p>
                   </div>
                 );
               })()}
+                </div>
 
               {/* Image Carousel - Before Navigation Buttons */}
               {dashboardCarouselImages.length > 0 && (
-                <div className="mb-6">
+                <div className="lg:col-span-2">
                   <ImageCarousel
                     images={dashboardCarouselImages}
+                    square
                     onImageClick={(objectId, projectId) => {
                       setSelectedObjectId(objectId);
                       setSelectedProjectId(projectId);
@@ -7279,6 +7285,7 @@ export default function AstroTracker() {
                   />
                 </div>
               )}
+              </div>
 
               {/* Active Projects Visibility Chart - After Carousel, Before Navigation */}
               {(() => {
@@ -7312,6 +7319,8 @@ export default function AstroTracker() {
                 }
                 return null;
               })()}
+                </>
+              )}
 
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
               <div className="hidden">
