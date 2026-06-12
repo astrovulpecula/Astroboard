@@ -10812,10 +10812,10 @@ export default function AstroTracker() {
 
               <div className="flex items-center gap-2 mb-4">
                 <Btn onClick={() => setMSes(true)}>
-                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSession')}
                 </Btn>
                 <Btn outline onClick={() => setMSesAuto(true)}>
-                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión (Automatizada)
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSessionAuto')}
                 </Btn>
               </div>
 
@@ -10825,22 +10825,22 @@ export default function AstroTracker() {
                     <thead>
                       <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
                         <th className="p-2 md:p-3 whitespace-nowrap">#</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Fecha</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Fase lunar</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Filtro</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Cámara</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Exposición (s)</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Lights sesión</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Lights acumulados</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo sesión</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo acumulado</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR (X̄)</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-R</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colDate')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colMoonPhase')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colFilter')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colCamera')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 z-10">
-                          Acciones
+                          {t('colActions')}
                         </th>
                       </tr>
                     </thead>
@@ -10894,7 +10894,7 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title={s.fitsAnalysis || s.phd2Analysis ? "Detalles y análisis" : "Comentarios"}
+                                      title={s.fitsAnalysis || s.phd2Analysis ? t('detailsAndAnalysis') : t('commentsLabel')}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                                       {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis ? (
@@ -10904,16 +10904,16 @@ export default function AstroTracker() {
                                   </DialogTrigger>
                                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
-                                      <DialogTitle>Detalles de sesión</DialogTitle>
+                                      <DialogTitle>{t('sessionDetailsTitle')}</DialogTitle>
                                       <DialogDescription>
-                                        Fecha: {formatDateDisplay(s.date, dateFormat)} - Filtro: {s.filter}
+                                        {t('sessionDetailsDateLabel')}: {formatDateDisplay(s.date, dateFormat)} - {t('colFilter')}: {s.filter}
                                       </DialogDescription>
                                     </DialogHeader>
                                     
                                     {/* Notes section */}
                                     {s.notes && s.notes.trim() !== "" && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-2">Comentarios</h4>
+                                        <h4 className="text-sm font-medium mb-2">{t('commentsLabel')}</h4>
                                         <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
                                           {s.notes}
                                         </div>
@@ -10923,7 +10923,7 @@ export default function AstroTracker() {
                                     {/* FITS Analysis Charts */}
                                     {s.fitsAnalysis && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-3">Análisis FITS</h4>
+                                        <h4 className="text-sm font-medium mb-3">{t('fitsAnalysisHeading')}</h4>
                                         
                                         {/* Averages summary */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
@@ -10935,13 +10935,13 @@ export default function AstroTracker() {
                                           )}
                                           {s.fitsAnalysis.averages.ambientTemp !== undefined && (
                                             <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                              <div className="text-xs text-slate-500">Temp. Ambiente</div>
+                                              <div className="text-xs text-slate-500">{t('ambientTempShort')}</div>
                                               <div className="font-semibold">{s.fitsAnalysis.averages.ambientTemp.toFixed(1)}°C</div>
                                             </div>
                                           )}
                                           {s.fitsAnalysis.averages.humidity !== undefined && (
                                             <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                              <div className="text-xs text-slate-500">Humedad</div>
+                                              <div className="text-xs text-slate-500">{t('humidityShort')}</div>
                                               <div className="font-semibold">{s.fitsAnalysis.averages.humidity.toFixed(1)}%</div>
                                             </div>
                                           )}
@@ -10955,24 +10955,24 @@ export default function AstroTracker() {
                                     {/* PHD2 Analysis Charts */}
                                     {s.phd2Analysis && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-3">Análisis PHD2 GuideLog</h4>
+                                        <h4 className="text-sm font-medium mb-3">{t('phd2AnalysisHeading')}</h4>
                                         
                                         {/* PHD2 Summary */}
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Mediana (P50)</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMedianLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.medianRms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS P68 (≈1σ)</div>
+                                            <div className="text-xs text-slate-500">{t('rmsP68Label')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.p68Rms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Mín</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMinLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.minRms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Máx</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMaxLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.maxRms.toFixed(2)}"</div>
                                           </div>
                                         </div>
@@ -10985,15 +10985,15 @@ export default function AstroTracker() {
                                     {/* Empty state if no notes and no FITS and no PHD2 */}
                                     {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && (
                                       <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
-                                        Sin comentarios ni análisis
+                                        {t('noNotesOrAnalysis')}
                                       </div>
                                     )}
                                   </DialogContent>
                                 </Dialog>
-                                <IconBtn title="Editar" onClick={() => setEditSes(s)}>
+                                <IconBtn title={t('iconEdit')} onClick={() => setEditSes(s)}>
                                   <Pencil className="w-3 h-3 md:w-4 md:h-4" />
                                 </IconBtn>
-                                <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}>
+                                <IconBtn title={t('iconDelete')} onClick={() => deleteSession(s.id)}>
                                   <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                                 </IconBtn>
                               </div>
