@@ -2623,6 +2623,7 @@ function FSession({
   telescopes?: { name: string; focalLength: string }[];
 }) {
   const init = initial || {};
+  const { t } = useLanguage();
 
   // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
@@ -2688,11 +2689,11 @@ function FSession({
     >
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Fecha</Label>
+          <Label>{t('sessionFormDate')}</Label>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>Filtro</Label>
+          <Label>{t('sessionFormFilter')}</Label>
           <div className="grid gap-2">
             {/* Botones de filtros predeterminados */}
             <div className="flex flex-wrap gap-2">
@@ -2729,7 +2730,7 @@ function FSession({
               }}
               className={INPUT_CLS}
             >
-              <option value="">Seleccionar otro filtro...</option>
+              <option value="">{t('sessionFormSelectOtherFilter')}</option>
               {availableFilters
                 .filter((f) => !predefinedFilters.includes(f))
                 .map((f) => (
@@ -2737,7 +2738,7 @@ function FSession({
                     {f}
                   </option>
                 ))}
-              <option value="custom">+ Añadir filtro personalizado</option>
+              <option value="custom">{t('sessionFormAddCustomFilter')}</option>
             </select>
 
             {/* Input para filtro personalizado */}
@@ -2749,14 +2750,14 @@ function FSession({
                   setFilter(e.target.value);
                 }}
                 className={INPUT_CLS}
-                placeholder="Nombre del nuevo filtro..."
+                placeholder={t('sessionFormNewFilterPlaceholder')}
                 autoFocus
               />
             )}
           </div>
         </label>
         <label className="grid gap-1">
-          <Label>Lights</Label>
+          <Label>{t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -2766,7 +2767,7 @@ function FSession({
           />
         </label>
         <label className="grid gap-1">
-          <Label>Exposición por light (s)</Label>
+          <Label>{t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -2779,9 +2780,9 @@ function FSession({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Cámara</Label>
+          <Label>{t('sessionFormCamera')}</Label>
           <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-            <option value="">Seleccionar cámara</option>
+            <option value="">{t('sessionFormSelectCamera')}</option>
             {cameras
               .filter((c) => c.trim() !== "")
               .map((c) => (
@@ -2793,7 +2794,7 @@ function FSession({
         </label>
 
         <label className="grid gap-1">
-          <Label>Telescopio</Label>
+          <Label>{t('sessionFormTelescope')}</Label>
           <select
             value={telescope}
             onChange={(e) => {
@@ -2802,7 +2803,7 @@ function FSession({
             }}
             className={INPUT_CLS}
           >
-            <option value="">Seleccionar telescopio...</option>
+            <option value="">{t('sessionFormSelectTelescope')}</option>
             {telescopes
               ?.filter((t) => t.name.trim())
               .map((t) => (
@@ -2810,7 +2811,7 @@ function FSession({
                   {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
                 </option>
               ))}
-            <option value="Otro">+ Añadir nuevo telescopio</option>
+            <option value="Otro">{t('sessionFormAddNewTelescope')}</option>
           </select>
           {showCustomTelescope && (
             <input
@@ -2820,7 +2821,7 @@ function FSession({
                 setTelescope(e.target.value);
               }}
               className={`${INPUT_CLS} mt-2`}
-              placeholder="Nombre del nuevo telescopio..."
+              placeholder={t('sessionFormNewTelescopePlaceholder')}
             />
           )}
         </label>
@@ -2830,49 +2831,49 @@ function FSession({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm">
             <Moon className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-            <span className="text-slate-600 dark:text-slate-400">Fase lunar:</span>
+            <span className="text-slate-600 dark:text-slate-400">{t('sessionFormMoonPhaseLabel')}</span>
             <span className="font-medium text-slate-900 dark:text-slate-100">
-              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% {t('sessionFormIllumination')})
             </span>
           </div>
         </div>
       )}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
-          <Label>SNR - R</Label>
+          <Label>{t('sessionFormSnrR')}</Label>
           <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - G</Label>
+          <Label>{t('sessionFormSnrG')}</Label>
           <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - B</Label>
+          <Label>{t('sessionFormSnrB')}</Label>
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} />
         </label>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Lights aceptados</Label>
+          <Label>{t('sessionFormLightsAccepted')}</Label>
           <input
             type="number"
             value={acceptedLights}
             min={0}
             onChange={(e) => setAcceptedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
         <label className="grid gap-1">
-          <Label>Lights rechazados</Label>
+          <Label>{t('sessionFormLightsRejected')}</Label>
           <input
             type="number"
             value={rejectedLights}
             min={0}
             onChange={(e) => setRejectedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
       </div>
@@ -2884,15 +2885,15 @@ function FSession({
       <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
 
       <label className="grid gap-1">
-        <Label>Notas</Label>
+        <Label>{t('sessionFormNotes')}</Label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} />
       </label>
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
         <div className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-          Tiempo total: <b>{hh(lights * exposureSec)}</b>
+          {t('sessionFormTotalTime')}: <b>{hh(lights * exposureSec)}</b>
         </div>
         <Btn type="submit">
-          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('sessionFormSave')}
         </Btn>
       </div>
     </form>
@@ -2913,6 +2914,7 @@ function FSessionAutomated({
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
 }) {
+  const { t } = useLanguage();
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
@@ -3066,9 +3068,9 @@ function FSessionAutomated({
       {fitsAnalysis?.extractedInfo && (
         <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
           <p className="text-sm text-green-700 dark:text-green-300">
-            ✓ Datos extraídos automáticamente: {fitsAnalysis.extractedInfo.totalLights} lights
-            {fitsAnalysis.extractedInfo.exposure && `, ${fitsAnalysis.extractedInfo.exposure}s exposición`}
-            {fitsAnalysis.extractedInfo.filters.length > 0 && `, filtro: ${fitsAnalysis.extractedInfo.filters.join(", ")}`}
+            ✓ {t('sessionFormAutoExtracted')}: {fitsAnalysis.extractedInfo.totalLights} lights
+            {fitsAnalysis.extractedInfo.exposure && `, ${fitsAnalysis.extractedInfo.exposure}${t('sessionFormExposureSuffix')}`}
+            {fitsAnalysis.extractedInfo.filters.length > 0 && `, ${t('sessionFormFilterSuffix')}: ${fitsAnalysis.extractedInfo.filters.join(", ")}`}
           </p>
         </div>
       )}
@@ -3076,7 +3078,7 @@ function FSessionAutomated({
       <div className="grid sm:grid-cols-2 gap-3">
         {/* Date selector with FITS dates */}
         <label className="grid gap-1">
-          <Label>Fecha</Label>
+          <Label>{t('sessionFormDate')}</Label>
           {availableDates.length > 1 ? (
             <div className="space-y-2">
               <select
@@ -3089,7 +3091,7 @@ function FSessionAutomated({
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Sesión nocturna: selecciona la fecha que prefieras
+                {t('sessionFormNightDatePick')}
               </p>
             </div>
           ) : (
@@ -3104,11 +3106,11 @@ function FSessionAutomated({
 
         {/* Filter selector with FITS option */}
         <label className="grid gap-1">
-          <Label>Filtro</Label>
+          <Label>{t('sessionFormFilter')}</Label>
           <div className="grid gap-2">
             {fitsFilter && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Filtro del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsFilter')}</span>
                 <span className="text-sm font-medium">{fitsFilter}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs">
                   <input
@@ -3117,7 +3119,7 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppFilter(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
@@ -3149,7 +3151,7 @@ function FSessionAutomated({
                   }}
                   className={INPUT_CLS}
                 >
-                  <option value="">Seleccionar otro filtro...</option>
+                  <option value="">{t('sessionFormSelectOtherFilter')}</option>
                   {availableFilters
                     .filter((f) => !predefinedFilters.includes(f))
                     .map((f) => (
@@ -3162,7 +3164,7 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>Lights</Label>
+          <Label>{t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -3172,7 +3174,7 @@ function FSessionAutomated({
           />
         </label>
         <label className="grid gap-1">
-          <Label>Exposición por light (s)</Label>
+          <Label>{t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -3185,11 +3187,11 @@ function FSessionAutomated({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Cámara</Label>
+          <Label>{t('sessionFormCamera')}</Label>
           <div className="grid gap-2">
             {fitsCamera && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Cámara del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsCamera')}</span>
                 <span className="text-sm font-medium truncate">{fitsCamera}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
                   <input
@@ -3198,13 +3200,13 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppCamera(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
             {useAppCamera && (
               <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-                <option value="">Seleccionar cámara</option>
+                <option value="">{t('sessionFormSelectCamera')}</option>
                 {cameras
                   .filter((c) => c.trim() !== "")
                   .map((c) => (
@@ -3216,11 +3218,11 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>Telescopio</Label>
+          <Label>{t('sessionFormTelescope')}</Label>
           <div className="grid gap-2">
             {fitsTelescope && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Telescopio del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsTelescope')}</span>
                 <span className="text-sm font-medium truncate">{fitsTelescope}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
                   <input
@@ -3229,7 +3231,7 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppTelescope(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
@@ -3243,7 +3245,7 @@ function FSessionAutomated({
                   }}
                   className={INPUT_CLS}
                 >
-                  <option value="">Seleccionar telescopio...</option>
+                  <option value="">{t('sessionFormSelectTelescope')}</option>
                   {telescopes
                     ?.filter((t) => t.name.trim())
                     .map((t) => (
@@ -3251,7 +3253,7 @@ function FSessionAutomated({
                         {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
                       </option>
                     ))}
-                  <option value="Otro">+ Añadir nuevo telescopio</option>
+                  <option value="Otro">{t('sessionFormAddNewTelescope')}</option>
                 </select>
                 {showCustomTelescope && (
                   <input
@@ -3261,7 +3263,7 @@ function FSessionAutomated({
                       setTelescope(e.target.value);
                     }}
                     className={`${INPUT_CLS} mt-2`}
-                    placeholder="Nombre del nuevo telescopio..."
+                    placeholder={t('sessionFormNewTelescopePlaceholder')}
                   />
                 )}
               </>
@@ -3274,9 +3276,9 @@ function FSessionAutomated({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm">
             <Moon className="w-4 h-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Fase lunar:</span>
+            <span className="text-muted-foreground">{t('sessionFormMoonPhaseLabel')}</span>
             <span className="font-medium">
-              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% {t('sessionFormIllumination')})
             </span>
           </div>
         </div>
@@ -3285,41 +3287,41 @@ function FSessionAutomated({
       {/* SNR fields - left blank for manual entry */}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
-          <Label>SNR - R</Label>
-          <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrR')}</Label>
+          <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - G</Label>
-          <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrG')}</Label>
+          <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - B</Label>
-          <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrB')}</Label>
+          <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
       </div>
 
       {/* Accepted/Rejected lights - left blank */}
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Lights aceptados</Label>
+          <Label>{t('sessionFormLightsAccepted')}</Label>
           <input
             type="number"
             value={acceptedLights}
             min={0}
             onChange={(e) => setAcceptedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
         <label className="grid gap-1">
-          <Label>Lights rechazados</Label>
+          <Label>{t('sessionFormLightsRejected')}</Label>
           <input
             type="number"
             value={rejectedLights}
             min={0}
             onChange={(e) => setRejectedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
       </div>
@@ -3329,13 +3331,13 @@ function FSessionAutomated({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
             <Thermometer className="w-4 h-4" />
-            <span>Datos ambientales manuales</span>
-            <span className="text-xs font-normal">(opcional, si FITS no los tiene)</span>
+            <span>{t('sessionFormManualEnvTitle')}</span>
+            <span className="text-xs font-normal">{t('sessionFormManualEnvHint')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {!fitsAnalysis?.averages?.mpsas && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">MPSAS</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormMpsas')}</span>
                 <input
                   type="number"
                   step="0.01"
@@ -3348,7 +3350,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.ambientTemp && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Temp. °C</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormTempC')}</span>
                 <input
                   type="number"
                   step="0.1"
@@ -3361,7 +3363,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.humidity && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Humedad %</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormHumidityPct')}</span>
                 <input
                   type="number"
                   step="1"
@@ -3376,7 +3378,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.wind && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Viento m/s</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormWindMs')}</span>
                 <input
                   type="number"
                   step="0.1"
@@ -3394,16 +3396,16 @@ function FSessionAutomated({
 
       {/* Notes - left blank */}
       <label className="grid gap-1">
-        <Label>Notas</Label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} placeholder="Opcional..." />
+        <Label>{t('sessionFormNotes')}</Label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} placeholder={t('sessionFormNotesOptional')} />
       </label>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
         <div className="text-xs sm:text-sm text-muted-foreground">
-          Tiempo total: <b>{hh(lights * exposureSec)}</b>
+          {t('sessionFormTotalTime')}: <b>{hh(lights * exposureSec)}</b>
         </div>
         <Btn type="submit">
-          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('sessionFormSave')}
         </Btn>
       </div>
     </form>
@@ -10810,10 +10812,10 @@ export default function AstroTracker() {
 
               <div className="flex items-center gap-2 mb-4">
                 <Btn onClick={() => setMSes(true)}>
-                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSession')}
                 </Btn>
                 <Btn outline onClick={() => setMSesAuto(true)}>
-                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión (Automatizada)
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSessionAuto')}
                 </Btn>
               </div>
 
@@ -10823,22 +10825,22 @@ export default function AstroTracker() {
                     <thead>
                       <tr className="text-left border-b bg-slate-50/50 dark:bg-slate-900/40">
                         <th className="p-2 md:p-3 whitespace-nowrap">#</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Fecha</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Fase lunar</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Filtro</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Cámara</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Exposición (s)</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Lights sesión</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Lights acumulados</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo sesión</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Tiempo acumulado</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR (X̄)</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-R</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-G</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">SNR-B</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">Incremento</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colDate')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colMoonPhase')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colFilter')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colCamera')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
+                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 z-10">
-                          Acciones
+                          {t('colActions')}
                         </th>
                       </tr>
                     </thead>
@@ -10892,7 +10894,7 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title={s.fitsAnalysis || s.phd2Analysis ? "Detalles y análisis" : "Comentarios"}
+                                      title={s.fitsAnalysis || s.phd2Analysis ? t('detailsAndAnalysis') : t('commentsLabel')}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
                                       {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis ? (
@@ -10902,16 +10904,16 @@ export default function AstroTracker() {
                                   </DialogTrigger>
                                   <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                                     <DialogHeader>
-                                      <DialogTitle>Detalles de sesión</DialogTitle>
+                                      <DialogTitle>{t('sessionDetailsTitle')}</DialogTitle>
                                       <DialogDescription>
-                                        Fecha: {formatDateDisplay(s.date, dateFormat)} - Filtro: {s.filter}
+                                        {t('sessionDetailsDateLabel')}: {formatDateDisplay(s.date, dateFormat)} - {t('colFilter')}: {s.filter}
                                       </DialogDescription>
                                     </DialogHeader>
                                     
                                     {/* Notes section */}
                                     {s.notes && s.notes.trim() !== "" && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-2">Comentarios</h4>
+                                        <h4 className="text-sm font-medium mb-2">{t('commentsLabel')}</h4>
                                         <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
                                           {s.notes}
                                         </div>
@@ -10921,7 +10923,7 @@ export default function AstroTracker() {
                                     {/* FITS Analysis Charts */}
                                     {s.fitsAnalysis && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-3">Análisis FITS</h4>
+                                        <h4 className="text-sm font-medium mb-3">{t('fitsAnalysisHeading')}</h4>
                                         
                                         {/* Averages summary */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
@@ -10933,13 +10935,13 @@ export default function AstroTracker() {
                                           )}
                                           {s.fitsAnalysis.averages.ambientTemp !== undefined && (
                                             <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                              <div className="text-xs text-slate-500">Temp. Ambiente</div>
+                                              <div className="text-xs text-slate-500">{t('ambientTempShort')}</div>
                                               <div className="font-semibold">{s.fitsAnalysis.averages.ambientTemp.toFixed(1)}°C</div>
                                             </div>
                                           )}
                                           {s.fitsAnalysis.averages.humidity !== undefined && (
                                             <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                              <div className="text-xs text-slate-500">Humedad</div>
+                                              <div className="text-xs text-slate-500">{t('humidityShort')}</div>
                                               <div className="font-semibold">{s.fitsAnalysis.averages.humidity.toFixed(1)}%</div>
                                             </div>
                                           )}
@@ -10953,24 +10955,24 @@ export default function AstroTracker() {
                                     {/* PHD2 Analysis Charts */}
                                     {s.phd2Analysis && (
                                       <div className="mt-4">
-                                        <h4 className="text-sm font-medium mb-3">Análisis PHD2 GuideLog</h4>
+                                        <h4 className="text-sm font-medium mb-3">{t('phd2AnalysisHeading')}</h4>
                                         
                                         {/* PHD2 Summary */}
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Mediana (P50)</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMedianLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.medianRms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS P68 (≈1σ)</div>
+                                            <div className="text-xs text-slate-500">{t('rmsP68Label')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.p68Rms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Mín</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMinLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.minRms.toFixed(2)}"</div>
                                           </div>
                                           <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 text-center">
-                                            <div className="text-xs text-slate-500">RMS Máx</div>
+                                            <div className="text-xs text-slate-500">{t('rmsMaxLabel')}</div>
                                             <div className="font-semibold">{s.phd2Analysis.maxRms.toFixed(2)}"</div>
                                           </div>
                                         </div>
@@ -10983,15 +10985,15 @@ export default function AstroTracker() {
                                     {/* Empty state if no notes and no FITS and no PHD2 */}
                                     {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && (
                                       <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
-                                        Sin comentarios ni análisis
+                                        {t('noNotesOrAnalysis')}
                                       </div>
                                     )}
                                   </DialogContent>
                                 </Dialog>
-                                <IconBtn title="Editar" onClick={() => setEditSes(s)}>
+                                <IconBtn title={t('iconEdit')} onClick={() => setEditSes(s)}>
                                   <Pencil className="w-3 h-3 md:w-4 md:h-4" />
                                 </IconBtn>
-                                <IconBtn title="Eliminar" onClick={() => deleteSession(s.id)}>
+                                <IconBtn title={t('iconDelete')} onClick={() => deleteSession(s.id)}>
                                   <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                                 </IconBtn>
                               </div>
@@ -11026,10 +11028,10 @@ export default function AstroTracker() {
               {/* Header */}
               <div>
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  Proyectos ONP y SNP
+                  {t('onpSnpProjectsTitle')}
                 </h1>
                 <p className="text-slate-600 dark:text-slate-400">
-                  Todos tus proyectos organizados por tipo: One-Night Projects (ONP) y Several-Nights Projects (SNP)
+                  {t('onpSnpDescription')}
                 </p>
               </div>
 
@@ -11080,7 +11082,7 @@ export default function AstroTracker() {
                             <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">One-Night Projects (ONP)</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('onpFull')}</div>
                             <div className="text-2xl font-bold">{onpProjects.length}</div>
                           </div>
                         </div>
@@ -11092,7 +11094,7 @@ export default function AstroTracker() {
                             <Telescope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Several-Nights Projects (SNP)</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('snpFull')}</div>
                             <div className="text-2xl font-bold">{snpProjects.length}</div>
                           </div>
                         </div>
@@ -11104,7 +11106,7 @@ export default function AstroTracker() {
                       <div>
                         <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
                           <Telescope className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-                          One-Night Projects (ONP)
+                          {t('onpFull')}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {onpProjects.map((proj) => (
@@ -11122,11 +11124,11 @@ export default function AstroTracker() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                                <Badge>{proj.status === "active" ? t('statusActive') : proj.status === "completed" ? t('statusCompleted') : t('statusPaused')}</Badge>
                               </div>
                               <div className="mt-3 flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">
-                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? t('sessionWord') : t('sessionsWord')}
                                 </span>
                                 <span className="font-medium">
                                   {formatHoursToHHMM(proj.totalHours)} h
@@ -11143,7 +11145,7 @@ export default function AstroTracker() {
                       <div>
                         <h2 className="text-xl md:text-2xl font-bold mb-3 flex items-center gap-2">
                           <Telescope className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                          Several-Nights Projects (SNP)
+                          {t('snpFull')}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {snpProjects.map((proj) => (
@@ -11161,11 +11163,11 @@ export default function AstroTracker() {
                                 <p className="text-sm text-slate-600 dark:text-slate-400">{proj.objectName}</p>
                               </div>
                               <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                                <Badge>{proj.status === "active" ? "Activo" : proj.status === "completed" ? "Completado" : "Pausado"}</Badge>
+                                <Badge>{proj.status === "active" ? t('statusActive') : proj.status === "completed" ? t('statusCompleted') : t('statusPaused')}</Badge>
                               </div>
                               <div className="mt-3 flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">
-                                  {proj.totalSessions} {proj.totalSessions === 1 ? "sesión" : "sesiones"}
+                                  {proj.totalSessions} {proj.totalSessions === 1 ? t('sessionWord') : t('sessionsWord')}
                                 </span>
                                 <span className="font-medium">
                                   {formatHoursToHHMM(proj.totalHours)} h
@@ -11181,7 +11183,7 @@ export default function AstroTracker() {
                       <Card className="p-8 text-center">
                         <Telescope className="w-12 h-12 mx-auto mb-3 text-slate-400" />
                         <p className="text-slate-600 dark:text-slate-400">
-                          No hay proyectos aún
+                          {t('noProjectsYet')}
                         </p>
                       </Card>
                     )}
@@ -11700,7 +11702,7 @@ export default function AstroTracker() {
             );
           })()}
         </Modal>
-        <Modal open={mSes} onClose={() => setMSes(false)} title="Nueva sesión" wide>
+        <Modal open={mSes} onClose={() => setMSes(false)} title={t('newSessionTitle')} wide>
           <FSession
             onSubmit={addSes}
             availableFilters={availableFilters}
@@ -11709,7 +11711,7 @@ export default function AstroTracker() {
             projectEquipment={(proj as any)?.equipment}
           />
         </Modal>
-        <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title="Nueva sesión (Automatizada)" wide>
+        <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title={t('newSessionAutoTitle')} wide>
           <FSessionAutomated
             onSubmit={addSes}
             availableFilters={availableFilters}
@@ -11718,7 +11720,7 @@ export default function AstroTracker() {
             projectEquipment={(proj as any)?.equipment}
           />
         </Modal>
-        <Modal open={!!editSes} onClose={() => setEditSes(null)} title="Editar sesión" wide>
+        <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
           {editSes && (
             <FSession
               initial={editSes}
@@ -11733,7 +11735,7 @@ export default function AstroTracker() {
             />
           )}
         </Modal>
-        <Modal open={show} onClose={() => setShow(false)} title="Nueva pestaña">
+        <Modal open={show} onClose={() => setShow(false)} title={t('newTabTitle')}>
           <form
             className="grid gap-3"
             onSubmit={(e) => {
@@ -11742,29 +11744,29 @@ export default function AstroTracker() {
             }}
           >
             <label className="grid gap-1">
-              <Label>Nombre</Label>
+              <Label>{t('newTabName')}</Label>
               <input
                 value={tabName}
                 onChange={(e) => setTabName(e.target.value)}
                 className={INPUT_CLS}
-                placeholder="Luminancia, SHO..."
+                placeholder={t('newTabPlaceholder')}
               />
             </label>
             <div className="flex items-center justify-between mt-2">
               <div />
               <div className="flex items-center gap-2">
                 <Btn outline onClick={() => setShow(false)}>
-                  Cancelar
+                  {t('cancel')}
                 </Btn>
                 <Btn type="submit">
-                  <Plus className="w-4 h-4" /> Crear
+                  <Plus className="w-4 h-4" /> {t('create')}
                 </Btn>
               </div>
             </div>
           </form>
         </Modal>
 
-        <Modal open={showEditPanels} onClose={() => setShowEditPanels(false)} title="Editar cantidad de paneles">
+        <Modal open={showEditPanels} onClose={() => setShowEditPanels(false)} title={t('editPanelsTitle')}>
           <form
             className="grid gap-4"
             onSubmit={(e) => {
@@ -11773,7 +11775,7 @@ export default function AstroTracker() {
             }}
           >
             <label className="grid gap-1">
-              <Label>Número de Paneles/Teselas</Label>
+              <Label>{t('panelsCountLabel')}</Label>
               <input
                 type="number"
                 min={1}
@@ -11786,15 +11788,15 @@ export default function AstroTracker() {
             <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
               <p className="text-sm text-yellow-800 dark:text-yellow-200">
                 {editNumPanels < Object.keys((proj as any)?.panels || {}).length
-                  ? "⚠️ Al reducir el número de paneles, se eliminarán las sesiones de los paneles eliminados."
-                  : "ℹ️ Los nuevos paneles se crearán vacíos sin sesiones."}
+                  ? t('panelsReduceWarning')
+                  : t('panelsIncreaseInfo')}
               </p>
             </div>
             <div className="flex items-center justify-end gap-2 mt-2">
               <Btn outline onClick={() => setShowEditPanels(false)}>
-                Cancelar
+                {t('cancel')}
               </Btn>
-              <Btn type="submit">Actualizar</Btn>
+              <Btn type="submit">{t('update')}</Btn>
             </div>
           </form>
         </Modal>
