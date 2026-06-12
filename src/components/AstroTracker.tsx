@@ -81,6 +81,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Check } from "lucide-react";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
+import { AppSidebar } from "@/components/AppSidebar";
 import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase } from "@/lib/lunar-phase";
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
 import { getObjectCoordinatesAsync } from "@/lib/celestial-coordinates";
@@ -6837,8 +6838,20 @@ export default function AstroTracker() {
         }
       `}</style>
       <div
-        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
+        className={`min-h-screen overflow-x-hidden md:pl-60 ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
       >
+        <AppSidebar
+          mainSection={mainSection}
+          setMainSection={setMainSection}
+          theme={theme}
+          labels={{
+            forecast: t('forecast'),
+            planning: t('planning'),
+            objects: t('objectsSection'),
+            metrics: t('statisticsSection'),
+            gallery: t('gallery'),
+          }}
+        />
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
@@ -7296,7 +7309,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
-              <div className="hidden md:grid md:grid-cols-5 gap-2 mb-6">
+              <div className="hidden">
                 <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
