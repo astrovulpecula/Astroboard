@@ -653,6 +653,7 @@ const WeatherCard = ({
   getWeatherIcon: (code: number) => string;
   getWeatherDescription: (code: number) => string;
 }) => {
+  const { t, language } = useLanguage();
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
@@ -738,7 +739,7 @@ const WeatherCard = ({
       <Card className="p-6">
         <div className="text-center text-muted-foreground">
           <CloudSun className="w-8 h-8 mx-auto mb-2" />
-          <p>No se pudo cargar el pronóstico</p>
+          <p>{t('couldNotLoadForecast')}</p>
         </div>
       </Card>
     );
@@ -758,7 +759,7 @@ const WeatherCard = ({
           <div className="mb-4 p-4 rounded-xl bg-muted/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Ahora</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('now')}</p>
                 <p className="text-3xl font-bold">
                   {Math.round(weather.current_weather.temperature)}°C
                 </p>
@@ -771,7 +772,7 @@ const WeatherCard = ({
               </div>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Viento: {Math.round(weather.current_weather.windspeed)} km/h
+              {t('wind')}: {Math.round(weather.current_weather.windspeed)} km/h
             </div>
           </div>
 
@@ -783,7 +784,7 @@ const WeatherCard = ({
                 viewMode === 'hourly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Hoy por horas
+              {t('todayByHours')}
             </button>
             <button
               onClick={() => setViewMode('daily')}
@@ -791,7 +792,7 @@ const WeatherCard = ({
                 viewMode === 'daily' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Por días
+              {t('byDays')}
             </button>
           </div>
 
@@ -799,13 +800,13 @@ const WeatherCard = ({
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-[11px] text-muted-foreground">
-                  Empieza en la hora actual. Usa las flechas o desplázate para ver el resto del día.
+                  {t('forecastStartsCurrentHour')}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => scrollHourlyForecast('left')}
-                    aria-label="Ver horas anteriores"
+                    aria-label={t('prevHours')}
                     className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -813,7 +814,7 @@ const WeatherCard = ({
                   <button
                     type="button"
                     onClick={() => scrollHourlyForecast('right')}
-                    aria-label="Ver horas siguientes"
+                    aria-label={t('nextHours')}
                     className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -839,7 +840,7 @@ const WeatherCard = ({
                       }`}
                     >
                       <p className="text-[10px] font-medium mb-1">
-                        {isCurrent ? 'Ahora' : `${String(hour).padStart(2, '0')}:00`}
+                        {isCurrent ? t('now') : `${String(hour).padStart(2, '0')}:00`}
                       </p>
                       <div className="text-base mb-1">{getWeatherIcon(h.code)}</div>
                       <p className="text-xs font-semibold">{Math.round(h.temp)}°</p>
@@ -856,8 +857,9 @@ const WeatherCard = ({
             <div className="overflow-x-auto overflow-y-hidden pb-3 pt-1 scroll-smooth">
               <div className="flex w-max gap-2 px-1">
                 {weather.daily.time.map((date: string, i: number) => {
-                  const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date + "T00:00:00").toLocaleDateString('es-ES', { weekday: 'short' });
-                  const dayDate = new Date(date + "T00:00:00").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                  const locale = language === 'en' ? 'en-US' : 'es-ES';
+                  const dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : new Date(date + "T00:00:00").toLocaleDateString(locale, { weekday: 'short' });
+                  const dayDate = new Date(date + "T00:00:00").toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
                   const isToday = i === 0;
                   return (
                     <div
