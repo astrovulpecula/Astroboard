@@ -7137,7 +7137,7 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title="Configuración" onClick={() => setMainSection("configuracion")}>
+              <IconBtn title={t('settings')} onClick={() => setMainSection("configuracion")}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
@@ -7266,7 +7266,7 @@ export default function AstroTracker() {
                           date={new Date()}
                           language={language}
                           altitudeLimit={minAltitudeLimit}
-                          title={language === 'en' ? 'Night Visibility - Active Projects' : 'Visibilidad Nocturna - Proyectos Activos'}
+                          title={t('nightVisibilityActiveProjects')}
                         />
                       </Card>
                     );
@@ -11799,7 +11799,7 @@ export default function AstroTracker() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-6">
           <Card className="p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg md:text-xl font-semibold">Configuración General</h3>
+              <h3 className="text-lg md:text-xl font-semibold">{t('generalSettings')}</h3>
             </div>
           <div className="grid gap-6">
             {/* Idioma */}
@@ -11837,9 +11837,9 @@ export default function AstroTracker() {
             <div className="grid gap-3">
               <Label>{t('dateFormat')}</Label>
               <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} className={INPUT_CLS}>
-                <option value="DD/MM/YYYY">DD/MM/YYYY ({language === 'es' ? 'Día/Mes/Año' : 'Day/Month/Year'})</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY ({language === 'es' ? 'Mes/Día/Año' : 'Month/Day/Year'})</option>
-                <option value="YYYY/MM/DD">YYYY/MM/DD ({language === 'es' ? 'Año/Mes/Día' : 'Year/Month/Day'})</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY ({t('dateFormatDay')})</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY ({t('dateFormatMonth')})</option>
+                <option value="YYYY/MM/DD">YYYY/MM/DD ({t('dateFormatYear')})</option>
               </select>
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 {t('dateFormatDescription')}
@@ -12019,11 +12019,11 @@ export default function AstroTracker() {
                           );
                         }
                       }}
-                      placeholder="Ej: ZWO ASI294MC Pro"
+                      placeholder={t('cameraPlaceholderExample')}
                       className={INPUT_CLS + " flex-1"}
                     />
                     {cameras.length > 1 && (
-                      <IconBtn title="Eliminar" onClick={() => setCameras(cameras.filter((_, i) => i !== index))}>
+                      <IconBtn title={t('remove')} onClick={() => setCameras(cameras.filter((_, i) => i !== index))}>
                         <Trash2 className="w-4 h-4" />
                       </IconBtn>
                     )}
@@ -12073,12 +12073,12 @@ export default function AstroTracker() {
                             );
                           }
                         }}
-                        placeholder="Ej: Sky-Watcher 80ED"
+                        placeholder={t('telescopePlaceholderExample')}
                         className={INPUT_CLS + " flex-1"}
                       />
                       {telescopes.length > 1 && (
                         <IconBtn
-                          title="Eliminar"
+                          title={t('remove')}
                           onClick={() => setTelescopes(telescopes.filter((_, i) => i !== index))}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -12093,7 +12093,7 @@ export default function AstroTracker() {
                         newTelescopes[index] = { ...newTelescopes[index], focalLength: e.target.value };
                         setTelescopes(newTelescopes);
                       }}
-                      placeholder="Distancia focal (mm)"
+                      placeholder={t('focalLengthPlaceholder')}
                       className={INPUT_CLS + " w-48"}
                     />
                   </div>
@@ -12113,7 +12113,7 @@ export default function AstroTracker() {
                     onChange={(e) => {
                       setGuideTelescope({ ...guideTelescope, name: e.target.value });
                     }}
-                    placeholder="Ej: Sky-Watcher 50mm"
+                    placeholder={t('guideTelescopePlaceholderExample')}
                     className={INPUT_CLS}
                   />
                   <input
@@ -12122,7 +12122,7 @@ export default function AstroTracker() {
                     onChange={(e) => {
                       setGuideTelescope({ ...guideTelescope, focalLength: e.target.value });
                     }}
-                    placeholder="Distancia focal (mm)"
+                    placeholder={t('focalLengthPlaceholder')}
                     className={INPUT_CLS + " w-48"}
                   />
                 </div>
@@ -12135,7 +12135,7 @@ export default function AstroTracker() {
                   type="text"
                   value={guideCamera}
                   onChange={(e) => setGuideCamera(e.target.value)}
-                  placeholder="Ej: ZWO ASI120MM Mini"
+                  placeholder={t('guideCameraPlaceholderExample')}
                   className={INPUT_CLS}
                 />
               </div>
@@ -12147,21 +12147,15 @@ export default function AstroTracker() {
                   type="text"
                   value={mount}
                   onChange={(e) => setMount(e.target.value)}
-                  placeholder="Ej: Sky-Watcher EQ6-R Pro"
+                  placeholder={t('mountPlaceholderExample')}
                   className={INPUT_CLS}
                 />
               </div>
 
               {/* Límite mínimo de altitud */}
               <div className="grid gap-2">
-                <span className="text-sm font-medium">
-                  {language === 'en' ? 'Minimum Altitude Limit' : 'Límite mínimo de altitud'}
-                </span>
-                <p className="text-xs text-muted-foreground">
-                  {language === 'en' 
-                    ? 'Objects below this altitude may have poor visibility. Set to 0 to disable.' 
-                    : 'Objetos bajo esta altitud pueden tener mala visibilidad. Pon 0 para desactivar.'}
-                </p>
+                <span className="text-sm font-medium">{t('minAltitudeLimit')}</span>
+                <p className="text-xs text-muted-foreground">{t('minAltitudeDescription')}</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -12185,7 +12179,7 @@ export default function AstroTracker() {
                   onChange={(e) => {
                     setMainLocation({ ...mainLocation, name: e.target.value });
                   }}
-                  placeholder="Ej: Observatorio de Sierra Nevada"
+                  placeholder={t('mainLocationNamePlaceholder')}
                   className={INPUT_CLS}
                 />
                 <input
@@ -12194,7 +12188,7 @@ export default function AstroTracker() {
                   onChange={(e) => {
                     setMainLocation({ ...mainLocation, coords: e.target.value });
                   }}
-                  placeholder="Coordenadas Google (Ej: 37.0644, -3.1706)"
+                  placeholder={t('coordsPlaceholder')}
                   className={INPUT_CLS}
                 />
               </div>
@@ -12213,11 +12207,11 @@ export default function AstroTracker() {
                           newLocations[index] = { ...newLocations[index], name: e.target.value };
                           setLocations(newLocations);
                         }}
-                        placeholder="Ej: Observatorio Los Molinos"
+                        placeholder={t('otherLocationNamePlaceholder')}
                         className={INPUT_CLS + " flex-1"}
                       />
                       {locations.length > 1 && (
-                        <IconBtn title="Eliminar" onClick={() => setLocations(locations.filter((_, i) => i !== index))}>
+                        <IconBtn title={t('remove')} onClick={() => setLocations(locations.filter((_, i) => i !== index))}>
                           <Trash2 className="w-4 h-4" />
                         </IconBtn>
                       )}
@@ -12230,7 +12224,7 @@ export default function AstroTracker() {
                         newLocations[index] = { ...newLocations[index], coords: e.target.value };
                         setLocations(newLocations);
                       }}
-                      placeholder="Coordenadas Google (Ej: 37.0644, -3.1706)"
+                      placeholder={t('coordsPlaceholder')}
                       className={INPUT_CLS + " w-full"}
                     />
                   </div>
@@ -12255,7 +12249,7 @@ export default function AstroTracker() {
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                Cerrar sesión
+                {t('signOut')}
               </button>
               <div className="flex items-center gap-2">
                 <Btn outline onClick={() => setMainSection("dashboard")}>
