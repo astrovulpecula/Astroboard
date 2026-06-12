@@ -8612,7 +8612,7 @@ export default function AstroTracker() {
                             <Database className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Total de Objetos</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightTotalObjects')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalObjects}</div>
                           </div>
                         </div>
@@ -8627,7 +8627,7 @@ export default function AstroTracker() {
                             <FolderOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Total de Proyectos</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightTotalProjects')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalProjects}</div>
                           </div>
                         </div>
@@ -8642,7 +8642,7 @@ export default function AstroTracker() {
                             <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Horas Totales</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightTotalHours')}</div>
                             <div className="text-2xl font-bold">{hh(globalMetrics.totalHours * 3600)}</div>
                           </div>
                         </div>
@@ -8657,7 +8657,7 @@ export default function AstroTracker() {
                             <Star className="w-6 h-6 text-amber-600 dark:text-amber-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Lights Totales</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightTotalLights')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalLights}</div>
                           </div>
                         </div>
@@ -8672,7 +8672,7 @@ export default function AstroTracker() {
                             <Moon className="w-6 h-6 text-green-600 dark:text-green-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Noches</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightNights')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalNights}</div>
                           </div>
                         </div>
@@ -8687,7 +8687,7 @@ export default function AstroTracker() {
                             <Calendar className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Sesiones</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightSessions')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalSessions}</div>
                           </div>
                         </div>
@@ -8705,12 +8705,12 @@ export default function AstroTracker() {
                             <Telescope className="w-6 h-6 text-teal-600 dark:text-teal-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">ONP vs SNP</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightOnpSnp')}</div>
                             <div className="text-2xl font-bold">
                               {globalMetrics.onpCount} / {globalMetrics.snpCount}
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">
-                              One-Night / Several-Nights
+                              {t('metricOnpSnpSub')}
                             </div>
                           </div>
                         </div>
@@ -8725,10 +8725,10 @@ export default function AstroTracker() {
                             <FolderOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Proyectos Activos</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightActiveProjects')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.activeProjects}</div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {globalMetrics.activeProjectsPercentage}% del total
+                              {globalMetrics.activeProjectsPercentage}{t('metricPercentOfTotal')}
                             </div>
                           </div>
                         </div>
@@ -8746,7 +8746,7 @@ export default function AstroTracker() {
                             <Star className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">Fotos Valoradas</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('highlightRatedPhotos')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.totalRated}</div>
                             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
                               <span className="flex items-center gap-0.5">
@@ -8778,7 +8778,7 @@ export default function AstroTracker() {
                             <Star className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                           </div>
                           <div>
-                            <div className="text-sm text-slate-600 dark:text-slate-400">SNR Récord</div>
+                            <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricSnrRecord')}</div>
                             <div className="text-2xl font-bold">{globalMetrics.maxSNR.toFixed(2)}</div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                               {globalMetrics.maxSNRObject} · {globalMetrics.maxSNRProject}
@@ -8810,10 +8810,10 @@ export default function AstroTracker() {
                           <Target className="w-6 h-6 text-sky-600 dark:text-sky-400" />
                         </div>
                         <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">RMS P50 Récord</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricRmsP50')}</div>
                           <div className="text-2xl font-bold">{globalMetrics.minP50Rms > 0 ? `${globalMetrics.minP50Rms.toFixed(2)}"` : '0.00"'}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {globalMetrics.minP50Rms > 0 ? `${globalMetrics.minP50RmsObject} · ${globalMetrics.minP50RmsProject}` : 'Sin datos PHD2'}
+                            {globalMetrics.minP50Rms > 0 ? `${globalMetrics.minP50RmsObject} · ${globalMetrics.minP50RmsProject}` : t('metricNoPhd2Data')}
                           </div>
                         </div>
                       </div>
@@ -8841,10 +8841,10 @@ export default function AstroTracker() {
                           <Target className="w-6 h-6 text-violet-600 dark:text-violet-400" />
                         </div>
                         <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">RMS P68 Récord</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricRmsP68')}</div>
                           <div className="text-2xl font-bold">{globalMetrics.minP68Rms > 0 ? `${globalMetrics.minP68Rms.toFixed(2)}"` : '0.00"'}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {globalMetrics.minP68Rms > 0 ? `${globalMetrics.minP68RmsObject} · ${globalMetrics.minP68RmsProject}` : 'Sin datos PHD2'}
+                            {globalMetrics.minP68Rms > 0 ? `${globalMetrics.minP68RmsObject} · ${globalMetrics.minP68RmsProject}` : t('metricNoPhd2Data')}
                           </div>
                         </div>
                       </div>
@@ -8887,7 +8887,7 @@ export default function AstroTracker() {
                               </div>
                               <div>
                                 <div className="text-sm text-slate-600 dark:text-slate-400">
-                                  {language === 'en' ? `Hours in ${selectedYear}` : `Horas en ${selectedYear}`}
+                                  {t('metricHoursIn')} {selectedYear}
                                 </div>
                                 <div className="text-2xl font-bold">{hh(currentYearSeconds)}</div>
                                 {percentageChange !== null && (
@@ -8927,12 +8927,12 @@ export default function AstroTracker() {
                           </div>
                           <div className="flex-1">
                             <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                              Objeto con Mayor Exposición
+                              {t('metricMostExposureObject')}
                             </div>
                             <div className="flex items-baseline gap-2">
                               <div className="text-2xl font-bold">{globalMetrics.maxExposureObj[0]}</div>
                               <div className="text-xs text-slate-500 dark:text-slate-400">
-                                {hh(globalMetrics.maxExposureObj[1] * 3600)} horas
+                                {hh(globalMetrics.maxExposureObj[1] * 3600)} {t('metricHoursLabel')}
                               </div>
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -8958,11 +8958,11 @@ export default function AstroTracker() {
                           </div>
                           <div>
                             <div className="text-sm text-slate-600 dark:text-slate-400">
-                              Constelación Más Fotografiada
+                              {t('highlightMostPhotographedConstellation')}
                             </div>
                             <div className="text-2xl font-bold">{globalMetrics.mostPhotographedConstellation[0]}</div>
                             <div className="text-xs text-slate-500 dark:text-slate-400">
-                              {globalMetrics.mostPhotographedConstellation[1]} objeto{globalMetrics.mostPhotographedConstellation[1] !== 1 ? "s" : ""}
+                              {globalMetrics.mostPhotographedConstellation[1]} {globalMetrics.mostPhotographedConstellation[1] !== 1 ? t('metricObjectsWord') : t('metricObjectWord')}
                             </div>
                           </div>
                         </div>
@@ -8980,19 +8980,19 @@ export default function AstroTracker() {
                             </div>
                             <div className="flex-1">
                               <div className="text-sm text-slate-600 dark:text-slate-400">
-                                Racha de Noches Consecutivas
+                                {t('metricStreakTitle')}
                               </div>
                               <div className="text-2xl font-bold">
-                                {globalMetrics.currentStreak > 0 ? globalMetrics.currentStreak : 0} noche{globalMetrics.currentStreak !== 1 ? "s" : ""}
+                                {globalMetrics.currentStreak > 0 ? globalMetrics.currentStreak : 0} {globalMetrics.currentStreak !== 1 ? t('metricNightsWord') : t('metricNightWord')}
                               </div>
                               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                 {globalMetrics.currentStreak > 0 ? (
                                   <>
-                                    Racha actual • Récord: {globalMetrics.maxStreak} noche{globalMetrics.maxStreak !== 1 ? "s" : ""}
+                                    {t('metricStreakCurrent')} • {t('metricStreakRecord')}: {globalMetrics.maxStreak} {globalMetrics.maxStreak !== 1 ? t('metricNightsWord') : t('metricNightWord')}
                                   </>
                                 ) : (
                                   <>
-                                    Sin racha activa • Récord: {globalMetrics.maxStreak} noche{globalMetrics.maxStreak !== 1 ? "s" : ""}
+                                    {t('metricStreakNone')} • {t('metricStreakRecord')}: {globalMetrics.maxStreak} {globalMetrics.maxStreak !== 1 ? t('metricNightsWord') : t('metricNightWord')}
                                   </>
                                 )}
                               </div>
@@ -9012,7 +9012,7 @@ export default function AstroTracker() {
                           <Calendar className="w-6 h-6 text-green-600 dark:text-green-400" />
                         </div>
                         <div className="flex-1">
-                          <div className="text-sm text-slate-600 dark:text-slate-400">Días con sesiones</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricDaysWithSessions')}</div>
                           <div className="text-2xl font-bold">
                             {(() => {
                               const allSessions = objects.flatMap((o) => o.projects.flatMap((p) => p.sessions || []));
@@ -9024,7 +9024,7 @@ export default function AstroTracker() {
                             })()}
                           </div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            en {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][calendarMonth]}
+                            {t('metricInMonth')} {new Date(calendarYear, calendarMonth, 1).toLocaleDateString(language === 'en' ? 'en-US' : 'es-ES', { month: 'long' })}
                           </div>
                         </div>
                         <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${calendarExpanded ? 'rotate-180' : ''}`} />
@@ -9183,7 +9183,7 @@ export default function AstroTracker() {
                       {visibleHighlights.cameraUsage && Object.keys(globalMetrics.cameraCounts).length > 0 && (
                         <Card className="p-5">
                           <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                            Uso de cámaras (% de lights)
+                            {t('metricCameraUsage')}
                           </div>
                           <div className="flex flex-wrap gap-3">
                             {Object.entries(globalMetrics.cameraCounts)
@@ -9210,7 +9210,7 @@ export default function AstroTracker() {
                       {/* Telescope Usage Statistics */}
                       {visibleHighlights.telescopeUsage && Object.keys(globalMetrics.telescopeCounts).length > 0 && (
                         <Card className="p-5">
-                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">Uso de telescopios</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">{t('metricTelescopeUsage')}</div>
                           <div className="flex flex-wrap gap-3">
                             {Object.entries(globalMetrics.telescopeCounts)
                               .sort(([, a], [, b]) => b.seconds - a.seconds)
