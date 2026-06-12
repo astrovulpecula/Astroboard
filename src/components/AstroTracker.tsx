@@ -5078,7 +5078,7 @@ export default function AstroTracker() {
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
   const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
-  const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
+  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("dashboard");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
   // Estado para proyectos planificados
@@ -6846,12 +6846,15 @@ export default function AstroTracker() {
           mainSection={mainSection}
           setMainSection={setMainSection}
           theme={theme}
+          onOpenSettings={() => setShowSettings(true)}
           labels={{
+            dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
             forecast: t('forecast'),
             planning: t('planning'),
             objects: t('objectsSection'),
             metrics: t('statisticsSection'),
             gallery: t('gallery'),
+            settings: language === 'en' ? 'Settings' : 'Configuración',
           }}
         />
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
