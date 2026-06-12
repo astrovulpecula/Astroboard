@@ -7483,10 +7483,10 @@ export default function AstroTracker() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <Calendar className="w-6 h-6" /> Proyectos Planificados
+                      <Calendar className="w-6 h-6" /> {t('plannedProjectsTitle')}
                     </h2>
                     <Btn onClick={() => setMPlanned(true)}>
-                      <Plus className="w-4 h-4" /> Nueva planificación
+                      <Plus className="w-4 h-4" /> {t('newPlanning')}
                     </Btn>
                   </div>
                   
@@ -7494,18 +7494,18 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No planning data yet. Create your first planned project.' : 'No hay datos de planificación todavía. Crea tu primer proyecto planificado.'}
+                        {t('noPlanningYet')}
                       </p>
                     </Card>
                   ) : (
                   <>
                   <p className="text-muted-foreground">
-                    Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
+                    {t('planningIntro')}
                   </p>
                   {plannedProjects.length > 0 && (
                     <Card className="p-4">
                       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" /> Visibilidad Anual
+                        <Calendar className="w-4 h-4" /> {t('annualVisibility')}
                       </h3>
                       <div className="space-y-2">
                         {/* Month headers */}
@@ -7642,7 +7642,7 @@ export default function AstroTracker() {
                         date={new Date()}
                         language={language}
                         altitudeLimit={minAltitudeLimit}
-                        title={language === 'en' ? 'Night Visibility - Planned Objects' : 'Visibilidad Nocturna - Objetos Planificados'}
+                        title={t('nightVisibilityPlanned')}
                       />
                     </Card>
                   )}
@@ -7656,14 +7656,14 @@ export default function AstroTracker() {
                           <button 
                             onClick={() => setPlannedSortMode("alpha")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title="Ordenar alfabéticamente (A-Z)"
+                            title={t('sortAlpha')}
                           >
                             A-Z
                           </button>
                           <button 
                             onClick={() => setPlannedSortMode("chrono")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "chrono" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title="Ordenar cronológicamente"
+                            title={t('sortChrono')}
                           >
                             1-3
                           </button>
@@ -7676,7 +7676,7 @@ export default function AstroTracker() {
                           type="text"
                           value={plannedSearchText}
                           onChange={(e) => setPlannedSearchText(e.target.value)}
-                          placeholder="Buscar por objeto, nombre o descripción..."
+                          placeholder={t('searchByObjectNameDescription')}
                           className={`${INPUT_CLS} w-full pl-10`}
                         />
                         <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -7691,7 +7691,7 @@ export default function AstroTracker() {
                       </div>
                       
                       <Btn outline onClick={() => setShowPlannedFilters(!showPlannedFilters)}>
-                        {showPlannedFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                        {showPlannedFilters ? t('hideFilters') : t('advancedFilters')}
                       </Btn>
                     </div>
                     
@@ -7699,53 +7699,53 @@ export default function AstroTracker() {
                     {showPlannedFilters && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Constelación</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('constellation')}</span>
                           <select
                             value={plannedFilterConstellation}
                             onChange={(e) => setPlannedFilterConstellation(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
+                            <option value="all">{t('allFemPlural')}</option>
                             {[...new Set(plannedProjects.map(p => p.constellation).filter(Boolean))].sort().map(c => (
                               <option key={c} value={c}>{c}</option>
                             ))}
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Señal</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('signal')}</span>
                           <select
                             value={plannedFilterSignal}
                             onChange={(e) => setPlannedFilterSignal(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
+                            <option value="all">{t('allFemPlural')}</option>
                             {[...new Set(plannedProjects.map(p => p.signal).filter(Boolean))].sort().map(s => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Prioridad</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('priority')}</span>
                           <select
                             value={plannedFilterPriority}
                             onChange={(e) => setPlannedFilterPriority(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
-                            <option value="Alta">Alta</option>
-                            <option value="Media">Media</option>
-                            <option value="Baja">Baja</option>
+                            <option value="all">{t('allFemPlural')}</option>
+                            <option value="Alta">{t('priorityHigh')}</option>
+                            <option value="Media">{t('priorityMedium')}</option>
+                            <option value="Baja">{t('priorityLow')}</option>
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Cenit</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('cenit')}</span>
                           <select
                             value={plannedFilterCenit}
                             onChange={(e) => setPlannedFilterCenit(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todos</option>
-                            <option value="proximo">Próximo</option>
+                            <option value="all">{t('allMasc')}</option>
+                            <option value="proximo">{t('upcoming')}</option>
                             {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(m => (
                               <option key={m} value={m}>{m}</option>
                             ))}
@@ -7762,7 +7762,7 @@ export default function AstroTracker() {
                               setPlannedSearchText("");
                             }}
                           >
-                            Limpiar filtros
+                            {t('clearFilters')}
                           </Btn>
                         </div>
                       </div>
@@ -7838,13 +7838,13 @@ export default function AstroTracker() {
                           <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                           <p className="text-muted-foreground mb-4">
                             {plannedProjects.length === 0 
-                              ? "No tienes proyectos planificados todavía"
-                              : "No se encontraron proyectos que coincidan con los filtros"
+                              ? t('noPlannedProjectsYet')
+                              : t('noPlannedMatches')
                             }
                           </p>
                           {plannedProjects.length === 0 && (
                             <Btn onClick={() => setMPlanned(true)}>
-                              <Plus className="w-4 h-4" /> Crear primera planificación
+                              <Plus className="w-4 h-4" /> {t('createFirstPlanning')}
                             </Btn>
                           )}
                         </Card>
@@ -7886,11 +7886,11 @@ export default function AstroTracker() {
                                   )}
                                   {/* Delete button positioned on top right of image */}
                                   <button
-                                    title="Eliminar"
+                                    title={t('deleteAction')}
                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (confirm("¿Eliminar este proyecto planificado?")) {
+                                      if (confirm(t('deletePlannedConfirm'))) {
                                         pendingChangesRef.current++; // Mark as user modification
                                         setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
                                       }
