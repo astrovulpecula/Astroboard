@@ -8397,22 +8397,22 @@ export default function AstroTracker() {
                   {/* Título de Highlights */}
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <BarChart3 className="w-6 h-6" /> {language === 'en' ? 'Metrics' : 'Métricas'}
+                      <BarChart3 className="w-6 h-6" /> {t('metricsTitle')}
                     </h2>
                     <button
                       onClick={() => setShowStatsConfig(true)}
                       className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                      title={language === 'en' ? 'Configure visible metrics' : 'Configurar métricas visibles'}
+                      title={t('configureMetricsBtnTitle')}
                     >
                       <Settings className="w-5 h-5 text-slate-500" />
                     </button>
                   </div>
 
                   {/* Modal de configuración de métricas */}
-                  <Modal open={showStatsConfig} onClose={() => setShowStatsConfig(false)} title={language === 'en' ? 'Configure Metrics' : 'Configurar Métricas'}>
+                  <Modal open={showStatsConfig} onClose={() => setShowStatsConfig(false)} title={t('configureMetricsModalTitle')}>
                     <div className="space-y-4">
                       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                        {language === 'en' ? 'Select which metrics you want to show on the dashboard.' : 'Selecciona qué métricas quieres mostrar en el dashboard.'}
+                        {t('configureMetricsDesc')}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -8422,7 +8422,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalObjects: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Total de Objetos</span>
+                          <span className="text-sm">{t('highlightTotalObjects')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8431,7 +8431,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalProjects: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Total de Proyectos</span>
+                          <span className="text-sm">{t('highlightTotalProjects')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8440,7 +8440,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalHours: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Horas Totales</span>
+                          <span className="text-sm">{t('highlightTotalHours')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8449,7 +8449,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalLights: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Lights Totales</span>
+                          <span className="text-sm">{t('highlightTotalLights')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8458,7 +8458,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalNights: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Noches</span>
+                          <span className="text-sm">{t('highlightNights')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8467,7 +8467,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, totalSessions: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Sesiones</span>
+                          <span className="text-sm">{t('highlightSessions')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8476,7 +8476,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, onpSnp: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">ONP vs SNP</span>
+                          <span className="text-sm">{t('highlightOnpSnp')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8485,7 +8485,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, activeProjects: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Proyectos Activos</span>
+                          <span className="text-sm">{t('highlightActiveProjects')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8494,7 +8494,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, ratedPhotos: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Fotos Valoradas</span>
+                          <span className="text-sm">{t('highlightRatedPhotos')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8503,7 +8503,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, snrRecord: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">SNR Récord</span>
+                          <span className="text-sm">{t('metricSnrRecord')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8512,7 +8512,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, hoursByYear: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Horas por Año</span>
+                          <span className="text-sm">{t('highlightHoursByYear')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8521,7 +8521,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedObject: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Objeto con Mayor Exposición</span>
+                          <span className="text-sm">{t('metricMostExposureObject')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8530,7 +8530,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, mostPhotographedConstellation: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Constelación Más Fotografiada</span>
+                          <span className="text-sm">{t('highlightMostPhotographedConstellation')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8539,7 +8539,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, streaks: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Rachas Consecutivas</span>
+                          <span className="text-sm">{t('highlightStreaks')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8548,7 +8548,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, cameraUsage: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Uso de Cámaras</span>
+                          <span className="text-sm">{t('highlightCameraUsage')}</span>
                         </label>
                         <label className="flex items-center gap-2 cursor-pointer">
                           <input
@@ -8557,7 +8557,7 @@ export default function AstroTracker() {
                             onChange={(e) => setVisibleHighlights({ ...visibleHighlights, telescopeUsage: e.target.checked })}
                             className="rounded"
                           />
-                          <span className="text-sm">Uso de Telescopios</span>
+                          <span className="text-sm">{t('highlightTelescopeUsage')}</span>
                         </label>
                       </div>
                       <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -8582,13 +8582,13 @@ export default function AstroTracker() {
                           })}
                           className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                         >
-                          Activar todas
+                          {t('metricEnableAll')}
                         </button>
                         <button
                           onClick={() => setShowStatsConfig(false)}
                           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition"
                         >
-                          Cerrar
+                          {t('close')}
                         </button>
                       </div>
                     </div>
@@ -8598,7 +8598,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <BarChart3 className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No statistics yet. Create objects and sessions to see your data.' : 'No hay estadísticas todavía. Crea objetos y sesiones para ver tus datos.'}
+                        {t('noStatsYet')}
                       </p>
                     </Card>
                   ) : (
