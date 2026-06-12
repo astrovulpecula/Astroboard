@@ -680,7 +680,7 @@ const WeatherCard = ({
         }
         const [lat, lon] = coords;
         const response = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability,windspeed_10m,cloudcover&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=3`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability,windspeed_10m,cloudcover&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weathercode&timezone=auto&forecast_days=7`
         );
         if (!response.ok) throw new Error('Weather API error');
         const data = await response.json();
@@ -745,12 +745,12 @@ const WeatherCard = ({
   return (
     <Card className="p-6 overflow-hidden">
       <div className="flex items-start gap-4">
-        <div className="p-3 rounded-xl bg-blue-500/20">
+        <div className="p-3 rounded-xl bg-blue-500/20 shrink-0">
           <CloudSun className="w-6 h-6 text-blue-600 dark:text-blue-400" />
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold mb-1">{location.name}</h3>
-          <p className="text-xs text-muted-foreground mb-3">📍 {location.coords}</p>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-bold mb-1 truncate">{location.name}</h3>
+          <p className="text-xs text-muted-foreground mb-3 truncate">📍 {location.coords}</p>
           
           {/* Current Weather */}
           <div className="mb-4 p-4 rounded-xl bg-muted/50">
@@ -851,24 +851,28 @@ const WeatherCard = ({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {weather.daily.time.slice(0, 3).map((date: string, i: number) => {
-                const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date).toLocaleDateString('es-ES', { weekday: 'short' });
-                return (
-                  <div key={i} className="text-center p-2 rounded-xl bg-muted/50">
-                    <p className="text-xs font-medium mb-1">{dayName}</p>
-                    <div className="text-xl mb-1">
-                      {getWeatherIcon(weather.daily.weathercode[i])}
+            <div className="overflow-x-auto pb-3 scroll-smooth">
+              <div className="flex w-max gap-2 pr-2">
+                {weather.daily.time.map((date: string, i: number) => {
+                  const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date + "T00:00:00").toLocaleDateString('es-ES', { weekday: 'short' });
+                  const dayDate = new Date(date + "T00:00:00").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                  return (
+                    <div key={i} className="min-w-[88px] shrink-0 text-center p-2 rounded-xl bg-muted/50">
+                      <p className="text-xs font-medium capitalize">{dayName}</p>
+                      <p className="text-[10px] text-muted-foreground mb-1">{dayDate}</p>
+                      <div className="text-2xl mb-1">
+                        {getWeatherIcon(weather.daily.weathercode[i])}
+                      </div>
+                      <p className="text-xs font-semibold">
+                        {Math.round(weather.daily.temperature_2m_max[i])}° / {Math.round(weather.daily.temperature_2m_min[i])}°
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        💧 {weather.daily.precipitation_probability_max[i]}%
+                      </p>
                     </div>
-                    <p className="text-xs font-semibold">
-                      {Math.round(weather.daily.temperature_2m_max[i])}° / {Math.round(weather.daily.temperature_2m_min[i])}°
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      💧 {weather.daily.precipitation_probability_max[i]}%
-                    </p>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
