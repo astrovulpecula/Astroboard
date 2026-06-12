@@ -717,7 +717,9 @@ const WeatherCard = ({
     const activeCard = currentHourCardRef.current;
     if (!container || !activeCard) return;
 
-    const targetScroll = Math.max(activeCard.offsetLeft - 12, 0);
+    const containerRect = container.getBoundingClientRect();
+    const activeCardRect = activeCard.getBoundingClientRect();
+    const targetScroll = Math.max(container.scrollLeft + activeCardRect.left - containerRect.left - 4, 0);
     container.scrollTo({ left: targetScroll, behavior: 'smooth' });
   }, [viewMode, currentHour, hourlyToday.length, location.coords]);
 
