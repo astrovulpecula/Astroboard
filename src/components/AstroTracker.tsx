@@ -9326,7 +9326,7 @@ export default function AstroTracker() {
                                 <Star className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                               </div>
                               <div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">Total</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">{t('total')}</div>
                                 <div className="text-xl font-bold">{allRatedImages.length}</div>
                               </div>
                             </div>
@@ -9342,7 +9342,7 @@ export default function AstroTracker() {
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">3 Estrellas</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">{t('starsThree')}</div>
                                 <div className="text-xl font-bold">{rating3Count}</div>
                               </div>
                             </div>
@@ -9358,7 +9358,7 @@ export default function AstroTracker() {
                                 </div>
                               </div>
                               <div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">2 Estrellas</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">{t('starsTwo')}</div>
                                 <div className="text-xl font-bold">{rating2Count}</div>
                               </div>
                             </div>
@@ -9370,7 +9370,7 @@ export default function AstroTracker() {
                                 <Star className="w-3 h-3 fill-slate-400 text-slate-400" />
                               </div>
                               <div>
-                                <div className="text-xs text-slate-600 dark:text-slate-400">1 Estrella</div>
+                                <div className="text-xs text-slate-600 dark:text-slate-400">{t('starsOne')}</div>
                                 <div className="text-xl font-bold">{rating1Count}</div>
                               </div>
                             </div>
@@ -9386,14 +9386,14 @@ export default function AstroTracker() {
                                 <button 
                                   onClick={() => setGallerySortMode("alpha")}
                                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${gallerySortMode === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                                  title="Ordenar alfabéticamente (A-Z)"
+                                  title={t('sortAlpha')}
                                 >
                                   A-Z
                                 </button>
                                 <button 
                                   onClick={() => setGallerySortMode("rating")}
                                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${gallerySortMode === "rating" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                                  title="Ordenar por valoración"
+                                  title={t('sortRating')}
                                 >
                                   <Star className="w-4 h-4" />
                                 </button>
@@ -9406,7 +9406,7 @@ export default function AstroTracker() {
                                 type="text"
                                 value={gallerySearchText}
                                 onChange={(e) => setGallerySearchText(e.target.value)}
-                                placeholder="Buscar por objeto o proyecto..."
+                                placeholder={t('searchByObjectOrProject')}
                                 className={`${INPUT_CLS} w-full pl-10`}
                               />
                               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -9421,7 +9421,7 @@ export default function AstroTracker() {
                             </div>
                             
                             <Btn outline onClick={() => setShowGalleryFilters(!showGalleryFilters)}>
-                              {showGalleryFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                              {showGalleryFilters ? t('hideFilters') : t('advancedFilters')}
                             </Btn>
                           </div>
                           
@@ -9429,29 +9429,29 @@ export default function AstroTracker() {
                           {showGalleryFilters && (
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                               <label className="grid gap-1">
-                                <span className="text-xs font-medium text-muted-foreground">Constelación</span>
+                                <span className="text-xs font-medium text-muted-foreground">{t('constellation')}</span>
                                 <select
                                   value={galleryFilterConstellation}
                                   onChange={(e) => setGalleryFilterConstellation(e.target.value)}
                                   className={INPUT_CLS}
                                 >
-                                  <option value="all">Todas</option>
+                                  <option value="all">{t('allFemPlural')}</option>
                                   {uniqueConstellations.map(c => (
                                     <option key={c} value={c}>{c}</option>
                                   ))}
                                 </select>
                               </label>
                               <label className="grid gap-1">
-                                <span className="text-xs font-medium text-muted-foreground">Valoración</span>
+                                <span className="text-xs font-medium text-muted-foreground">{t('ratingLabel')}</span>
                                 <Select value={filterRating} onValueChange={(v) => setFilterRating(v as any)}>
                                   <SelectTrigger className="bg-background">
-                                    <SelectValue placeholder="Todas" />
+                                    <SelectValue placeholder={t('allFemPlural')} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-popover">
                                     <SelectItem value="all">
                                       <span className="flex items-center gap-2">
                                         <Check className="w-4 h-4 opacity-0" />
-                                        Todas
+                                        {t('allFemPlural')}
                                       </span>
                                     </SelectItem>
                                     <SelectItem value="3">
@@ -9459,20 +9459,20 @@ export default function AstroTracker() {
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                        3 Estrellas
+                                        {t('starsThree')}
                                       </span>
                                     </SelectItem>
                                     <SelectItem value="2">
                                       <span className="flex items-center gap-2">
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                        2 Estrellas
+                                        {t('starsTwo')}
                                       </span>
                                     </SelectItem>
                                     <SelectItem value="1">
                                       <span className="flex items-center gap-2">
                                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                        1 Estrella
+                                        {t('starsOne')}
                                       </span>
                                     </SelectItem>
                                   </SelectContent>
@@ -9487,7 +9487,7 @@ export default function AstroTracker() {
                                   }}
                                   className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                                 >
-                                  Limpiar filtros
+                                  {t('clearFilters')}
                                 </button>
                               </div>
                             </div>
@@ -9530,7 +9530,9 @@ export default function AstroTracker() {
                               <Card className="p-8 text-center">
                                 <Star className="w-12 h-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
                                 <p className="text-slate-600 dark:text-slate-400">
-                                  No hay imágenes {filterRating !== "all" ? `con ${filterRating} ${filterRating === "1" ? "estrella" : "estrellas"}` : "valoradas"} aún
+                                  {filterRating !== "all"
+                                    ? `${t('noRatedImagesWith')} ${filterRating} ${filterRating === "1" ? t('starSingular') : t('starsPlural')}`
+                                    : t('noRatedImagesYet')}
                                 </p>
                               </Card>
                             );
@@ -9557,7 +9559,7 @@ export default function AstroTracker() {
                                         deleteImageFromGallery(img.objectId, img.projectId, img.keyName);
                                       }}
                                       className="absolute bottom-2 right-2 bg-red-500/90 hover:bg-red-600 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                                      title="Eliminar imagen"
+                                      title={t('deleteImageTitle')}
                                     >
                                       <Trash2 className="w-4 h-4" />
                                     </button>
