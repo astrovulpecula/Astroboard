@@ -6859,7 +6859,7 @@ export default function AstroTracker() {
           mainSection={mainSection}
           setMainSection={setMainSection}
           theme={theme}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => setMainSection("configuracion")}
           labels={{
             dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
             forecast: t('forecast'),
