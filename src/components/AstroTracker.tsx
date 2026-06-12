@@ -42,6 +42,7 @@ import {
   ChevronDownIcon,
   Target,
   Search,
+  Home,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -280,9 +281,11 @@ type ImageItem = {
 const ImageCarousel = ({
   images,
   onImageClick,
+  square = false,
 }: {
   images: ImageItem[];
   onImageClick?: (objectId: string, projectId: string) => void;
+  square?: boolean;
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -312,7 +315,7 @@ const ImageCarousel = ({
 
   return (
     <Card className="p-4 mb-4">
-      <div className="relative h-48 overflow-hidden rounded-xl">
+      <div className={`relative overflow-hidden rounded-xl ${square ? "aspect-square w-full" : "h-48"}`}>
         <img
           src={currentImage.src}
           alt={currentImage.title}
@@ -5076,7 +5079,7 @@ export default function AstroTracker() {
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
   const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
-  const [mainSection, setMainSection] = useState<"pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("objetos");
+  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("dashboard");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
   // Estado para proyectos planificados
@@ -6844,12 +6847,15 @@ export default function AstroTracker() {
           mainSection={mainSection}
           setMainSection={setMainSection}
           theme={theme}
+          onOpenSettings={() => setShowSettings(true)}
           labels={{
+            dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
             forecast: t('forecast'),
             planning: t('planning'),
             objects: t('objectsSection'),
             metrics: t('statisticsSection'),
             gallery: t('gallery'),
+            settings: language === 'en' ? 'Settings' : 'Configuración',
           }}
         />
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
@@ -7128,6 +7134,9 @@ export default function AstroTracker() {
         <main className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-6">
           {view === "objects" && (
             <div className="grid gap-4" key="view-objects">
+              {/* ===== DASHBOARD SECTION ===== */}
+              {mainSection === "dashboard" && (
+                <>
               {/* Saludo personalizado con fase lunar */}
               {(() => {
                 const now = new Date();
@@ -7184,12 +7193,14 @@ export default function AstroTracker() {
                 );
               })()}
 
+              {/* Dashboard grid: ephemeris + visible + carousel */}
+              <div className="grid gap-4 lg:grid-cols-3 mb-6">
+                <div className="space-y-4 flex flex-col">
               {/* Next Ephemeris Card */}
               {nextEphemeris && (
-                <div className="mb-6">
                   <div 
                     onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden"
+                    className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden h-full"
                   >
                     <div className="flex items-start gap-4">
                       <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
@@ -7215,7 +7226,6 @@ export default function AstroTracker() {
                         </div>
                       </div>
                     </div>
-                  </div>
                 </div>
               )}
 
@@ -7243,7 +7253,7 @@ export default function AstroTracker() {
                 
                 if (visibleNow.length === 0) {
                   return (
-                    <div className="mb-6 p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border overflow-hidden">
                       <p className="text-sm text-muted-foreground break-words">
                         {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
                       </p>
@@ -7252,19 +7262,21 @@ export default function AstroTracker() {
                 }
                 
                 return (
-                  <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
+                  <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden">
                     <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
                       🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
                     </p>
                   </div>
                 );
               })()}
+                </div>
 
               {/* Image Carousel - Before Navigation Buttons */}
               {dashboardCarouselImages.length > 0 && (
-                <div className="mb-6">
+                <div className="lg:col-span-2">
                   <ImageCarousel
                     images={dashboardCarouselImages}
+                    square
                     onImageClick={(objectId, projectId) => {
                       setSelectedObjectId(objectId);
                       setSelectedProjectId(projectId);
@@ -7274,6 +7286,7 @@ export default function AstroTracker() {
                   />
                 </div>
               )}
+              </div>
 
               {/* Active Projects Visibility Chart - After Carousel, Before Navigation */}
               {(() => {
@@ -7307,6 +7320,8 @@ export default function AstroTracker() {
                 }
                 return null;
               })()}
+                </>
+              )}
 
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
               <div className="hidden">
@@ -13213,6 +13228,15 @@ export default function AstroTracker() {
           <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
             <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-lg">
               <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
+                <button
+                  onClick={() => setMainSection("dashboard")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "dashboard" ? "bg-primary/20" : ""
+                  }`}
+                >
+                  <Home className={`w-6 h-6 ${mainSection === "dashboard" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
                 <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${

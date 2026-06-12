@@ -1,26 +1,30 @@
-import { CloudSun, Calendar, Telescope, BarChart3, Image as ImageIcon, type LucideIcon } from "lucide-react";
+import { CloudSun, Calendar, Telescope, BarChart3, Image as ImageIcon, Home, Settings, type LucideIcon } from "lucide-react";
 import logoLight from "@/assets/logo-light.png";
 import logoDark from "@/assets/logo-dark.png";
 
-export type MainSection = "pronostico" | "planificacion" | "objetos" | "estadisticas" | "galeria";
+export type MainSection = "dashboard" | "pronostico" | "planificacion" | "objetos" | "estadisticas" | "galeria";
 
 interface AppSidebarProps {
   mainSection: MainSection;
   setMainSection: (s: MainSection) => void;
   theme: string;
+  onOpenSettings?: () => void;
   labels: {
+    dashboard: string;
     forecast: string;
     planning: string;
     objects: string;
     metrics: string;
     gallery: string;
+    settings: string;
   };
 }
 
 type Item = { id: MainSection; icon: LucideIcon; label: string };
 
-export function AppSidebar({ mainSection, setMainSection, theme, labels }: AppSidebarProps) {
+export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenSettings }: AppSidebarProps) {
   const items: Item[] = [
+    { id: "dashboard", icon: Home, label: labels.dashboard },
     { id: "pronostico", icon: CloudSun, label: labels.forecast },
     { id: "planificacion", icon: Calendar, label: labels.planning },
     { id: "objetos", icon: Telescope, label: labels.objects },
@@ -85,8 +89,19 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels }: AppSi
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-border/60 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground/60">
-        v1 · Desktop
+      <div className="border-t border-border/60 p-2">
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-surface-elevated/60 transition-colors duration-200"
+          >
+            <Settings className="w-4 h-4 shrink-0" />
+            <span className="truncate">{labels.settings}</span>
+          </button>
+        )}
+        <div className="px-3 pt-2 pb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground/60">
+          v1 · Desktop
+        </div>
       </div>
     </aside>
   );
