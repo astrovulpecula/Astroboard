@@ -781,7 +781,7 @@ const WeatherCard = ({
                 viewMode === 'hourly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              ⏱ Hoy por horas
+              Hoy por horas
             </button>
             <button
               onClick={() => setViewMode('daily')}
@@ -789,7 +789,7 @@ const WeatherCard = ({
                 viewMode === 'daily' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              📅 3 días
+              Por días
             </button>
           </div>
 
@@ -818,8 +818,8 @@ const WeatherCard = ({
                   </button>
                 </div>
               </div>
-              <div ref={hourlyScrollRef} className="overflow-x-auto pb-3 scroll-smooth">
-                <div className="flex w-max snap-x snap-mandatory gap-2 pr-2">
+              <div ref={hourlyScrollRef} className="overflow-x-auto overflow-y-hidden pb-3 pt-1 scroll-smooth">
+                <div className="flex w-max snap-x snap-mandatory gap-2 px-1">
                 {hourlyToday.map((h: any, i: number) => {
                   const hour = new Date(h.time).getHours();
                   const isPast = hour < currentHour;
@@ -851,13 +851,19 @@ const WeatherCard = ({
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto pb-3 scroll-smooth">
-              <div className="flex w-max gap-2 pr-2">
+            <div className="overflow-x-auto overflow-y-hidden pb-3 pt-1 scroll-smooth">
+              <div className="flex w-max gap-2 px-1">
                 {weather.daily.time.map((date: string, i: number) => {
                   const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date + "T00:00:00").toLocaleDateString('es-ES', { weekday: 'short' });
                   const dayDate = new Date(date + "T00:00:00").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                  const isToday = i === 0;
                   return (
-                    <div key={i} className="min-w-[88px] shrink-0 text-center p-2 rounded-xl bg-muted/50">
+                    <div
+                      key={i}
+                      className={`min-w-[88px] shrink-0 text-center p-2 rounded-xl transition-colors ${
+                        isToday ? 'bg-primary/20 ring-1 ring-primary/40' : 'bg-muted/50'
+                      }`}
+                    >
                       <p className="text-xs font-medium capitalize">{dayName}</p>
                       <p className="text-[10px] text-muted-foreground mb-1">{dayDate}</p>
                       <div className="text-2xl mb-1">
