@@ -2914,6 +2914,7 @@ function FSessionAutomated({
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
 }) {
+  const { t } = useLanguage();
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
@@ -3067,9 +3068,9 @@ function FSessionAutomated({
       {fitsAnalysis?.extractedInfo && (
         <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
           <p className="text-sm text-green-700 dark:text-green-300">
-            ✓ Datos extraídos automáticamente: {fitsAnalysis.extractedInfo.totalLights} lights
-            {fitsAnalysis.extractedInfo.exposure && `, ${fitsAnalysis.extractedInfo.exposure}s exposición`}
-            {fitsAnalysis.extractedInfo.filters.length > 0 && `, filtro: ${fitsAnalysis.extractedInfo.filters.join(", ")}`}
+            ✓ {t('sessionFormAutoExtracted')}: {fitsAnalysis.extractedInfo.totalLights} lights
+            {fitsAnalysis.extractedInfo.exposure && `, ${fitsAnalysis.extractedInfo.exposure}${t('sessionFormExposureSuffix')}`}
+            {fitsAnalysis.extractedInfo.filters.length > 0 && `, ${t('sessionFormFilterSuffix')}: ${fitsAnalysis.extractedInfo.filters.join(", ")}`}
           </p>
         </div>
       )}
@@ -3077,7 +3078,7 @@ function FSessionAutomated({
       <div className="grid sm:grid-cols-2 gap-3">
         {/* Date selector with FITS dates */}
         <label className="grid gap-1">
-          <Label>Fecha</Label>
+          <Label>{t('sessionFormDate')}</Label>
           {availableDates.length > 1 ? (
             <div className="space-y-2">
               <select
@@ -3090,7 +3091,7 @@ function FSessionAutomated({
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Sesión nocturna: selecciona la fecha que prefieras
+                {t('sessionFormNightDatePick')}
               </p>
             </div>
           ) : (
@@ -3105,11 +3106,11 @@ function FSessionAutomated({
 
         {/* Filter selector with FITS option */}
         <label className="grid gap-1">
-          <Label>Filtro</Label>
+          <Label>{t('sessionFormFilter')}</Label>
           <div className="grid gap-2">
             {fitsFilter && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Filtro del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsFilter')}</span>
                 <span className="text-sm font-medium">{fitsFilter}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs">
                   <input
@@ -3118,7 +3119,7 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppFilter(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
@@ -3150,7 +3151,7 @@ function FSessionAutomated({
                   }}
                   className={INPUT_CLS}
                 >
-                  <option value="">Seleccionar otro filtro...</option>
+                  <option value="">{t('sessionFormSelectOtherFilter')}</option>
                   {availableFilters
                     .filter((f) => !predefinedFilters.includes(f))
                     .map((f) => (
@@ -3163,7 +3164,7 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>Lights</Label>
+          <Label>{t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -3173,7 +3174,7 @@ function FSessionAutomated({
           />
         </label>
         <label className="grid gap-1">
-          <Label>Exposición por light (s)</Label>
+          <Label>{t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -3186,11 +3187,11 @@ function FSessionAutomated({
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Cámara</Label>
+          <Label>{t('sessionFormCamera')}</Label>
           <div className="grid gap-2">
             {fitsCamera && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Cámara del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsCamera')}</span>
                 <span className="text-sm font-medium truncate">{fitsCamera}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
                   <input
@@ -3199,13 +3200,13 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppCamera(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
             {useAppCamera && (
               <select value={camera} onChange={(e) => setCamera(e.target.value)} className={INPUT_CLS}>
-                <option value="">Seleccionar cámara</option>
+                <option value="">{t('sessionFormSelectCamera')}</option>
                 {cameras
                   .filter((c) => c.trim() !== "")
                   .map((c) => (
@@ -3217,11 +3218,11 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>Telescopio</Label>
+          <Label>{t('sessionFormTelescope')}</Label>
           <div className="grid gap-2">
             {fitsTelescope && (
               <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-                <span className="text-xs text-muted-foreground">Telescopio del FITS:</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormFitsTelescope')}</span>
                 <span className="text-sm font-medium truncate">{fitsTelescope}</span>
                 <label className="flex items-center gap-1 ml-auto text-xs whitespace-nowrap">
                   <input
@@ -3230,7 +3231,7 @@ function FSessionAutomated({
                     onChange={(e) => setUseAppTelescope(!e.target.checked)}
                     className="rounded border-slate-300"
                   />
-                  Usar este
+                  {t('sessionFormUseThis')}
                 </label>
               </div>
             )}
@@ -3244,7 +3245,7 @@ function FSessionAutomated({
                   }}
                   className={INPUT_CLS}
                 >
-                  <option value="">Seleccionar telescopio...</option>
+                  <option value="">{t('sessionFormSelectTelescope')}</option>
                   {telescopes
                     ?.filter((t) => t.name.trim())
                     .map((t) => (
@@ -3252,7 +3253,7 @@ function FSessionAutomated({
                         {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
                       </option>
                     ))}
-                  <option value="Otro">+ Añadir nuevo telescopio</option>
+                  <option value="Otro">{t('sessionFormAddNewTelescope')}</option>
                 </select>
                 {showCustomTelescope && (
                   <input
@@ -3262,7 +3263,7 @@ function FSessionAutomated({
                       setTelescope(e.target.value);
                     }}
                     className={`${INPUT_CLS} mt-2`}
-                    placeholder="Nombre del nuevo telescopio..."
+                    placeholder={t('sessionFormNewTelescopePlaceholder')}
                   />
                 )}
               </>
@@ -3275,9 +3276,9 @@ function FSessionAutomated({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm">
             <Moon className="w-4 h-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Fase lunar:</span>
+            <span className="text-muted-foreground">{t('sessionFormMoonPhaseLabel')}</span>
             <span className="font-medium">
-              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% iluminación)
+              {formatMoonPhase(moonPhase)} ({moonPhase.illumination}% {t('sessionFormIllumination')})
             </span>
           </div>
         </div>
@@ -3286,41 +3287,41 @@ function FSessionAutomated({
       {/* SNR fields - left blank for manual entry */}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
-          <Label>SNR - R</Label>
-          <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrR')}</Label>
+          <input value={snrR} onChange={(e) => setSnrR(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - G</Label>
-          <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrG')}</Label>
+          <input value={snrG} onChange={(e) => setSnrG(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
         <label className="grid gap-1">
-          <Label>SNR - B</Label>
-          <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder="Opcional" />
+          <Label>{t('sessionFormSnrB')}</Label>
+          <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
       </div>
 
       {/* Accepted/Rejected lights - left blank */}
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
-          <Label>Lights aceptados</Label>
+          <Label>{t('sessionFormLightsAccepted')}</Label>
           <input
             type="number"
             value={acceptedLights}
             min={0}
             onChange={(e) => setAcceptedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
         <label className="grid gap-1">
-          <Label>Lights rechazados</Label>
+          <Label>{t('sessionFormLightsRejected')}</Label>
           <input
             type="number"
             value={rejectedLights}
             min={0}
             onChange={(e) => setRejectedLights(e.target.value)}
             className={INPUT_CLS}
-            placeholder="Opcional"
+            placeholder={t('sessionFormOptional')}
           />
         </label>
       </div>
@@ -3330,13 +3331,13 @@ function FSessionAutomated({
         <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3">
             <Thermometer className="w-4 h-4" />
-            <span>Datos ambientales manuales</span>
-            <span className="text-xs font-normal">(opcional, si FITS no los tiene)</span>
+            <span>{t('sessionFormManualEnvTitle')}</span>
+            <span className="text-xs font-normal">{t('sessionFormManualEnvHint')}</span>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {!fitsAnalysis?.averages?.mpsas && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">MPSAS</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormMpsas')}</span>
                 <input
                   type="number"
                   step="0.01"
@@ -3349,7 +3350,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.ambientTemp && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Temp. °C</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormTempC')}</span>
                 <input
                   type="number"
                   step="0.1"
@@ -3362,7 +3363,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.humidity && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Humedad %</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormHumidityPct')}</span>
                 <input
                   type="number"
                   step="1"
@@ -3377,7 +3378,7 @@ function FSessionAutomated({
             )}
             {!fitsAnalysis?.averages?.wind && (
               <label className="grid gap-1">
-                <span className="text-xs text-muted-foreground">Viento m/s</span>
+                <span className="text-xs text-muted-foreground">{t('sessionFormWindMs')}</span>
                 <input
                   type="number"
                   step="0.1"
@@ -3395,16 +3396,16 @@ function FSessionAutomated({
 
       {/* Notes - left blank */}
       <label className="grid gap-1">
-        <Label>Notas</Label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} placeholder="Opcional..." />
+        <Label>{t('sessionFormNotes')}</Label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} placeholder={t('sessionFormNotesOptional')} />
       </label>
 
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 mt-2">
         <div className="text-xs sm:text-sm text-muted-foreground">
-          Tiempo total: <b>{hh(lights * exposureSec)}</b>
+          {t('sessionFormTotalTime')}: <b>{hh(lights * exposureSec)}</b>
         </div>
         <Btn type="submit">
-          <Plus className="w-3 h-3 md:w-4 md:h-4" /> Guardar
+          <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('sessionFormSave')}
         </Btn>
       </div>
     </form>
