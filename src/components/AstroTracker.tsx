@@ -7137,7 +7137,7 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title="Configuración" onClick={() => setShowSettings(true)}>
+              <IconBtn title="Configuración" onClick={() => setMainSection("configuracion")}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
@@ -7431,7 +7431,7 @@ export default function AstroTracker() {
                           <p className="text-muted-foreground mb-4">
                             No tienes localizaciones configuradas para ver el pronóstico
                           </p>
-                          <Btn onClick={() => setShowSettings(true)}>
+                          <Btn onClick={() => setMainSection("configuracion")}>
                             <Settings className="w-4 h-4" /> Configurar localizaciones
                           </Btn>
                         </Card>
