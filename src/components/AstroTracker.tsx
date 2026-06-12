@@ -5091,7 +5091,7 @@ export default function AstroTracker() {
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
   const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
-  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("dashboard");
+  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion" | "configuracion">("dashboard");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
   // Estado para proyectos planificados
