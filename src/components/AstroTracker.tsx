@@ -11837,9 +11837,9 @@ export default function AstroTracker() {
             <div className="grid gap-3">
               <Label>{t('dateFormat')}</Label>
               <select value={dateFormat} onChange={(e) => setDateFormat(e.target.value)} className={INPUT_CLS}>
-                <option value="DD/MM/YYYY">DD/MM/YYYY ({language === 'es' ? 'Día/Mes/Año' : 'Day/Month/Year'})</option>
-                <option value="MM/DD/YYYY">MM/DD/YYYY ({language === 'es' ? 'Mes/Día/Año' : 'Month/Day/Year'})</option>
-                <option value="YYYY/MM/DD">YYYY/MM/DD ({language === 'es' ? 'Año/Mes/Día' : 'Year/Month/Day'})</option>
+                <option value="DD/MM/YYYY">DD/MM/YYYY ({t('dateFormatDay')})</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY ({t('dateFormatMonth')})</option>
+                <option value="YYYY/MM/DD">YYYY/MM/DD ({t('dateFormatYear')})</option>
               </select>
               <div className="text-xs text-slate-600 dark:text-slate-400">
                 {t('dateFormatDescription')}
