@@ -280,9 +280,11 @@ type ImageItem = {
 const ImageCarousel = ({
   images,
   onImageClick,
+  square = false,
 }: {
   images: ImageItem[];
   onImageClick?: (objectId: string, projectId: string) => void;
+  square?: boolean;
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -312,7 +314,7 @@ const ImageCarousel = ({
 
   return (
     <Card className="p-4 mb-4">
-      <div className="relative h-48 overflow-hidden rounded-xl">
+      <div className={`relative overflow-hidden rounded-xl ${square ? "aspect-square w-full" : "h-48"}`}>
         <img
           src={currentImage.src}
           alt={currentImage.title}
