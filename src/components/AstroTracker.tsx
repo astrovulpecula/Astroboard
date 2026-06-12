@@ -13228,6 +13228,15 @@ export default function AstroTracker() {
             <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-lg">
               <div className="flex items-center justify-around px-2 py-2 safe-area-pb">
                 <button
+                  onClick={() => setMainSection("dashboard")}
+                  className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
+                    mainSection === "dashboard" ? "bg-primary/20" : ""
+                  }`}
+                >
+                  <Home className={`w-6 h-6 ${mainSection === "dashboard" ? "text-primary" : "text-muted-foreground"}`} />
+                </button>
+
+                <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex flex-col items-center justify-center p-2 rounded-2xl transition-all min-w-[56px] ${
                     mainSection === "pronostico"
