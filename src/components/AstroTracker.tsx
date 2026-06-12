@@ -8111,21 +8111,21 @@ export default function AstroTracker() {
                           <button 
                             onClick={() => setSortObjects("alpha")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title={language === 'en' ? "Sort alphabetically (A-Z)" : "Ordenar alfabéticamente (A-Z)"}
+                            title={t('sortAlpha')}
                           >
                             A-Z
                           </button>
                           <button 
                             onClick={() => setSortObjects("recent")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${sortObjects === "recent" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title={language === 'en' ? "Sort by most recent" : "Ordenar por más recientes"}
+                            title={t('sortRecent')}
                           >
                             1-3
                           </button>
                         </div>
                       )}
                       <Btn onClick={() => setMObj(true)}>
-                        <Plus className="w-4 h-4" /> <span className="hidden md:inline">{t('newObject')}</span><span className="md:hidden">{language === 'en' ? 'New' : 'Nuevo'}</span>
+                        <Plus className="w-4 h-4" /> <span className="hidden md:inline">{t('newObject')}</span><span className="md:hidden">{t('newShort')}</span>
                       </Btn>
                     </div>
                   </div>
@@ -8134,7 +8134,7 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No objects yet. Create your first object.' : 'No hay objetos todavía. Crea tu primer objeto.'}
+                        {t('noObjectsYet')}
                       </p>
                     </Card>
                   ) : (
@@ -8148,7 +8148,7 @@ export default function AstroTracker() {
                           type="text"
                           value={searchText}
                           onChange={(e) => setSearchText(e.target.value)}
-                          placeholder="Buscar por código, nombre, constelación o tipo..."
+                          placeholder={t('searchObjectsPlaceholder')}
                           className={`${INPUT_CLS} w-full pl-10`}
                         />
                         <Telescope className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -8162,20 +8162,20 @@ export default function AstroTracker() {
                         )}
                       </div>
                       <Btn outline onClick={() => setShowFilters(!showFilters)}>
-                        {showFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                        {showFilters ? t('hideFilters') : t('advancedFilters')}
                       </Btn>
                     </div>
 
                     {showFilters && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                         <label className="grid gap-1">
-                          <Label>Filtrar por constelación</Label>
+                          <Label>{t('filterByConstellation')}</Label>
                           <select
                             value={filterConstellation}
                             onChange={(e) => setFilterConstellation(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas las constelaciones</option>
+                            <option value="all">{t('allConstellations')}</option>
                             {constellations.map((c) => (
                               <option key={c} value={c}>
                                 {c}
@@ -8184,9 +8184,9 @@ export default function AstroTracker() {
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <Label>Filtrar por tipo</Label>
+                          <Label>{t('filterByType')}</Label>
                           <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={INPUT_CLS}>
-                            <option value="all">Todos los tipos</option>
+                            <option value="all">{t('allTypes')}</option>
                             {types.map((t) => (
                               <option key={t} value={t}>
                                 {t}
@@ -8195,16 +8195,16 @@ export default function AstroTracker() {
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <Label>Filtrar por estado</Label>
+                          <Label>{t('filterByStatus')}</Label>
                           <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todos los estados</option>
-                            <option value="active">Activo</option>
-                            <option value="paused">Pausado</option>
-                            <option value="closed">Terminado</option>
+                            <option value="all">{t('allStatuses')}</option>
+                            <option value="active">{t('statusActive')}</option>
+                            <option value="paused">{t('statusPaused')}</option>
+                            <option value="closed">{t('statusOptionClosed')}</option>
                           </select>
                         </label>
                         {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all") && (
@@ -8217,7 +8217,7 @@ export default function AstroTracker() {
                                 setFilterStatus("all");
                               }}
                             >
-                              Limpiar filtros
+                              {t('clearFilters')}
                             </Btn>
                           </div>
                         )}
@@ -8226,7 +8226,7 @@ export default function AstroTracker() {
 
                     {(searchText || filterConstellation !== "all" || filterType !== "all") && (
                       <div className="text-sm text-slate-600 dark:text-slate-400">
-                        {filteredObjects.length} objeto(s) encontrado(s)
+                        {filteredObjects.length} {t('objectsFound')}
                       </div>
                     )}
                   </div>
