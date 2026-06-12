@@ -11799,7 +11799,7 @@ export default function AstroTracker() {
         <section className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-6">
           <Card className="p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg md:text-xl font-semibold">Configuración General</h3>
+              <h3 className="text-lg md:text-xl font-semibold">{t('generalSettings')}</h3>
             </div>
           <div className="grid gap-6">
             {/* Idioma */}
