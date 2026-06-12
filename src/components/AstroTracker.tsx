@@ -5091,7 +5091,7 @@ export default function AstroTracker() {
   const [evolutionSectionExpanded, setEvolutionSectionExpanded] = useState(true);
   const [timelineSectionExpanded, setTimelineSectionExpanded] = useState(true);
   const [visibilitySectionExpanded, setVisibilitySectionExpanded] = useState(true);
-  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion">("dashboard");
+  const [mainSection, setMainSection] = useState<"dashboard" | "pronostico" | "objetos" | "estadisticas" | "galeria" | "planificacion" | "configuracion">("dashboard");
   const [nextEphemeris, setNextEphemeris] = useState<Ephemeris | null>(null);
   
   // Estado para proyectos planificados
@@ -5633,6 +5633,7 @@ export default function AstroTracker() {
     
     if (saved) {
       setShowSettings(false);
+      setMainSection("dashboard");
     } else {
       toast({
         title: "Error de almacenamiento",
@@ -6859,7 +6860,7 @@ export default function AstroTracker() {
           mainSection={mainSection}
           setMainSection={setMainSection}
           theme={theme}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={() => setMainSection("configuracion")}
           labels={{
             dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
             forecast: t('forecast'),
@@ -7136,7 +7137,7 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title="Configuración" onClick={() => setShowSettings(true)}>
+              <IconBtn title="Configuración" onClick={() => setMainSection("configuracion")}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
@@ -7430,7 +7431,7 @@ export default function AstroTracker() {
                           <p className="text-muted-foreground mb-4">
                             No tienes localizaciones configuradas para ver el pronóstico
                           </p>
-                          <Btn onClick={() => setShowSettings(true)}>
+                          <Btn onClick={() => setMainSection("configuracion")}>
                             <Settings className="w-4 h-4" /> Configurar localizaciones
                           </Btn>
                         </Card>
@@ -11794,7 +11795,12 @@ export default function AstroTracker() {
           </form>
         </Modal>
 
-        <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración General" wide>
+        {mainSection === "configuracion" && (
+        <section className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-6">
+          <Card className="p-4 md:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg md:text-xl font-semibold">Configuración General</h3>
+            </div>
           <div className="grid gap-6">
             {/* Idioma */}
             <div className="grid gap-3">
@@ -12252,14 +12258,16 @@ export default function AstroTracker() {
                 Cerrar sesión
               </button>
               <div className="flex items-center gap-2">
-                <Btn outline onClick={() => setShowSettings(false)}>
+                <Btn outline onClick={() => setMainSection("dashboard")}>
                   {t('cancel')}
                 </Btn>
                 <Btn onClick={saveSettings}>{t('save')}</Btn>
               </div>
             </div>
           </div>
-        </Modal>
+          </Card>
+        </section>
+        )}
 
         {/* Modal de configuración del proyecto */}
         <Modal
