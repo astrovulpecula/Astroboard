@@ -7309,7 +7309,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Navigation Buttons - Hidden on mobile, shown on md+ */}
-              <div className="hidden md:grid md:grid-cols-5 gap-2 mb-6 md:hidden">
+              <div className="hidden">
                 <button
                   onClick={() => setMainSection("pronostico")}
                   className={`flex items-center gap-2 p-3 rounded-2xl border-2 transition-all shadow-sm min-w-0 overflow-hidden ${
