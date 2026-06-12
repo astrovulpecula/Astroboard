@@ -11794,7 +11794,12 @@ export default function AstroTracker() {
           </form>
         </Modal>
 
-        <Modal open={showSettings} onClose={() => setShowSettings(false)} title="Configuración General" wide>
+        {mainSection === "configuracion" && (
+        <section className="max-w-7xl mx-auto px-3 md:px-4 py-4 md:py-6">
+          <Card className="p-4 md:p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg md:text-xl font-semibold">Configuración General</h3>
+            </div>
           <div className="grid gap-6">
             {/* Idioma */}
             <div className="grid gap-3">
@@ -12252,14 +12257,16 @@ export default function AstroTracker() {
                 Cerrar sesión
               </button>
               <div className="flex items-center gap-2">
-                <Btn outline onClick={() => setShowSettings(false)}>
+                <Btn outline onClick={() => setMainSection("dashboard")}>
                   {t('cancel')}
                 </Btn>
                 <Btn onClick={saveSettings}>{t('save')}</Btn>
               </div>
             </div>
           </div>
-        </Modal>
+          </Card>
+        </section>
+        )}
 
         {/* Modal de configuración del proyecto */}
         <Modal
