@@ -9166,7 +9166,7 @@ export default function AstroTracker() {
                                   className="w-full text-left p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
                                 >
                                   <div className="font-medium text-sm">{p.objectName}</div>
-                                  <div className="text-xs text-slate-500 dark:text-slate-400">{p.projectName} · {p.sessionsCount} sesión(es)</div>
+                                  <div className="text-xs text-slate-500 dark:text-slate-400">{p.projectName} · {p.sessionsCount} {t('metricSessionsCount')}</div>
                                 </button>
                               ))}
                             </div>
