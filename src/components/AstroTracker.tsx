@@ -6838,8 +6838,20 @@ export default function AstroTracker() {
         }
       `}</style>
       <div
-        className={`min-h-screen overflow-x-hidden ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
+        className={`min-h-screen overflow-x-hidden md:pl-60 ${theme === "astro" ? "astro-bg" : "bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950"} text-slate-900 dark:text-slate-100`}
       >
+        <AppSidebar
+          mainSection={mainSection}
+          setMainSection={setMainSection}
+          theme={theme}
+          labels={{
+            forecast: t('forecast'),
+            planning: t('planning'),
+            objects: t('objectsSection'),
+            metrics: t('statisticsSection'),
+            gallery: t('gallery'),
+          }}
+        />
         <header className="sticky top-0 z-40 backdrop-blur bg-white/60 dark:bg-slate-950/60 border-b border-slate-200/70 dark:border-slate-800/70 pt-[env(safe-area-inset-top)] md:pt-0">
           <div className="max-w-7xl mx-auto px-3 md:px-4 py-2 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-3">
