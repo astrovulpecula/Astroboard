@@ -653,6 +653,7 @@ const WeatherCard = ({
   getWeatherIcon: (code: number) => string;
   getWeatherDescription: (code: number) => string;
 }) => {
+  const { t, language } = useLanguage();
   const [weather, setWeather] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
@@ -738,7 +739,7 @@ const WeatherCard = ({
       <Card className="p-6">
         <div className="text-center text-muted-foreground">
           <CloudSun className="w-8 h-8 mx-auto mb-2" />
-          <p>No se pudo cargar el pronóstico</p>
+          <p>{t('couldNotLoadForecast')}</p>
         </div>
       </Card>
     );
@@ -758,7 +759,7 @@ const WeatherCard = ({
           <div className="mb-4 p-4 rounded-xl bg-muted/50">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Ahora</p>
+                <p className="text-sm text-muted-foreground mb-1">{t('now')}</p>
                 <p className="text-3xl font-bold">
                   {Math.round(weather.current_weather.temperature)}°C
                 </p>
@@ -771,7 +772,7 @@ const WeatherCard = ({
               </div>
             </div>
             <div className="mt-3 text-xs text-muted-foreground">
-              Viento: {Math.round(weather.current_weather.windspeed)} km/h
+              {t('wind')}: {Math.round(weather.current_weather.windspeed)} km/h
             </div>
           </div>
 
@@ -783,7 +784,7 @@ const WeatherCard = ({
                 viewMode === 'hourly' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Hoy por horas
+              {t('todayByHours')}
             </button>
             <button
               onClick={() => setViewMode('daily')}
@@ -791,7 +792,7 @@ const WeatherCard = ({
                 viewMode === 'daily' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              Por días
+              {t('byDays')}
             </button>
           </div>
 
@@ -799,13 +800,13 @@ const WeatherCard = ({
             <div>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-[11px] text-muted-foreground">
-                  Empieza en la hora actual. Usa las flechas o desplázate para ver el resto del día.
+                  {t('forecastStartsCurrentHour')}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
                   <button
                     type="button"
                     onClick={() => scrollHourlyForecast('left')}
-                    aria-label="Ver horas anteriores"
+                    aria-label={t('prevHours')}
                     className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -813,7 +814,7 @@ const WeatherCard = ({
                   <button
                     type="button"
                     onClick={() => scrollHourlyForecast('right')}
-                    aria-label="Ver horas siguientes"
+                    aria-label={t('nextHours')}
                     className="rounded-md border border-border bg-background/80 p-1.5 text-foreground transition-colors hover:bg-muted"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -839,7 +840,7 @@ const WeatherCard = ({
                       }`}
                     >
                       <p className="text-[10px] font-medium mb-1">
-                        {isCurrent ? 'Ahora' : `${String(hour).padStart(2, '0')}:00`}
+                        {isCurrent ? t('now') : `${String(hour).padStart(2, '0')}:00`}
                       </p>
                       <div className="text-base mb-1">{getWeatherIcon(h.code)}</div>
                       <p className="text-xs font-semibold">{Math.round(h.temp)}°</p>
@@ -856,8 +857,9 @@ const WeatherCard = ({
             <div className="overflow-x-auto overflow-y-hidden pb-3 pt-1 scroll-smooth">
               <div className="flex w-max gap-2 px-1">
                 {weather.daily.time.map((date: string, i: number) => {
-                  const dayName = i === 0 ? "Hoy" : i === 1 ? "Mañana" : new Date(date + "T00:00:00").toLocaleDateString('es-ES', { weekday: 'short' });
-                  const dayDate = new Date(date + "T00:00:00").toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                  const locale = language === 'en' ? 'en-US' : 'es-ES';
+                  const dayName = i === 0 ? t('today') : i === 1 ? t('tomorrow') : new Date(date + "T00:00:00").toLocaleDateString(locale, { weekday: 'short' });
+                  const dayDate = new Date(date + "T00:00:00").toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
                   const isToday = i === 0;
                   return (
                     <div
@@ -7429,10 +7431,10 @@ export default function AstroTracker() {
                         <Card className="p-8 text-center">
                           <CloudSun className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                           <p className="text-muted-foreground mb-4">
-                            No tienes localizaciones configuradas para ver el pronóstico
+                            {t('noLocationsConfigured')}
                           </p>
                           <Btn onClick={() => setMainSection("configuracion")}>
-                            <Settings className="w-4 h-4" /> Configurar localizaciones
+                            <Settings className="w-4 h-4" /> {t('configureLocations')}
                           </Btn>
                         </Card>
                       );
@@ -7450,14 +7452,14 @@ export default function AstroTracker() {
                     };
 
                     const getWeatherDescription = (code: number) => {
-                      if (code === 0) return "Cielo despejado";
-                      if (code <= 3) return "Parcialmente nublado";
-                      if (code <= 48) return "Nublado";
-                      if (code <= 67) return "Lluvia";
-                      if (code <= 77) return "Nieve";
-                      if (code <= 82) return "Chubascos";
-                      if (code >= 95) return "Tormenta";
-                      return "Variable";
+                      if (code === 0) return t('weatherClear');
+                      if (code <= 3) return t('weatherPartlyCloudy');
+                      if (code <= 48) return t('weatherCloudy');
+                      if (code <= 67) return t('weatherRain');
+                      if (code <= 77) return t('weatherSnow');
+                      if (code <= 82) return t('weatherShowers');
+                      if (code >= 95) return t('weatherStorm');
+                      return t('weatherVariable');
                     };
 
                     return (
@@ -7481,10 +7483,10 @@ export default function AstroTracker() {
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-bold flex items-center gap-2">
-                      <Calendar className="w-6 h-6" /> Proyectos Planificados
+                      <Calendar className="w-6 h-6" /> {t('plannedProjectsTitle')}
                     </h2>
                     <Btn onClick={() => setMPlanned(true)}>
-                      <Plus className="w-4 h-4" /> Nueva planificación
+                      <Plus className="w-4 h-4" /> {t('newPlanning')}
                     </Btn>
                   </div>
                   
@@ -7492,18 +7494,18 @@ export default function AstroTracker() {
                     <Card className="p-8 text-center">
                       <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                       <p className="text-muted-foreground">
-                        {language === 'en' ? 'No planning data yet. Create your first planned project.' : 'No hay datos de planificación todavía. Crea tu primer proyecto planificado.'}
+                        {t('noPlanningYet')}
                       </p>
                     </Card>
                   ) : (
                   <>
                   <p className="text-muted-foreground">
-                    Aquí puedes planificar tus próximos proyectos de astrofotografía. Cuando estés listo, podrás convertirlos en proyectos reales.
+                    {t('planningIntro')}
                   </p>
                   {plannedProjects.length > 0 && (
                     <Card className="p-4">
                       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <Calendar className="w-4 h-4" /> Visibilidad Anual
+                        <Calendar className="w-4 h-4" /> {t('annualVisibility')}
                       </h3>
                       <div className="space-y-2">
                         {/* Month headers */}
@@ -7640,7 +7642,7 @@ export default function AstroTracker() {
                         date={new Date()}
                         language={language}
                         altitudeLimit={minAltitudeLimit}
-                        title={language === 'en' ? 'Night Visibility - Planned Objects' : 'Visibilidad Nocturna - Objetos Planificados'}
+                        title={t('nightVisibilityPlanned')}
                       />
                     </Card>
                   )}
@@ -7654,14 +7656,14 @@ export default function AstroTracker() {
                           <button 
                             onClick={() => setPlannedSortMode("alpha")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "alpha" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title="Ordenar alfabéticamente (A-Z)"
+                            title={t('sortAlpha')}
                           >
                             A-Z
                           </button>
                           <button 
                             onClick={() => setPlannedSortMode("chrono")}
                             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${plannedSortMode === "chrono" ? "bg-white dark:bg-slate-700 shadow-sm" : "hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                            title="Ordenar cronológicamente"
+                            title={t('sortChrono')}
                           >
                             1-3
                           </button>
@@ -7674,7 +7676,7 @@ export default function AstroTracker() {
                           type="text"
                           value={plannedSearchText}
                           onChange={(e) => setPlannedSearchText(e.target.value)}
-                          placeholder="Buscar por objeto, nombre o descripción..."
+                          placeholder={t('searchByObjectNameDescription')}
                           className={`${INPUT_CLS} w-full pl-10`}
                         />
                         <Calendar className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -7689,7 +7691,7 @@ export default function AstroTracker() {
                       </div>
                       
                       <Btn outline onClick={() => setShowPlannedFilters(!showPlannedFilters)}>
-                        {showPlannedFilters ? "Ocultar filtros" : "Filtros avanzados"}
+                        {showPlannedFilters ? t('hideFilters') : t('advancedFilters')}
                       </Btn>
                     </div>
                     
@@ -7697,53 +7699,53 @@ export default function AstroTracker() {
                     {showPlannedFilters && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Constelación</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('constellation')}</span>
                           <select
                             value={plannedFilterConstellation}
                             onChange={(e) => setPlannedFilterConstellation(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
+                            <option value="all">{t('allFemPlural')}</option>
                             {[...new Set(plannedProjects.map(p => p.constellation).filter(Boolean))].sort().map(c => (
                               <option key={c} value={c}>{c}</option>
                             ))}
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Señal</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('signal')}</span>
                           <select
                             value={plannedFilterSignal}
                             onChange={(e) => setPlannedFilterSignal(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
+                            <option value="all">{t('allFemPlural')}</option>
                             {[...new Set(plannedProjects.map(p => p.signal).filter(Boolean))].sort().map(s => (
                               <option key={s} value={s}>{s}</option>
                             ))}
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Prioridad</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('priority')}</span>
                           <select
                             value={plannedFilterPriority}
                             onChange={(e) => setPlannedFilterPriority(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todas</option>
-                            <option value="Alta">Alta</option>
-                            <option value="Media">Media</option>
-                            <option value="Baja">Baja</option>
+                            <option value="all">{t('allFemPlural')}</option>
+                            <option value="Alta">{t('priorityHigh')}</option>
+                            <option value="Media">{t('priorityMedium')}</option>
+                            <option value="Baja">{t('priorityLow')}</option>
                           </select>
                         </label>
                         <label className="grid gap-1">
-                          <span className="text-xs font-medium text-muted-foreground">Cenit</span>
+                          <span className="text-xs font-medium text-muted-foreground">{t('cenit')}</span>
                           <select
                             value={plannedFilterCenit}
                             onChange={(e) => setPlannedFilterCenit(e.target.value)}
                             className={INPUT_CLS}
                           >
-                            <option value="all">Todos</option>
-                            <option value="proximo">Próximo</option>
+                            <option value="all">{t('allMasc')}</option>
+                            <option value="proximo">{t('upcoming')}</option>
                             {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(m => (
                               <option key={m} value={m}>{m}</option>
                             ))}
@@ -7760,7 +7762,7 @@ export default function AstroTracker() {
                               setPlannedSearchText("");
                             }}
                           >
-                            Limpiar filtros
+                            {t('clearFilters')}
                           </Btn>
                         </div>
                       </div>
@@ -7836,13 +7838,13 @@ export default function AstroTracker() {
                           <Calendar className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                           <p className="text-muted-foreground mb-4">
                             {plannedProjects.length === 0 
-                              ? "No tienes proyectos planificados todavía"
-                              : "No se encontraron proyectos que coincidan con los filtros"
+                              ? t('noPlannedProjectsYet')
+                              : t('noPlannedMatches')
                             }
                           </p>
                           {plannedProjects.length === 0 && (
                             <Btn onClick={() => setMPlanned(true)}>
-                              <Plus className="w-4 h-4" /> Crear primera planificación
+                              <Plus className="w-4 h-4" /> {t('createFirstPlanning')}
                             </Btn>
                           )}
                         </Card>
@@ -7884,11 +7886,11 @@ export default function AstroTracker() {
                                   )}
                                   {/* Delete button positioned on top right of image */}
                                   <button
-                                    title="Eliminar"
+                                    title={t('deleteAction')}
                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (confirm("¿Eliminar este proyecto planificado?")) {
+                                      if (confirm(t('deletePlannedConfirm'))) {
                                         pendingChangesRef.current++; // Mark as user modification
                                         setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
                                       }
