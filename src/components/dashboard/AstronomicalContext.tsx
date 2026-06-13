@@ -409,7 +409,17 @@ export default function AstronomicalContext({
         </div>
         {data.best ? (
           <>
-            <div className="text-xl font-bold mb-1 truncate">{data.best.objectId}</div>
+            {onObjectClick ? (
+              <button
+                type="button"
+                onClick={() => onObjectClick(data.best!.objectId)}
+                className="text-xl font-bold mb-1 truncate block text-left hover:underline hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors max-w-full"
+              >
+                {data.best.objectId}
+              </button>
+            ) : (
+              <div className="text-xl font-bold mb-1 truncate">{data.best.objectId}</div>
+            )}
             {data.best.name !== data.best.objectId && (
               <div className="text-xs text-muted-foreground truncate mb-2">{data.best.name}</div>
             )}
