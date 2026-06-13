@@ -6990,9 +6990,25 @@ export default function AstroTracker() {
       >
         <AppSidebar
           mainSection={mainSection}
-          setMainSection={setMainSection}
+          setMainSection={(s) => {
+            setView("objects");
+            setSelectedObjectId(null);
+            setSelectedProjectId(null);
+            setMainSection(s);
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }
+          }}
           theme={theme}
-          onOpenSettings={() => setMainSection("configuracion")}
+          onOpenSettings={() => {
+            setView("objects");
+            setSelectedObjectId(null);
+            setSelectedProjectId(null);
+            setMainSection("configuracion");
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }
+          }}
           labels={{
             dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
             forecast: t('forecast'),
@@ -7269,7 +7285,15 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title={t('settings')} onClick={() => setMainSection("configuracion")}>
+              <IconBtn title={t('settings')} onClick={() => {
+                setView("objects");
+                setSelectedObjectId(null);
+                setSelectedProjectId(null);
+                setMainSection("configuracion");
+                if (typeof window !== "undefined") {
+                  window.scrollTo({ top: 0, behavior: "auto" });
+                }
+              }}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
