@@ -7285,7 +7285,15 @@ export default function AstroTracker() {
                   <Sun className="w-4 h-4" />
                 )}
               </IconBtn>
-              <IconBtn title={t('settings')} onClick={() => setMainSection("configuracion")}>
+              <IconBtn title={t('settings')} onClick={() => {
+                setView("objects");
+                setSelectedObjectId(null);
+                setSelectedProjectId(null);
+                setMainSection("configuracion");
+                if (typeof window !== "undefined") {
+                  window.scrollTo({ top: 0, behavior: "auto" });
+                }
+              }}>
                 <Settings className="w-4 h-4" />
               </IconBtn>
             </div>
