@@ -137,7 +137,7 @@ export default function AstronomicalContext({
           narrowband: "Best window for narrowband",
           broadband: "Best window for broadband (RGB)",
           noCoords: "Set your main location to see tonight's context.",
-          forecastTitle: "Forecast",
+          forecastTitle: "Weather",
           today: "Today",
           tomorrow: "Tomorrow",
           precip: "rain",
@@ -165,7 +165,7 @@ export default function AstronomicalContext({
           narrowband: "Ideal para banda estrecha",
           broadband: "Ideal para banda ancha (RGB)",
           noCoords: "Configura tu ubicación principal para ver el contexto de esta noche.",
-          forecastTitle: "Pronóstico",
+          forecastTitle: "Meteorología",
           today: "Hoy",
           tomorrow: "Mañana",
           precip: "lluvia",
@@ -337,7 +337,7 @@ export default function AstronomicalContext({
     const startIdx = Math.max(0, items.findIndex((it: any) => it.time.getTime() >= now - 3600000));
     return items.slice(startIdx);
   }, [hourly]);
-  const HOURS_PER_PAGE = 4;
+  const HOURS_PER_PAGE = 7;
   const [hourOffset, setHourOffset] = useState(0);
   const maxOffset = Math.max(0, hourlyItems.length - HOURS_PER_PAGE);
   const visibleHours = hourlyItems.slice(hourOffset, hourOffset + HOURS_PER_PAGE);
