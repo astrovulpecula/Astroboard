@@ -25,6 +25,7 @@ interface Props {
   language: "es" | "en";
   forecast?: any;
   locationName?: string;
+  onObjectClick?: (objectId: string) => void;
 }
 
 const SYNODIC = 29.53058867;
@@ -111,6 +112,7 @@ export default function AstronomicalContext({
   language,
   forecast,
   locationName,
+  onObjectClick,
 }: Props) {
   const L = useMemo(() => {
     return language === "en"
