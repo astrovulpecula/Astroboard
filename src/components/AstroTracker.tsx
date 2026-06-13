@@ -7435,39 +7435,6 @@ export default function AstroTracker() {
 
               {/* Row 2: Ephemeris + Carousel */}
               <div className="grid gap-4 lg:grid-cols-2 mb-6">
-              {/* Next Ephemeris Card */}
-              {nextEphemeris && (
-                  <div 
-                    onClick={() => setView("ephemerides")}
-                    className="bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 dark:from-indigo-500/20 dark:via-purple-500/20 dark:to-pink-500/20 rounded-2xl p-6 border border-indigo-200/50 dark:border-indigo-500/30 cursor-pointer hover:scale-[1.02] transition-transform duration-200 overflow-hidden h-full"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-xl bg-indigo-500/20 dark:bg-indigo-500/30">
-                        <Calendar className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-100 mb-1 truncate">
-                          {t('nextEphemeris')}
-                        </h3>
-                        <p className="text-sm text-indigo-700 dark:text-indigo-300 mb-2 truncate">
-                          {formatSpanishDate(nextEphemeris.date)}
-                        </p>
-                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100 mb-1 line-clamp-2">
-                          {language === 'en' ? nextEphemeris.eventEN : nextEphemeris.eventES}
-                        </p>
-                        {nextEphemeris.notes && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {nextEphemeris.notes}
-                          </p>
-                        )}
-                        <div className="mt-2 inline-block px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                          {nextEphemeris.category}
-                        </div>
-                      </div>
-                    </div>
-                </div>
-              )}
-
               {/* Image Carousel */}
               {dashboardCarouselImages.length > 0 && (
                   <ImageCarousel
@@ -7481,6 +7448,55 @@ export default function AstroTracker() {
                     }}
                   />
               )}
+
+              {/* Latest final image uploaded */}
+              {(() => {
+                let latest: { src: string; objectId: string; projectId: string; title: string; subtitle: string; ts: number } | null = null;
+                for (const o of objects) {
+                  for (const p of (o.projects || [])) {
+                    const src = (p as any)?.images?.finalProject;
+                    if (!src) continue;
+                    const ts = new Date((p as any).updatedAt || (p as any).createdAt || 0).getTime();
+                    if (!latest || ts > latest.ts) {
+                      latest = {
+                        src,
+                        objectId: o.id,
+                        projectId: p.id,
+                        title: `${o.id}${o.commonName ? " · " + o.commonName : ""}`,
+                        subtitle: p.name || '',
+                        ts,
+                      };
+                    }
+                  }
+                }
+                if (!latest) return null;
+                return (
+                  <Card className="p-4 mb-4">
+                    <div className="relative overflow-hidden rounded-xl aspect-square w-full">
+                      <img
+                        src={latest.src}
+                        alt={latest.title}
+                        className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => {
+                          setSelectedObjectId(latest!.objectId);
+                          setSelectedProjectId(latest!.projectId);
+                          setView("project");
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                      />
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/55 backdrop-blur-sm text-white text-[10px] font-mono uppercase tracking-wider">
+                        {language === 'en' ? 'Latest final image' : 'Última imagen final'}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+                        <div className="text-white text-sm font-medium truncate">{latest.title}</div>
+                        {latest.subtitle && (
+                          <div className="text-white/80 text-xs truncate">{latest.subtitle}</div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })()}
               </div>
                 </>
               )}

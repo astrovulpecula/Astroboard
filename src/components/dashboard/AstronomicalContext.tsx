@@ -229,9 +229,11 @@ export default function AstronomicalContext({
       darknessHours = Math.max(0, (astroDawn.getTime() - astroDusk.getTime()) / 3600000);
     }
 
-    // Best target: max time above altitude limit AND outside moon interference
+    // Best target: max time above altitude limit AND outside moon interference,
+    // strictly within astronomical night (astro dusk → astro dawn).
     let best: { name: string; objectId: string; usefulHours: number } | null = null;
-    for (const obj of activeObjects) {
+    const hasAstroNight = !!(astroDusk && astroDawn);
+    for (const obj of (hasAstroNight ? activeObjects : [])) {
       const oc = getObjectCoordinates(obj.objectId);
       if (!oc) continue;
       const vis = calculateNightVisibility(oc.ra, oc.dec, coords, now);
@@ -240,9 +242,9 @@ export default function AstronomicalContext({
       for (let i = 0; i < vis.data.length; i++) {
         const p = vis.data[i];
         if (p.altitude < altitudeLimit) continue;
-        // Filter to astronomical night window
-        if (astroDusk && p.time < astroDusk) continue;
-        if (astroDawn && p.time > astroDawn) continue;
+        // Strictly restrict to astronomical night window
+        if (p.time < astroDusk!) continue;
+        if (p.time > astroDawn!) continue;
         const moonPt = moonCurve[i];
         if (moonPt && moonPt.altitude > 0) {
           const moonRD = getMoonCoordinates(p.time);
