@@ -98,6 +98,7 @@ import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
 import VisibilityChart from "@/components/VisibilityChart";
 import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
+import AstronomicalContext from "@/components/dashboard/AstronomicalContext";
 import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
