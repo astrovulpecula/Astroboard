@@ -7362,6 +7362,19 @@ export default function AstroTracker() {
                 activeObjects={objects
                   .filter((obj: any) => obj.projects.some((p: any) => p.status === 'active' || p.status === 'paused'))
                   .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
+                onObjectClick={(objectId: string) => {
+                  const obj = objects.find((o: any) => o.id === objectId);
+                  const proj = obj?.projects?.find((p: any) => p.status === 'active' || p.status === 'paused') || obj?.projects?.[0];
+                  if (obj && proj) {
+                    setSelectedObjectId(obj.id);
+                    setSelectedProjectId(proj.id);
+                    setView("project");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else {
+                    setMainSection("planificacion");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
               />
 
               {/* Other planned objects visible this month */}
