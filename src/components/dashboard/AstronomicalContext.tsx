@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { Moon, Sunset, Sparkles, Target, CloudSun } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Moon, Sunset, Sparkles, Target, CloudSun, ChevronUp, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { calculateMoonPhase } from "@/lib/lunar-phase";
 import {
