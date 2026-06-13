@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Moon, Sunset, Sparkles, Target } from "lucide-react";
+import { Moon, Sunset, Sparkles, Target, CloudSun } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { calculateMoonPhase } from "@/lib/lunar-phase";
 import {
@@ -23,6 +23,8 @@ interface Props {
   activeObjects: ActiveObj[];
   altitudeLimit: number;
   language: "es" | "en";
+  forecast?: any;
+  locationName?: string;
 }
 
 const SYNODIC = 29.53058867;
@@ -107,6 +109,8 @@ export default function AstronomicalContext({
   activeObjects,
   altitudeLimit,
   language,
+  forecast,
+  locationName,
 }: Props) {
   const L = useMemo(() => {
     return language === "en"
@@ -133,6 +137,10 @@ export default function AstronomicalContext({
           narrowband: "Best window for narrowband",
           broadband: "Best window for broadband (RGB)",
           noCoords: "Set your main location to see tonight's context.",
+          forecastTitle: "Forecast",
+          today: "Today",
+          tomorrow: "Tomorrow",
+          precip: "rain",
         }
       : {
           moonTitle: "Fase lunar",
@@ -157,6 +165,10 @@ export default function AstronomicalContext({
           narrowband: "Ideal para banda estrecha",
           broadband: "Ideal para banda ancha (RGB)",
           noCoords: "Configura tu ubicación principal para ver el contexto de esta noche.",
+          forecastTitle: "Pronóstico",
+          today: "Hoy",
+          tomorrow: "Mañana",
+          precip: "lluvia",
         };
   }, [language]);
 
@@ -285,8 +297,34 @@ export default function AstronomicalContext({
   const recommendation =
     data.phase.illumination > 40 ? L.narrowband : L.broadband;
 
+  // Weather code → emoji + label
+  const wcMap = (code: number, lang: "es" | "en"): { emoji: string; label: string } => {
+    const es: Record<number, [string, string]> = {
+      0: ["☀️", "Despejado"], 1: ["🌤️", "Mayormente despejado"], 2: ["⛅", "Parcial"], 3: ["☁️", "Nublado"],
+      45: ["🌫️", "Niebla"], 48: ["🌫️", "Niebla"],
+      51: ["🌦️", "Llovizna"], 53: ["🌦️", "Llovizna"], 55: ["🌧️", "Llovizna fuerte"],
+      61: ["🌧️", "Lluvia"], 63: ["🌧️", "Lluvia"], 65: ["🌧️", "Lluvia fuerte"],
+      71: ["🌨️", "Nieve"], 73: ["🌨️", "Nieve"], 75: ["❄️", "Nieve fuerte"],
+      80: ["🌦️", "Chubascos"], 81: ["🌧️", "Chubascos"], 82: ["⛈️", "Chubascos fuertes"],
+      95: ["⛈️", "Tormenta"], 96: ["⛈️", "Tormenta"], 99: ["⛈️", "Tormenta"],
+    };
+    const en: Record<number, [string, string]> = {
+      0: ["☀️", "Clear"], 1: ["🌤️", "Mostly clear"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Overcast"],
+      45: ["🌫️", "Fog"], 48: ["🌫️", "Fog"],
+      51: ["🌦️", "Drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌧️", "Heavy drizzle"],
+      61: ["🌧️", "Rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"],
+      71: ["🌨️", "Snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"],
+      80: ["🌦️", "Showers"], 81: ["🌧️", "Showers"], 82: ["⛈️", "Heavy showers"],
+      95: ["⛈️", "Storm"], 96: ["⛈️", "Storm"], 99: ["⛈️", "Storm"],
+    };
+    const m = lang === "en" ? en : es;
+    return { emoji: (m[code]?.[0]) || "🌡️", label: (m[code]?.[1]) || "—" };
+  };
+
+  const daily = forecast?.daily;
+
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 mb-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
       {/* Moon phase */}
       <Card className="p-4 bg-gradient-to-br from-amber-500/5 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/15 border-amber-200/40 dark:border-amber-500/20">
         <div className="flex items-center gap-2 mb-2">
@@ -382,6 +420,52 @@ export default function AstronomicalContext({
         <div className="text-[11px] pt-2 border-t border-border/40 text-muted-foreground">
           {recommendation}
         </div>
+      </Card>
+
+      {/* Forecast (main location) */}
+      <Card className="p-4 bg-gradient-to-br from-sky-500/5 to-blue-500/10 dark:from-sky-500/10 dark:to-blue-500/15 border-sky-200/40 dark:border-sky-500/20">
+        <div className="flex items-center gap-2 mb-2">
+          <CloudSun className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+          <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground truncate">
+            {L.forecastTitle}{locationName ? ` · ${locationName}` : ""}
+          </span>
+        </div>
+        {daily && Array.isArray(daily.time) && daily.time.length > 0 ? (
+          <div className="space-y-1.5">
+            {daily.time.slice(0, 3).map((iso: string, i: number) => {
+              const code = daily.weathercode?.[i] ?? 0;
+              const tmax = Math.round(daily.temperature_2m_max?.[i] ?? 0);
+              const tmin = Math.round(daily.temperature_2m_min?.[i] ?? 0);
+              const pp = daily.precipitation_probability_max?.[i] ?? 0;
+              const { emoji, label } = wcMap(code, language);
+              const d = new Date(iso);
+              const dayLabel =
+                i === 0
+                  ? L.today
+                  : i === 1
+                  ? L.tomorrow
+                  : d.toLocaleDateString(language === "en" ? "en-US" : "es-ES", { weekday: "short" });
+              return (
+                <div key={iso} className="flex items-center justify-between text-xs gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-base leading-none">{emoji}</span>
+                    <span className="font-semibold capitalize w-12 shrink-0">{dayLabel}</span>
+                    <span className="text-muted-foreground truncate hidden sm:inline">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 font-mono">
+                    <span className="text-sky-600 dark:text-sky-400">💧{pp}%</span>
+                    <span>
+                      <span className="text-rose-500">{tmax}°</span>
+                      <span className="text-muted-foreground">/{tmin}°</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">{L.noCoords}</p>
+        )}
       </Card>
     </div>
   );
