@@ -321,7 +321,26 @@ export default function AstronomicalContext({
     return { emoji: (m[code]?.[0]) || "🌡️", label: (m[code]?.[1]) || "—" };
   };
 
-  const daily = forecast?.daily;
+  const hourly = forecast?.hourly;
+  const hourlyItems = useMemo(() => {
+    if (!hourly || !Array.isArray(hourly.time)) return [];
+    const now = Date.now();
+    const items = hourly.time.map((iso: string, i: number) => ({
+      iso,
+      time: new Date(iso),
+      temp: hourly.temperature_2m?.[i],
+      code: hourly.weathercode?.[i] ?? 0,
+      pp: hourly.precipitation_probability?.[i] ?? 0,
+      clouds: hourly.cloudcover?.[i] ?? 0,
+    }));
+    // Start from the current hour
+    const startIdx = Math.max(0, items.findIndex((it: any) => it.time.getTime() >= now - 3600000));
+    return items.slice(startIdx);
+  }, [hourly]);
+  const HOURS_PER_PAGE = 4;
+  const [hourOffset, setHourOffset] = useState(0);
+  const maxOffset = Math.max(0, hourlyItems.length - HOURS_PER_PAGE);
+  const visibleHours = hourlyItems.slice(hourOffset, hourOffset + HOURS_PER_PAGE);
 
   return (
     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
