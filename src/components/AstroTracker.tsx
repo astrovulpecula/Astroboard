@@ -7348,17 +7348,6 @@ export default function AstroTracker() {
                     <h2 className="text-3xl md:text-4xl font-bold mb-2">
                       {greeting}{displayName ? `, ${displayName}` : ''}
                     </h2>
-                    {(objects.length > 0 || plannedProjects.length > 0) && (
-                      <div className="space-y-1">
-                        <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl">
-                          {t('todayMoonPhase')} {formatMoonPhase(moonPhase, language)} • {moonPhase.illumination}% {t('illuminated')}
-                        </p>
-                        <p className="text-slate-500 dark:text-slate-500 text-base md:text-lg">
-                          {t('risesAt')} {formatTime(moonTimes.moonrise)} • {t('setsAt')} {formatTime(moonTimes.moonset)} •{" "}
-                          {formatHoursToHHMM(moonTimes.darkHours)} {t('totalDarkness')}
-                        </p>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
@@ -7373,46 +7362,48 @@ export default function AstroTracker() {
                   .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
               />
 
-              {/* Row 1: Visible objects + Night visibility chart */}
-              <div className="grid gap-4 lg:grid-cols-2 mb-4">
-                {/* Currently visible objects indicator */}
-                {plannedProjects.length > 0 ? (() => {
-                  const currentMonth = new Date().getMonth() + 1;
-                  const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-                  const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                  const currentMonthName = language === 'en' ? MONTH_NAMES_EN[currentMonth - 1] : MONTH_NAMES_ES[currentMonth - 1];
+              {/* Other planned objects visible this month */}
+              {plannedProjects.length > 0 && (() => {
+                const currentMonth = new Date().getMonth() + 1;
+                const MONTH_NAMES_ES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+                const MONTH_NAMES_EN = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const currentMonthName = language === 'en' ? MONTH_NAMES_EN[currentMonth - 1] : MONTH_NAMES_ES[currentMonth - 1];
 
-                  const visibleNow = plannedProjects.filter(planned => {
-                    if (planned.isCircumpolar) return true;
-                    if (!planned.orto || !planned.ocaso) return false;
-                    const ortoNum = parseInt(planned.orto);
-                    const ocasoNum = parseInt(planned.ocaso);
-                    if (ortoNum <= ocasoNum) {
-                      return currentMonth >= ortoNum && currentMonth <= ocasoNum;
-                    } else {
-                      return currentMonth >= ortoNum || currentMonth <= ocasoNum;
-                    }
-                  });
-
-                  if (visibleNow.length === 0) {
-                    return (
-                      <div className="p-4 rounded-xl bg-muted/50 border border-border overflow-hidden flex items-center">
-                        <p className="text-sm text-muted-foreground break-words">
-                          {t('noPlannedObjectsVisible')} <span className="font-semibold">{currentMonthName}</span>
-                        </p>
-                      </div>
-                    );
+                const visibleNow = plannedProjects.filter(planned => {
+                  if (planned.isCircumpolar) return true;
+                  if (!planned.orto || !planned.ocaso) return false;
+                  const ortoNum = parseInt(planned.orto);
+                  const ocasoNum = parseInt(planned.ocaso);
+                  if (ortoNum <= ocasoNum) {
+                    return currentMonth >= ortoNum && currentMonth <= ocasoNum;
+                  } else {
+                    return currentMonth >= ortoNum || currentMonth <= ocasoNum;
                   }
+                });
 
-                  return (
-                    <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 overflow-hidden flex items-center">
-                      <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300 break-words">
-                        🔭 {t('visibleObjectsIn')} <span className="font-bold">{currentMonthName}</span>: {visibleNow.map(p => p.objectId).join(", ")}
-                      </p>
+                const title = language === 'en'
+                  ? `Other objects visible in ${currentMonthName}`
+                  : `Otros objetos visibles en ${currentMonthName}`;
+                const emptyText = language === 'en'
+                  ? 'No planned objects visible this month.'
+                  : 'Ningún objeto planificado visible este mes.';
+
+                return (
+                  <Card className="px-4 py-3 mb-4 bg-gradient-to-br from-cyan-500/5 to-sky-500/10 dark:from-cyan-500/10 dark:to-sky-500/15 border-cyan-200/40 dark:border-cyan-500/20">
+                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+                        🔭 {title}:
+                      </span>
+                      <span className="text-sm font-medium text-cyan-700 dark:text-cyan-300 break-words">
+                        {visibleNow.length > 0 ? visibleNow.map(p => p.objectId).join(", ") : emptyText}
+                      </span>
                     </div>
-                  );
-                })() : <div />}
+                  </Card>
+                );
+              })()}
 
+              {/* Row 1: Night visibility chart */}
+              <div className="grid gap-4 mb-4">
                 {/* Active Projects Visibility Chart */}
                 {(() => {
                   const activeProjectObjects = objects.filter(obj =>
