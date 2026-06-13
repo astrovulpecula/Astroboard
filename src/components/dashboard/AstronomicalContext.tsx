@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Moon, Sunset, Sparkles, Target } from "lucide-react";
+import { Moon, Sunset, Sparkles, Target, CloudSun } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { calculateMoonPhase } from "@/lib/lunar-phase";
 import {
@@ -23,6 +23,8 @@ interface Props {
   activeObjects: ActiveObj[];
   altitudeLimit: number;
   language: "es" | "en";
+  forecast?: any;
+  locationName?: string;
 }
 
 const SYNODIC = 29.53058867;
@@ -133,6 +135,10 @@ export default function AstronomicalContext({
           narrowband: "Best window for narrowband",
           broadband: "Best window for broadband (RGB)",
           noCoords: "Set your main location to see tonight's context.",
+          forecastTitle: "Forecast",
+          today: "Today",
+          tomorrow: "Tomorrow",
+          precip: "rain",
         }
       : {
           moonTitle: "Fase lunar",
@@ -157,6 +163,10 @@ export default function AstronomicalContext({
           narrowband: "Ideal para banda estrecha",
           broadband: "Ideal para banda ancha (RGB)",
           noCoords: "Configura tu ubicación principal para ver el contexto de esta noche.",
+          forecastTitle: "Pronóstico",
+          today: "Hoy",
+          tomorrow: "Mañana",
+          precip: "lluvia",
         };
   }, [language]);
 
