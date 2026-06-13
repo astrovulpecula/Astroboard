@@ -5830,7 +5830,7 @@ export default function AstroTracker() {
     a.download = `astroboard_${dateStr}_${timeStr}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 0);
-  }, [objects, plannedProjects, userName, cameras, telescopes, locations, mainLocation, guideTelescope, guideCamera, mount, dateFormat, defaultTheme, jsonPath, visibleHighlights, language]);
+  }, [objects, plannedProjects, userName, cameras, telescopes, locations, mainLocation, guideTelescope, guideCamera, mount, dateFormat, defaultTheme, jsonPath, visibleHighlights, language, minAltitudeLimit]);
 
 
   const filteredObjects = useMemo(() => {
