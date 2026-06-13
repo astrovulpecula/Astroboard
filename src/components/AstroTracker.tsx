@@ -3471,6 +3471,44 @@ const compressImage = async (file: File, maxDimension = 1920, quality = 0.88): P
 
 const SNRChart = ({ sessions }: { sessions: any[] }) => {
   const [xAxisMode, setXAxisMode] = useState<"lights" | "hours">("lights");
+  const { language } = useLanguage();
+  const L = language === "en"
+    ? {
+        title: "SNR (mean) vs cumulative",
+        boxLabel: (n: string) => `Estimated SNR · next session (~${n} lights)`,
+        heading: "SNR prediction",
+        cumLights: "Cumulative lights:",
+        currentSNR: "Current SNR:",
+        avgLights: "Avg lights/session:",
+        equation: "Equation:",
+        futureLights: "Future lights:",
+        estLog: "Estimated SNR (log):",
+        increment: "Expected increment:",
+        theo: "Theoretical SNR (√N):",
+        reliable: "More reliable:",
+        log: "Logarithmic regression",
+        theoLbl: "Theoretical √N formula",
+        conclusion: (x: string, y: string, z: string) =>
+          `Based on the project's actual evolution, a new session of approximately ${x} lights should add around ${y} SNR points, reaching a total SNR of about ${z}.`,
+      }
+    : {
+        title: "SNR (media) vs acumulado",
+        boxLabel: (n: string) => `SNR estimado · próx. sesión (~${n} lights)`,
+        heading: "Predicción de SNR",
+        cumLights: "Lights acumulados:",
+        currentSNR: "SNR actual:",
+        avgLights: "Lights medios/sesión:",
+        equation: "Ecuación:",
+        futureLights: "Lights futuros:",
+        estLog: "SNR estimado (log):",
+        increment: "Incremento esperado:",
+        theo: "SNR teórico (√N):",
+        reliable: "Más fiable:",
+        log: "Regresión logarítmica",
+        theoLbl: "Fórmula teórica √N",
+        conclusion: (x: string, y: string, z: string) =>
+          `Basándonos en la evolución real del proyecto, una nueva sesión de aproximadamente ${x} lights debería aportar un incremento de alrededor de ${y} puntos de SNR, alcanzando un SNR total aproximado de ${z}.`,
+      };
   // Sort chronologically (oldest first = left side of chart)
   const sortedSessions = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   // Build data with cumulative values for ALL sessions
