@@ -443,40 +443,53 @@ export default function AstronomicalContext({
 
       {/* Forecast (main location) */}
       <Card className="p-4 bg-gradient-to-br from-sky-500/5 to-blue-500/10 dark:from-sky-500/10 dark:to-blue-500/15 border-sky-200/40 dark:border-sky-500/20">
-        <div className="flex items-center gap-2 mb-2">
-          <CloudSun className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-          <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground truncate">
-            {L.forecastTitle}{locationName ? ` · ${locationName}` : ""}
-          </span>
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <CloudSun className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+            <span className="text-xs font-mono uppercase tracking-wider text-muted-foreground truncate">
+              {L.forecastTitle}{locationName ? ` · ${locationName}` : ""}
+            </span>
+          </div>
+          {hourlyItems.length > HOURS_PER_PAGE && (
+            <div className="flex flex-col -my-1">
+              <button
+                type="button"
+                onClick={() => setHourOffset((o) => Math.max(0, o - HOURS_PER_PAGE))}
+                disabled={hourOffset === 0}
+                className="p-0.5 rounded hover:bg-sky-500/10 disabled:opacity-30 disabled:cursor-not-allowed text-sky-600 dark:text-sky-400"
+                aria-label="Previous hours"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setHourOffset((o) => Math.min(maxOffset, o + HOURS_PER_PAGE))}
+                disabled={hourOffset >= maxOffset}
+                className="p-0.5 rounded hover:bg-sky-500/10 disabled:opacity-30 disabled:cursor-not-allowed text-sky-600 dark:text-sky-400"
+                aria-label="Next hours"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
-        {daily && Array.isArray(daily.time) && daily.time.length > 0 ? (
+        {visibleHours.length > 0 ? (
           <div className="space-y-1.5">
-            {daily.time.slice(0, 3).map((iso: string, i: number) => {
-              const code = daily.weathercode?.[i] ?? 0;
-              const tmax = Math.round(daily.temperature_2m_max?.[i] ?? 0);
-              const tmin = Math.round(daily.temperature_2m_min?.[i] ?? 0);
-              const pp = daily.precipitation_probability_max?.[i] ?? 0;
-              const { emoji, label } = wcMap(code, language);
-              const d = new Date(iso);
-              const dayLabel =
-                i === 0
-                  ? L.today
-                  : i === 1
-                  ? L.tomorrow
-                  : d.toLocaleDateString(language === "en" ? "en-US" : "es-ES", { weekday: "short" });
+            {visibleHours.map((h: any) => {
+              const { emoji } = wcMap(h.code, language);
+              const isToday = h.time.toDateString() === new Date().toDateString();
+              const label = isToday
+                ? fmtTime(h.time, language)
+                : `${h.time.toLocaleDateString(language === "en" ? "en-US" : "es-ES", { weekday: "short" })} ${fmtTime(h.time, language)}`;
               return (
-                <div key={iso} className="flex items-center justify-between text-xs gap-2">
+                <div key={h.iso} className="flex items-center justify-between text-xs gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-base leading-none">{emoji}</span>
-                    <span className="font-semibold capitalize w-12 shrink-0">{dayLabel}</span>
-                    <span className="text-muted-foreground truncate hidden sm:inline">{label}</span>
+                    <span className="font-mono font-semibold shrink-0">{label}</span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 font-mono">
-                    <span className="text-sky-600 dark:text-sky-400">💧{pp}%</span>
-                    <span>
-                      <span className="text-rose-500">{tmax}°</span>
-                      <span className="text-muted-foreground">/{tmin}°</span>
-                    </span>
+                    <span className="text-sky-600 dark:text-sky-400">💧{h.pp}%</span>
+                    <span className="text-rose-500">{Math.round(h.temp)}°</span>
                   </div>
                 </div>
               );
