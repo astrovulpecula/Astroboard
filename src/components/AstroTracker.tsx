@@ -7362,10 +7362,18 @@ export default function AstroTracker() {
                 );
               })()}
 
+              {/* Astronomical context for tonight */}
+              <AstronomicalContext
+                coordinates={mainLocation?.coords}
+                language={language as 'es' | 'en'}
+                altitudeLimit={minAltitudeLimit}
+                activeObjects={objects
+                  .filter((obj: any) => obj.projects.some((p: any) => p.status === 'active' || p.status === 'paused'))
+                  .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
+              />
+
               {/* Row 1: Visible objects + Night visibility chart */}
               <div className="grid gap-4 lg:grid-cols-2 mb-4">
-              </div>
-              {/* placeholder */}
                 {/* Currently visible objects indicator */}
                 {plannedProjects.length > 0 ? (() => {
                   const currentMonth = new Date().getMonth() + 1;
