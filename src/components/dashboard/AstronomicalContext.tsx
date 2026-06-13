@@ -25,6 +25,7 @@ interface Props {
   language: "es" | "en";
   forecast?: any;
   locationName?: string;
+  onObjectClick?: (objectId: string) => void;
 }
 
 const SYNODIC = 29.53058867;
@@ -111,6 +112,7 @@ export default function AstronomicalContext({
   language,
   forecast,
   locationName,
+  onObjectClick,
 }: Props) {
   const L = useMemo(() => {
     return language === "en"
@@ -407,7 +409,17 @@ export default function AstronomicalContext({
         </div>
         {data.best ? (
           <>
-            <div className="text-xl font-bold mb-1 truncate">{data.best.objectId}</div>
+            {onObjectClick ? (
+              <button
+                type="button"
+                onClick={() => onObjectClick(data.best!.objectId)}
+                className="text-xl font-bold mb-1 truncate block text-left hover:underline hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors max-w-full"
+              >
+                {data.best.objectId}
+              </button>
+            ) : (
+              <div className="text-xl font-bold mb-1 truncate">{data.best.objectId}</div>
+            )}
             {data.best.name !== data.best.objectId && (
               <div className="text-xs text-muted-foreground truncate mb-2">{data.best.name}</div>
             )}

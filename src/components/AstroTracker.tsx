@@ -7362,6 +7362,19 @@ export default function AstroTracker() {
                 activeObjects={objects
                   .filter((obj: any) => obj.projects.some((p: any) => p.status === 'active' || p.status === 'paused'))
                   .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
+                onObjectClick={(objectId: string) => {
+                  const obj = objects.find((o: any) => o.id === objectId);
+                  const proj = obj?.projects?.find((p: any) => p.status === 'active' || p.status === 'paused') || obj?.projects?.[0];
+                  if (obj && proj) {
+                    setSelectedObjectId(obj.id);
+                    setSelectedProjectId(proj.id);
+                    setView("project");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  } else {
+                    setMainSection("planificacion");
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
               />
 
               {/* Other planned objects visible this month */}
@@ -7397,7 +7410,33 @@ export default function AstroTracker() {
                         🔭 {title}:
                       </span>
                       <span className="text-sm font-medium text-cyan-700 dark:text-cyan-300 break-words">
-                        {visibleNow.length > 0 ? visibleNow.map(p => p.objectId).join(", ") : emptyText}
+                        {visibleNow.length > 0 ? (
+                          visibleNow.map((p, i) => {
+                            const obj = objects.find((o: any) => o.id === p.objectId);
+                            const proj = obj?.projects?.find((pr: any) => pr.status === 'active' || pr.status === 'paused') || obj?.projects?.[0];
+                            return (
+                              <React.Fragment key={p.objectId + i}>
+                                {i > 0 && ", "}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (obj && proj) {
+                                      setSelectedObjectId(obj.id);
+                                      setSelectedProjectId(proj.id);
+                                      setView("project");
+                                    } else {
+                                      setMainSection("planificacion");
+                                    }
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                  }}
+                                  className="hover:underline hover:text-cyan-900 dark:hover:text-cyan-100 transition-colors"
+                                >
+                                  {p.objectId}
+                                </button>
+                              </React.Fragment>
+                            );
+                          })
+                        ) : emptyText}
                       </span>
                     </div>
                   </Card>
