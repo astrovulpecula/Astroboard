@@ -109,6 +109,8 @@ export default function AstronomicalContext({
   activeObjects,
   altitudeLimit,
   language,
+  forecast,
+  locationName,
 }: Props) {
   const L = useMemo(() => {
     return language === "en"
@@ -295,8 +297,34 @@ export default function AstronomicalContext({
   const recommendation =
     data.phase.illumination > 40 ? L.narrowband : L.broadband;
 
+  // Weather code → emoji + label
+  const wcMap = (code: number, lang: "es" | "en"): { emoji: string; label: string } => {
+    const es: Record<number, [string, string]> = {
+      0: ["☀️", "Despejado"], 1: ["🌤️", "Mayormente despejado"], 2: ["⛅", "Parcial"], 3: ["☁️", "Nublado"],
+      45: ["🌫️", "Niebla"], 48: ["🌫️", "Niebla"],
+      51: ["🌦️", "Llovizna"], 53: ["🌦️", "Llovizna"], 55: ["🌧️", "Llovizna fuerte"],
+      61: ["🌧️", "Lluvia"], 63: ["🌧️", "Lluvia"], 65: ["🌧️", "Lluvia fuerte"],
+      71: ["🌨️", "Nieve"], 73: ["🌨️", "Nieve"], 75: ["❄️", "Nieve fuerte"],
+      80: ["🌦️", "Chubascos"], 81: ["🌧️", "Chubascos"], 82: ["⛈️", "Chubascos fuertes"],
+      95: ["⛈️", "Tormenta"], 96: ["⛈️", "Tormenta"], 99: ["⛈️", "Tormenta"],
+    };
+    const en: Record<number, [string, string]> = {
+      0: ["☀️", "Clear"], 1: ["🌤️", "Mostly clear"], 2: ["⛅", "Partly cloudy"], 3: ["☁️", "Overcast"],
+      45: ["🌫️", "Fog"], 48: ["🌫️", "Fog"],
+      51: ["🌦️", "Drizzle"], 53: ["🌦️", "Drizzle"], 55: ["🌧️", "Heavy drizzle"],
+      61: ["🌧️", "Rain"], 63: ["🌧️", "Rain"], 65: ["🌧️", "Heavy rain"],
+      71: ["🌨️", "Snow"], 73: ["🌨️", "Snow"], 75: ["❄️", "Heavy snow"],
+      80: ["🌦️", "Showers"], 81: ["🌧️", "Showers"], 82: ["⛈️", "Heavy showers"],
+      95: ["⛈️", "Storm"], 96: ["⛈️", "Storm"], 99: ["⛈️", "Storm"],
+    };
+    const m = lang === "en" ? en : es;
+    return { emoji: (m[code]?.[0]) || "🌡️", label: (m[code]?.[1]) || "—" };
+  };
+
+  const daily = forecast?.daily;
+
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 mb-4">
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-4">
       {/* Moon phase */}
       <Card className="p-4 bg-gradient-to-br from-amber-500/5 to-orange-500/10 dark:from-amber-500/10 dark:to-orange-500/15 border-amber-200/40 dark:border-amber-500/20">
         <div className="flex items-center gap-2 mb-2">
