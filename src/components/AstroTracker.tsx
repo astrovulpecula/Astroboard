@@ -7357,6 +7357,8 @@ export default function AstroTracker() {
                 coordinates={mainLocation?.coords}
                 language={language as 'es' | 'en'}
                 altitudeLimit={minAltitudeLimit}
+                forecast={weatherData}
+                locationName={mainLocation?.name}
                 activeObjects={objects
                   .filter((obj: any) => obj.projects.some((p: any) => p.status === 'active' || p.status === 'paused'))
                   .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
