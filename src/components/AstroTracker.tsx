@@ -7364,6 +7364,8 @@ export default function AstroTracker() {
 
               {/* Row 1: Visible objects + Night visibility chart */}
               <div className="grid gap-4 lg:grid-cols-2 mb-4">
+              </div>
+              {/* placeholder */}
                 {/* Currently visible objects indicator */}
                 {plannedProjects.length > 0 ? (() => {
                   const currentMonth = new Date().getMonth() + 1;
