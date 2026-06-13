@@ -164,7 +164,7 @@
   }
 
   html {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Figtree', 'Inter', system-ui, -apple-system, sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -173,15 +173,14 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Figtree', 'Inter', system-ui, -apple-system, sans-serif;
     letter-spacing: -0.005em;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: 'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
+    font-family: 'Outfit', 'Figtree', system-ui, sans-serif;
     letter-spacing: -0.025em;
-    font-feature-settings: 'ss01', 'ss02';
-    font-optical-sizing: auto;
+    font-feature-settings: 'ss01';
   }
 
   .font-mono, code, pre, kbd, samp,
