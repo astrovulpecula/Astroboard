@@ -98,6 +98,7 @@ import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
 import VisibilityChart from "@/components/VisibilityChart";
 import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
+import AstronomicalContext from "@/components/dashboard/AstronomicalContext";
 import { Eye } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
@@ -7361,6 +7362,16 @@ export default function AstroTracker() {
                   </div>
                 );
               })()}
+
+              {/* Astronomical context for tonight */}
+              <AstronomicalContext
+                coordinates={mainLocation?.coords}
+                language={language as 'es' | 'en'}
+                altitudeLimit={minAltitudeLimit}
+                activeObjects={objects
+                  .filter((obj: any) => obj.projects.some((p: any) => p.status === 'active' || p.status === 'paused'))
+                  .map((obj: any) => ({ id: obj.id, objectId: obj.id, objectName: obj.commonName }))}
+              />
 
               {/* Row 1: Visible objects + Night visibility chart */}
               <div className="grid gap-4 lg:grid-cols-2 mb-4">
