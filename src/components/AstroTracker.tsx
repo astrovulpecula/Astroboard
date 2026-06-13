@@ -3573,7 +3573,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
       <div className="flex items-center justify-between mb-2">
-        <SectionTitle icon={Star} title="SNR (media) vs acumulado" />
+        <SectionTitle icon={Star} title={L.title} />
         <div className="flex items-center gap-3 flex-wrap">
           <RadioGroup value={xAxisMode} onValueChange={(v) => setXAxisMode(v as "lights" | "hours")} className="flex gap-4">
             <div className="flex items-center space-x-2">
@@ -3582,7 +3582,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="hours" id="snr-hours" />
-              <label htmlFor="snr-hours" className="text-sm cursor-pointer">Horas</label>
+              <label htmlFor="snr-hours" className="text-sm cursor-pointer">{language === "en" ? "Hours" : "Horas"}</label>
             </div>
           </RadioGroup>
           {prediction && (
@@ -3590,7 +3590,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
               <HoverCardTrigger asChild>
                 <div className="rounded-md border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs cursor-help leading-tight">
                   <div className="text-muted-foreground uppercase tracking-wide text-[10px]">
-                    SNR estimado · próx. sesión (~{prediction.avgLights.toFixed(0)} lights)
+                    {L.boxLabel(prediction.avgLights.toFixed(0))}
                   </div>
                   <div className="font-mono font-semibold text-foreground">
                     {prediction.futureSNRLog.toFixed(2)}{" "}
@@ -3599,31 +3599,31 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
                 </div>
               </HoverCardTrigger>
               <HoverCardContent align="end" className="w-96 text-xs space-y-1.5">
-                <div className="font-semibold text-sm mb-1">Predicción de SNR</div>
+                <div className="font-semibold text-sm mb-1">{L.heading}</div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono">
-                  <span className="text-muted-foreground">Lights acumulados:</span>
+                  <span className="text-muted-foreground">{L.cumLights}</span>
                   <span>{prediction.currentLights}</span>
-                  <span className="text-muted-foreground">SNR actual:</span>
+                  <span className="text-muted-foreground">{L.currentSNR}</span>
                   <span>{prediction.currentSNR.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Lights medios/sesión:</span>
+                  <span className="text-muted-foreground">{L.avgLights}</span>
                   <span>{prediction.avgLights.toFixed(1)}</span>
-                  <span className="text-muted-foreground">Ecuación:</span>
+                  <span className="text-muted-foreground">{L.equation}</span>
                   <span>SNR = {prediction.a.toFixed(3)}·ln(L) {prediction.b >= 0 ? "+" : "−"} {Math.abs(prediction.b).toFixed(3)}</span>
                   <span className="text-muted-foreground">R²:</span>
                   <span>{prediction.r2.toFixed(3)}</span>
-                  <span className="text-muted-foreground">Lights futuros:</span>
+                  <span className="text-muted-foreground">{L.futureLights}</span>
                   <span>{prediction.futureLights.toFixed(0)}</span>
-                  <span className="text-muted-foreground">SNR estimado (log):</span>
+                  <span className="text-muted-foreground">{L.estLog}</span>
                   <span>{prediction.futureSNRLog.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Incremento esperado:</span>
+                  <span className="text-muted-foreground">{L.increment}</span>
                   <span className="text-emerald-400">+{prediction.increment.toFixed(2)}</span>
-                  <span className="text-muted-foreground">SNR teórico (√N):</span>
+                  <span className="text-muted-foreground">{L.theo}</span>
                   <span>{prediction.futureSNRTheo.toFixed(2)}</span>
-                  <span className="text-muted-foreground">Más fiable:</span>
-                  <span>{prediction.reliable === "log" ? "Regresión logarítmica" : "Fórmula teórica √N"}</span>
+                  <span className="text-muted-foreground">{L.reliable}</span>
+                  <span>{prediction.reliable === "log" ? L.log : L.theoLbl}</span>
                 </div>
                 <div className="pt-2 border-t border-border/40 text-foreground/90 leading-snug font-sans">
-                  Basándonos en la evolución real del proyecto, una nueva sesión de aproximadamente {prediction.avgLights.toFixed(0)} lights debería aportar un incremento de alrededor de {prediction.increment.toFixed(2)} puntos de SNR, alcanzando un SNR total aproximado de {prediction.futureSNRLog.toFixed(2)}.
+                  {L.conclusion(prediction.avgLights.toFixed(0), prediction.increment.toFixed(2), prediction.futureSNRLog.toFixed(2))}
                 </div>
               </HoverCardContent>
             </HoverCard>
