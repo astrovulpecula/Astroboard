@@ -3184,6 +3184,7 @@ function FSessionAutomated({
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: finalFitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
+          fireCaptureData: fireCaptureData || undefined,
         };
 
         onSubmit(sessionData);
@@ -3194,6 +3195,26 @@ function FSessionAutomated({
         <div className="space-y-4 pb-4 border-b border-border">
           <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
           <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+        </div>
+      )}
+
+      {/* FireCapture .txt analyzer - planetary only */}
+      {isPlanetary && (
+        <div className="pb-4 border-b border-border">
+          <FireCaptureAnalyzer
+            value={fireCaptureData}
+            onChange={(r) => {
+              setFireCaptureData(r);
+              if (r) {
+                if (r.totals.frames > 0) setLights(r.totals.frames);
+                if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
+                if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+                if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
+                  setCamera(r.extractedInfo.camera);
+                }
+              }
+            }}
+          />
         </div>
       )}
 
