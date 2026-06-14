@@ -3271,7 +3271,7 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>{t('sessionFormLights')}</Label>
+          <Label>{isPlanetary ? 'Frames' : t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -3281,7 +3281,7 @@ function FSessionAutomated({
           />
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormExposurePerLight')}</Label>
+          <Label>{isPlanetary ? 'Segundos por frame' : t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -3392,6 +3392,7 @@ function FSessionAutomated({
       )}
 
       {/* SNR fields - left blank for manual entry */}
+      {!isPlanetary && (
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormSnrR')}</Label>
@@ -3406,8 +3407,10 @@ function FSessionAutomated({
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
       </div>
+      )}
 
       {/* Accepted/Rejected lights - left blank */}
+      {!isPlanetary && (
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsAccepted')}</Label>
@@ -3432,6 +3435,7 @@ function FSessionAutomated({
           />
         </label>
       </div>
+      )}
 
       {/* Manual environment data fields - shown when FITS lacks this data */}
       {(!fitsAnalysis?.averages?.mpsas || !fitsAnalysis?.averages?.ambientTemp || !fitsAnalysis?.averages?.humidity || !fitsAnalysis?.averages?.wind) && (
