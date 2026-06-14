@@ -11305,11 +11305,11 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title={s.fitsAnalysis || s.phd2Analysis ? t('detailsAndAnalysis') : t('commentsLabel')}
+                                      title={s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? t('detailsAndAnalysis') : t('commentsLabel')}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis ? (
-                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis || s.phd2Analysis ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? (
+                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                                       ) : null}
                                     </button>
                                   </DialogTrigger>
