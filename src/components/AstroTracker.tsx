@@ -5453,12 +5453,7 @@ export default function AstroTracker() {
     pendingChangesRef.current = 0;
     setCloudDataLoaded(true);
 
-    // Load ephemeris data (still needed for astronomical calculations)
-    const loadEphemerisData = async () => {
-      // placeholder, real loader below
-    };
-
-    // Legacy loader kept disabled for reference
+    // Legacy loader kept disabled for reference (ephemeral mode is active above)
     const _legacyLoadData = async () => {
       // Helper to apply settings
       const applySettings = (settings: any) => {
@@ -5577,8 +5572,6 @@ export default function AstroTracker() {
       
       initializationCompleteRef.current = true;
     };
-
-    loadData();
 
     // Load ephemeris data
     const loadEphemerisData = async () => {
