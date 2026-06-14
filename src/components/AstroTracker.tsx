@@ -11156,7 +11156,7 @@ export default function AstroTracker() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <ImageCard
-                  title={`Imagen inicial ${act?.name || tabLabel}`}
+                  title={`${(obj as any).category === "planetary" ? "Imagen apilada sin apilar" : "Imagen inicial"} ${act?.name || tabLabel}`}
                   keyName={`initial${keyPrefix}`}
                   proj={proj}
                   upImgs={upImgs}
@@ -11167,7 +11167,7 @@ export default function AstroTracker() {
                   }}
                 />
                 <ImageCard
-                  title={`Imagen final ${act?.name || tabLabel}`}
+                  title={`${(obj as any).category === "planetary" ? "Imagen apilada" : "Imagen final"} ${act?.name || tabLabel}`}
                   keyName={`final${keyPrefix}`}
                   proj={proj}
                   upImgs={upImgs}
