@@ -3074,7 +3074,8 @@ function FSession({
               if (r) {
                 if (r.totals.frames > 0) setLights(r.totals.frames);
                 if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
-                if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+                // No sobreescribir el filtro elegido por el usuario:
+                // FireCapture suele reportar "L" por defecto y no aplica a planetaria.
                 if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
                   setCamera(r.extractedInfo.camera);
                 }
