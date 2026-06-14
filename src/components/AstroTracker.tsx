@@ -9921,7 +9921,11 @@ export default function AstroTracker() {
               <div className="flex items-center justify-between">
                 <SectionTitle
                   icon={FolderOpen}
-                  title={`Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`}
+                  title={
+                    obj.category === "planetary"
+                      ? `Proyectos de ${obj.commonName || obj.id}`
+                      : `Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`
+                  }
                 />
                 <div className="flex items-center gap-2">
                   <Btn outline onClick={() => setView("objects")}>
@@ -10021,15 +10025,19 @@ export default function AstroTracker() {
                         )}
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="text-sm text-slate-500 dark:text-slate-400">Exposición total</div>
-                        <div className="text-2xl font-bold mt-1">{hh(totalSeconds)}</div>
-                      </Card>
+                      {obj.category !== "planetary" && (
+                        <>
+                          <Card className="p-4">
+                            <div className="text-sm text-slate-500 dark:text-slate-400">Exposición total</div>
+                            <div className="text-2xl font-bold mt-1">{hh(totalSeconds)}</div>
+                          </Card>
 
-                      <Card className="p-4">
-                        <div className="text-sm text-slate-500 dark:text-slate-400">Lights acumulados</div>
-                        <div className="text-2xl font-bold mt-1">{totalLights}</div>
-                      </Card>
+                          <Card className="p-4">
+                            <div className="text-sm text-slate-500 dark:text-slate-400">Lights acumulados</div>
+                            <div className="text-2xl font-bold mt-1">{totalLights}</div>
+                          </Card>
+                        </>
+                      )}
 
                       <Card className="p-4">
                         <div className="text-sm text-slate-500 dark:text-slate-400">Sesiones</div>
@@ -10410,7 +10418,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Visibility Chart Block */}
-              {mainLocation?.coords && (
+              {mainLocation?.coords && obj.id !== "Sol" && (
                 <Card className="p-4 md:p-6">
                   <Collapsible open={visibilitySectionExpanded} onOpenChange={setVisibilitySectionExpanded}>
                     <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">

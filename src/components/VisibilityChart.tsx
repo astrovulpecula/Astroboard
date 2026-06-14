@@ -22,6 +22,12 @@ import {
   type ObserverLocation,
 } from '@/lib/astronomy-calculations';
 import { calculateMoonNightVisibility } from '@/lib/moon-position';
+import {
+  isPlanetaryBody,
+  getPlanetaryCoordinates,
+  calculatePlanetaryNightVisibility,
+  calculatePlanetaryAnnualVisibility,
+} from '@/lib/planet-position';
 import { Clock, ArrowUp, Sunrise, Sunset, Calendar, Moon } from 'lucide-react';
 
 interface VisibilityChartProps {
@@ -53,22 +59,32 @@ export default function VisibilityChart({
   }, []);
 
   const coords = useMemo(() => parseCoordinates(coordinates), [coordinates]);
-  const objectCoords = useMemo(() => getObjectCoordinates(objectCode), [objectCode]);
+  const planetary = isPlanetaryBody(objectCode);
+  const objectCoords = useMemo(() => {
+    if (planetary) return getPlanetaryCoordinates(objectCode, date);
+    return getObjectCoordinates(objectCode);
+  }, [objectCode, planetary, date]);
 
   const visibility = useMemo(() => {
     if (!coords || !objectCoords) return null;
+    if (planetary) {
+      return calculatePlanetaryNightVisibility(objectCode as any, coords, date);
+    }
     return calculateNightVisibility(objectCoords.ra, objectCoords.dec, coords, date);
-  }, [objectCoords, coords, date]);
+  }, [objectCoords, coords, date, planetary, objectCode]);
 
   const moonData = useMemo(() => {
-    if (!coords) return [];
+    if (!coords || objectCode === 'Luna') return [];
     return calculateMoonNightVisibility(coords, date);
-  }, [coords, date]);
+  }, [coords, date, objectCode]);
 
   const annualVisibility = useMemo(() => {
     if (!coords || !objectCoords) return null;
+    if (planetary) {
+      return calculatePlanetaryAnnualVisibility(objectCode as any, coords, date.getFullYear());
+    }
     return calculateAnnualVisibility(objectCoords.ra, objectCoords.dec, coords, date.getFullYear());
-  }, [objectCoords, coords, date]);
+  }, [objectCoords, coords, date, planetary, objectCode]);
 
   // Preparar datos para el gráfico (cada hora) - incluyendo Luna
   const chartData = useMemo(() => {
