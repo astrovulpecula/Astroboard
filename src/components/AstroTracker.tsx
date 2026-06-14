@@ -12055,6 +12055,7 @@ export default function AstroTracker() {
             cameras={cameras}
             telescopes={telescopes}
             projectEquipment={(proj as any)?.equipment}
+            objectCategory={(obj as any)?.category}
           />
         </Modal>
         <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title={t('newSessionAutoTitle')} wide>
@@ -12064,6 +12065,7 @@ export default function AstroTracker() {
             cameras={cameras}
             telescopes={telescopes}
             projectEquipment={(proj as any)?.equipment}
+            objectCategory={(obj as any)?.category}
           />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
@@ -12078,6 +12080,7 @@ export default function AstroTracker() {
               cameras={cameras}
               telescopes={telescopes}
               projectEquipment={(proj as any)?.equipment}
+              objectCategory={(obj as any)?.category}
             />
           )}
         </Modal>
