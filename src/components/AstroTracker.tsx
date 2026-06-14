@@ -3048,6 +3048,7 @@ function FSessionAutomated({
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
+  const [fireCaptureData, setFireCaptureData] = useState<FireCaptureAnalysisResult | null>(null);
   
   // State for form fields
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
