@@ -16,6 +16,22 @@ import {
 } from './astronomy-calculations';
 import { getMoonCoordinates } from './moon-position';
 
+export interface PlanetaryAnnualPoint {
+  month: number;
+  monthLabel: string;
+  maxAltitude: number;
+  midnightAltitude: number;
+  visibleHours: number;
+  transitTime: string;
+}
+export interface PlanetaryAnnualResult {
+  data: PlanetaryAnnualPoint[];
+  bestMonth: number;
+  bestMonthName: string;
+  isCircumpolar: boolean;
+  neverRises: boolean;
+}
+
 export type PlanetaryBody =
   | 'Luna'
   | 'Sol'
