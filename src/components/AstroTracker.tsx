@@ -11198,16 +11198,22 @@ export default function AstroTracker() {
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colMoonPhase')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colFilter')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colCamera')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
+                        {(obj as any).category === "planetary" ? (
+                          <th className="p-2 md:p-3 whitespace-nowrap">Frames</th>
+                        ) : (
+                          <>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
+                          </>
+                        )}
                         <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 z-10">
                           {t('colActions')}
                         </th>
