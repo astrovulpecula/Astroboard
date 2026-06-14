@@ -9921,7 +9921,11 @@ export default function AstroTracker() {
               <div className="flex items-center justify-between">
                 <SectionTitle
                   icon={FolderOpen}
-                  title={`Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`}
+                  title={
+                    obj.category === "planetary"
+                      ? `Proyectos de ${obj.commonName || obj.id}`
+                      : `Proyectos de ${obj.id}${obj.commonName ? " · " + obj.commonName : ""}`
+                  }
                 />
                 <div className="flex items-center gap-2">
                   <Btn outline onClick={() => setView("objects")}>
