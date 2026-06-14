@@ -10025,15 +10025,19 @@ export default function AstroTracker() {
                         )}
                       </Card>
 
-                      <Card className="p-4">
-                        <div className="text-sm text-slate-500 dark:text-slate-400">Exposición total</div>
-                        <div className="text-2xl font-bold mt-1">{hh(totalSeconds)}</div>
-                      </Card>
+                      {obj.category !== "planetary" && (
+                        <>
+                          <Card className="p-4">
+                            <div className="text-sm text-slate-500 dark:text-slate-400">Exposición total</div>
+                            <div className="text-2xl font-bold mt-1">{hh(totalSeconds)}</div>
+                          </Card>
 
-                      <Card className="p-4">
-                        <div className="text-sm text-slate-500 dark:text-slate-400">Lights acumulados</div>
-                        <div className="text-2xl font-bold mt-1">{totalLights}</div>
-                      </Card>
+                          <Card className="p-4">
+                            <div className="text-sm text-slate-500 dark:text-slate-400">Lights acumulados</div>
+                            <div className="text-2xl font-bold mt-1">{totalLights}</div>
+                          </Card>
+                        </>
+                      )}
 
                       <Card className="p-4">
                         <div className="text-sm text-slate-500 dark:text-slate-400">Sesiones</div>
