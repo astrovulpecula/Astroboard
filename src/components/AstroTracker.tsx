@@ -11245,24 +11245,30 @@ export default function AstroTracker() {
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(m) ? m!.toFixed(2) : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrR) ? s.snrR : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrG) ? s.snrG : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrB) ? s.snrB : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                            {(obj as any).category === "planetary" ? (
+                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                            ) : (
+                              <>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(m) ? m!.toFixed(2) : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrR) ? s.snrR : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrG) ? s.snrG : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrB) ? s.snrB : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                              </>
+                            )}
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-700">
                               <div className="inline-flex gap-1 md:gap-2">
                                 <Dialog>
