@@ -2938,6 +2938,7 @@ function FSession({
           </div>
         </div>
       )}
+      {!isPlanetary && (
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormSnrR')}</Label>
@@ -2952,7 +2953,9 @@ function FSession({
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} />
         </label>
       </div>
+      )}
 
+      {!isPlanetary && (
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsAccepted')}</Label>
@@ -2977,6 +2980,7 @@ function FSession({
           />
         </label>
       </div>
+      )}
 
       {/* FITS Analyzer - before notes */}
       <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
