@@ -11394,7 +11394,65 @@ export default function AstroTracker() {
                                     )}
                                     
                                     {/* Empty state if no notes and no FITS and no PHD2 */}
-                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && (
+                                    {s.fireCaptureData && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-3">Metadata FireCapture</h4>
+                                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                          <table className="w-full text-xs md:text-sm">
+                                            <thead className="bg-slate-50 dark:bg-slate-900/50">
+                                              <tr className="text-left">
+                                                <th className="p-2">Archivo</th>
+                                                <th className="p-2">Fecha</th>
+                                                <th className="p-2">Hora (UT)</th>
+                                                <th className="p-2">Cámara</th>
+                                                <th className="p-2">Filtro</th>
+                                                <th className="p-2">Perfil</th>
+                                                <th className="p-2">Frames</th>
+                                                <th className="p-2">Dur (s)</th>
+                                                <th className="p-2">FPS</th>
+                                                <th className="p-2">Shutter (ms)</th>
+                                                <th className="p-2">Gain</th>
+                                                <th className="p-2">Gamma</th>
+                                                <th className="p-2">ROI</th>
+                                                <th className="p-2">Binning</th>
+                                                <th className="p-2">Hist %</th>
+                                                <th className="p-2">T sensor</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {s.fireCaptureData.files.map((f: any, idx: number) => (
+                                                <tr key={idx} className="border-t border-slate-200 dark:border-slate-800">
+                                                  <td className="p-2 whitespace-nowrap">{f.filename || f.sourceFile}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.date || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.startUT || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.camera || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.filter || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.profile || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.frames ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.duration?.toFixed(2) ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.fps ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.shutterMs ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.gain || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.gamma ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.roi || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.binning || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.histogramPct ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.sensorTempC !== undefined ? `${f.sensorTempC}°C` : "–"}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        {s.fireCaptureData.files.length > 1 && (
+                                          <div className="text-xs text-muted-foreground mt-2">
+                                            Totales: {s.fireCaptureData.totals.frames} frames · {s.fireCaptureData.totals.durationSec.toFixed(2)}s
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Empty state if no notes and no analyses */}
+                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && !s.fireCaptureData && (
                                       <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
                                         {t('noNotesOrAnalysis')}
                                       </div>
