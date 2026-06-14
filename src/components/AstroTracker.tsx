@@ -1211,6 +1211,7 @@ function FProject({
   guideCamera,
   mount,
   initialData,
+  objectCategory,
 }: {
   onSubmit: (proj: any) => void;
   cameras?: string[];
@@ -1229,7 +1230,9 @@ function FProject({
     location?: string;
     encuadreImage?: string;
   };
+  objectCategory?: "dso" | "planetary";
 }) {
+  const isPlanetary = objectCategory === "planetary";
   // Determinar localización inicial
   const initialLocation = initialData?.location || mainLocation?.name || locations[0]?.name || "";
   const initialCoords = mainLocation?.coords || locations[0]?.coords || "";
@@ -1238,7 +1241,9 @@ function FProject({
   const [description, setDescription] = useState(initialData?.description || "Campaña principal");
   const [location, setLocation] = useState(initialLocation);
   const [googleCoords, setGoogleCoords] = useState(initialCoords);
-  const [projectType, setProjectType] = useState(initialData?.projectType || "ONP");
+  const [projectType, setProjectType] = useState(
+    initialData?.projectType || (isPlanetary ? "PP" : "ONP"),
+  );
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
   const [selectedCamera, setSelectedCamera] = useState("");
@@ -1389,6 +1394,20 @@ function FProject({
       <label className="grid gap-1">
         <Label>Tipo de proyecto</Label>
         <div className="flex flex-col sm:flex-row gap-3">
+          {isPlanetary ? (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="projectType"
+                value="PP"
+                checked={projectType === "PP"}
+                onChange={(e) => setProjectType(e.target.value)}
+                className="w-4 h-4"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">PP (Planetary Project)</span>
+            </label>
+          ) : (
+            <>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="radio"
@@ -1411,6 +1430,8 @@ function FProject({
             />
             <span className="text-sm text-slate-700 dark:text-slate-300">SNP (Several-Nights Project)</span>
           </label>
+            </>
+          )}
         </div>
       </label>
 
@@ -1564,23 +1585,25 @@ function FProject({
         />
       </label>
 
-      <label className="grid gap-1">
-        <Label>{numPanels > 1 ? "Objetivo horas (por panel)" : "Objetivo horas"}</Label>
-        <input
-          type="number"
-          min={0}
-          step={0.5}
-          value={goalHours}
-          onChange={(e) => setGoalHours(e.target.value === "" ? "" : parseFloat(e.target.value))}
-          className={INPUT_CLS}
-          placeholder="Ej: 10"
-        />
-        <p className="text-xs text-slate-500">
-          {numPanels > 1
-            ? "Horas objetivo por cada panel (opcional)"
-            : "Horas totales objetivo para el proyecto (opcional)"}
-        </p>
-      </label>
+      {!isPlanetary && (
+        <label className="grid gap-1">
+          <Label>{numPanels > 1 ? "Objetivo horas (por panel)" : "Objetivo horas"}</Label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={goalHours}
+            onChange={(e) => setGoalHours(e.target.value === "" ? "" : parseFloat(e.target.value))}
+            className={INPUT_CLS}
+            placeholder="Ej: 10"
+          />
+          <p className="text-xs text-slate-500">
+            {numPanels > 1
+              ? "Horas objetivo por cada panel (opcional)"
+              : "Horas totales objetivo para el proyecto (opcional)"}
+          </p>
+        </label>
+      )}
 
       <label className="grid gap-1">
         <Label>Fecha de inicio del proyecto</Label>
