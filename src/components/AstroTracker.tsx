@@ -3011,14 +3011,17 @@ function FSessionAutomated({
   cameras,
   projectEquipment,
   telescopes,
+  objectCategory,
 }: {
   onSubmit: (session: any) => void;
   availableFilters: string[];
   cameras: string[];
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
+  objectCategory?: "dso" | "planetary";
 }) {
   const { t } = useLanguage();
+  const isPlanetary = objectCategory === "planetary";
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
