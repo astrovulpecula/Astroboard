@@ -253,3 +253,51 @@ export function calculatePlanetaryNightVisibility(
     neverRises: false,
   };
 }
+
+const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+export function calculatePlanetaryAnnualVisibility(
+  name: PlanetaryBody,
+  observer: ObserverLocation,
+  year: number = new Date().getFullYear(),
+): PlanetaryAnnualResult {
+  const data: PlanetaryAnnualPoint[] = [];
+  let bestMonth = 0;
+  let bestAltitude = -90;
+
+  for (let month = 0; month < 12; month++) {
+    const date = new Date(year, month, 15);
+    const vis = calculatePlanetaryNightVisibility(name, observer, date);
+
+    const midnight = new Date(year, month, 16, 0, 0, 0);
+    const mc = getPlanetaryCoordinates(name, midnight);
+    const midAlt = mc ? calculateAltAz(mc.ra, mc.dec, observer, midnight).altitude : -90;
+
+    const visiblePoints = vis.data.filter((d) => d.altitude > 0);
+    const visibleHours = (visiblePoints.length * 15) / 60;
+
+    data.push({
+      month: month + 1,
+      monthLabel: MONTHS_ES[month],
+      maxAltitude: vis.transitAltitude,
+      midnightAltitude: parseFloat(midAlt.toFixed(1)),
+      visibleHours,
+      transitTime: vis.transitTime
+        ? vis.transitTime.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '—',
+    });
+
+    if (midAlt > bestAltitude) {
+      bestAltitude = midAlt;
+      bestMonth = month + 1;
+    }
+  }
+
+  return {
+    data,
+    bestMonth,
+    bestMonthName: MONTHS_ES[bestMonth - 1] || '',
+    isCircumpolar: false,
+    neverRises: false,
+  };
+}
