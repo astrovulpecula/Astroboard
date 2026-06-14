@@ -10669,7 +10669,6 @@ export default function AstroTracker() {
 
           {view === "project" && obj && proj && (
             <div className="grid gap-4 mt-2" key={`view-project-${obj.id}-${proj.id}`}>
-              {(() => { /* marker */ return null; })()}
               {/* Nueva sección de Configuración */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
                 <SectionTitle icon={Settings} title="Configuración" />
