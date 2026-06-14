@@ -2806,7 +2806,7 @@ function FSession({
               const n = parseFloat(v.replace(",", "."));
               return isNaN(n) ? undefined : n;
             };
-            const baseFile = fireCaptureData?.files?.[0] || {};
+            const baseFile: any = fireCaptureData?.files?.[0] || {};
             const mergedFile = {
               ...baseFile,
               sourceFile: baseFile.sourceFile || "manual",
