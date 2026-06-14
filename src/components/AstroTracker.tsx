@@ -2857,7 +2857,7 @@ function FSession({
           </div>
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormLights')}</Label>
+          <Label>{isPlanetary ? 'Frames' : t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -2867,7 +2867,7 @@ function FSession({
           />
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormExposurePerLight')}</Label>
+          <Label>{isPlanetary ? 'Segundos por frame' : t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
