@@ -5233,6 +5233,7 @@ export default function AstroTracker() {
   const [filterConstellation, setFilterConstellation] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
   const [theme, setTheme] = useState("astro");
   const [editingProjectName, setEditingProjectName] = useState<string | null>(null);
