@@ -10980,7 +10980,7 @@ export default function AstroTracker() {
                     <Card className="p-4">
                       <div className="text-sm text-slate-500">Segundos</div>
                       <div className="text-xl font-semibold">
-                        {totalExposureSec(proj.sessions)}
+                        {proj.sessions.reduce((a: number, s: any) => a + (s.fireCaptureData?.totals?.durationSec || 0), 0).toFixed(2)}
                       </div>
                     </Card>
                   </>
