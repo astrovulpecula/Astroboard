@@ -2982,11 +2982,13 @@ function FSession({
       </div>
       )}
 
-      {/* FITS Analyzer - before notes */}
-      <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
-
-      {/* PHD2 Analyzer - after FITS */}
-      <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+      {/* FITS & PHD2 Analyzers - hidden for planetary objects */}
+      {!isPlanetary && (
+        <>
+          <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
+          <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+        </>
+      )}
 
       <label className="grid gap-1">
         <Label>{t('sessionFormNotes')}</Label>
@@ -3165,11 +3167,13 @@ function FSessionAutomated({
         onSubmit(sessionData);
       }}
     >
-      {/* FITS and PHD2 Analyzers at the top */}
-      <div className="space-y-4 pb-4 border-b border-border">
-        <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
-        <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
-      </div>
+      {/* FITS and PHD2 Analyzers at the top - hidden for planetary objects */}
+      {!isPlanetary && (
+        <div className="space-y-4 pb-4 border-b border-border">
+          <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
+          <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+        </div>
+      )}
 
       {/* Auto-filled fields notification */}
       {fitsAnalysis?.extractedInfo && (
