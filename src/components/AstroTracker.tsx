@@ -5434,8 +5434,32 @@ export default function AstroTracker() {
     // Prevent double initialization in Strict Mode - check synchronously BEFORE any async
     if (initializationStartedRef.current) return;
     initializationStartedRef.current = true; // Set immediately to block second call
-    
-    const loadData = async () => {
+
+    // EPHEMERAL MODE: The app must always start completely empty on page load.
+    // No data is restored from cloud or localStorage. Data only exists in memory
+    // after the user imports a JSON, and is discarded on reload.
+    try {
+      localStorage.removeItem("astroTrackerData");
+      localStorage.removeItem("astroTrackerSettings");
+      localStorage.removeItem("astroTrackerPlannedProjects");
+    } catch (e) {
+      // ignore
+    }
+    setObjects([]);
+    setPlannedProjects([]);
+    setHasImportedData(false);
+    cloudLoadedDataRef.current = { objects: [], planned: [] };
+    initializationCompleteRef.current = true;
+    pendingChangesRef.current = 0;
+    setCloudDataLoaded(true);
+
+    // Load ephemeris data (still needed for astronomical calculations)
+    const loadEphemerisData = async () => {
+      // placeholder, real loader below
+    };
+
+    // Legacy loader kept disabled for reference
+    const _legacyLoadData = async () => {
       // Helper to apply settings
       const applySettings = (settings: any) => {
         if (settings.defaultTheme) {
