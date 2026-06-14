@@ -11506,6 +11506,7 @@ export default function AstroTracker() {
                 </Card>
               </div>
 
+              {(obj as any).category !== "planetary" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {((proj as any)?.chartVisibility?.exposureChart !== false) && <ExposureChart sessions={filtered} dateFormat={dateFormat} />}
                 {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} />}
@@ -11520,6 +11521,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
               </div>
+              )}
             </div>
           )}
 
