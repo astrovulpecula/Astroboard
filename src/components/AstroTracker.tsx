@@ -11229,7 +11229,19 @@ export default function AstroTracker() {
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colFilter')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colCamera')}</th>
                         {(obj as any).category === "planetary" ? (
-                          <th className="p-2 md:p-3 whitespace-nowrap">Frames</th>
+                          <>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Frames</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Dur (s)</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">FPS</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Shutter (ms)</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Gain</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Gamma</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">ROI</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Binning</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Hist %</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">T sensor</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">Perfil</th>
+                          </>
                         ) : (
                           <>
                             <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
@@ -11276,7 +11288,26 @@ export default function AstroTracker() {
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
                             {(obj as any).category === "planetary" ? (
-                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                              (() => {
+                                const fc = s.fireCaptureData;
+                                const f = fc?.files?.[0];
+                                const dur = fc?.totals?.durationSec;
+                                return (
+                                  <>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{dur !== undefined ? dur.toFixed(2) : (f?.duration?.toFixed(2) ?? "–")}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.fps ?? "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.shutterMs ?? "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.gain || "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.gamma ?? "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.roi || "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.binning || "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.histogramPct ?? "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.sensorTempC !== undefined ? `${f.sensorTempC}°C` : "–"}</td>
+                                    <td className="p-2 md:p-3 whitespace-nowrap align-middle">{f?.profile || "–"}</td>
+                                  </>
+                                );
+                              })()
                             ) : (
                               <>
                                 <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
@@ -11475,6 +11506,7 @@ export default function AstroTracker() {
                 </Card>
               </div>
 
+              {(obj as any).category !== "planetary" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {((proj as any)?.chartVisibility?.exposureChart !== false) && <ExposureChart sessions={filtered} dateFormat={dateFormat} />}
                 {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} />}
@@ -11489,6 +11521,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
               </div>
+              )}
             </div>
           )}
 
