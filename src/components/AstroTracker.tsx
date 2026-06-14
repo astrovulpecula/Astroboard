@@ -2746,6 +2746,22 @@ function FSession({
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(init.fitsAnalysis || null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(init.phd2Analysis || null);
   const [fireCaptureData, setFireCaptureData] = useState<FireCaptureAnalysisResult | null>(init.fireCaptureData || null);
+  // Editable planetary metadata fields (synced with FireCapture .txt when uploaded)
+  const initFc = init.fireCaptureData?.files?.[0] || {};
+  const [fcDuration, setFcDuration] = useState<string>(
+    init.fireCaptureData?.totals?.durationSec !== undefined
+      ? String(init.fireCaptureData.totals.durationSec)
+      : (initFc.duration !== undefined ? String(initFc.duration) : "")
+  );
+  const [fcFps, setFcFps] = useState<string>(initFc.fps !== undefined ? String(initFc.fps) : "");
+  const [fcShutterMs, setFcShutterMs] = useState<string>(initFc.shutterMs !== undefined ? String(initFc.shutterMs) : "");
+  const [fcGain, setFcGain] = useState<string>(initFc.gain ?? "");
+  const [fcGamma, setFcGamma] = useState<string>(initFc.gamma !== undefined ? String(initFc.gamma) : "");
+  const [fcRoi, setFcRoi] = useState<string>(initFc.roi ?? "");
+  const [fcBinning, setFcBinning] = useState<string>(initFc.binning ?? "");
+  const [fcHistogramPct, setFcHistogramPct] = useState<string>(initFc.histogramPct !== undefined ? String(initFc.histogramPct) : "");
+  const [fcSensorTempC, setFcSensorTempC] = useState<string>(initFc.sensorTempC !== undefined ? String(initFc.sensorTempC) : "");
+  const [fcProfile, setFcProfile] = useState<string>(initFc.profile ?? "");
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
@@ -2784,7 +2800,62 @@ function FSession({
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: fitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
-          fireCaptureData: fireCaptureData || undefined,
+          fireCaptureData: (() => {
+            if (!isPlanetary) return fireCaptureData || undefined;
+            const numOrU = (v: string) => {
+              const n = parseFloat(v.replace(",", "."));
+              return isNaN(n) ? undefined : n;
+            };
+            const baseFile: any = fireCaptureData?.files?.[0] || {};
+            const mergedFile = {
+              ...baseFile,
+              sourceFile: baseFile.sourceFile || "manual",
+              camera: camera || baseFile.camera,
+              filter: filter || baseFile.filter,
+              profile: fcProfile || baseFile.profile,
+              date,
+              duration: numOrU(fcDuration) ?? baseFile.duration,
+              frames: num(lights) || baseFile.frames,
+              fps: numOrU(fcFps) ?? baseFile.fps,
+              shutterMs: numOrU(fcShutterMs) ?? baseFile.shutterMs,
+              gain: fcGain || baseFile.gain,
+              gamma: numOrU(fcGamma) ?? baseFile.gamma,
+              roi: fcRoi || baseFile.roi,
+              binning: fcBinning || baseFile.binning,
+              histogramPct: numOrU(fcHistogramPct) ?? baseFile.histogramPct,
+              sensorTempC: numOrU(fcSensorTempC) ?? baseFile.sensorTempC,
+            };
+            const hasAny =
+              mergedFile.duration !== undefined ||
+              mergedFile.fps !== undefined ||
+              mergedFile.shutterMs !== undefined ||
+              mergedFile.gain ||
+              mergedFile.gamma !== undefined ||
+              mergedFile.roi ||
+              mergedFile.binning ||
+              mergedFile.histogramPct !== undefined ||
+              mergedFile.sensorTempC !== undefined ||
+              mergedFile.profile ||
+              (fireCaptureData?.files?.length ?? 0) > 0;
+            if (!hasAny) return undefined;
+            const otherFiles = (fireCaptureData?.files || []).slice(1);
+            const files = [mergedFile, ...otherFiles];
+            const totals = files.reduce(
+              (acc, f: any) => ({
+                frames: acc.frames + (f.frames || 0),
+                durationSec: acc.durationSec + (f.duration || 0),
+              }),
+              { frames: 0, durationSec: 0 },
+            );
+            return {
+              files,
+              totals,
+              extractedInfo: fireCaptureData?.extractedInfo || {
+                camera, filter, profile: fcProfile,
+                dates: date ? [date] : [],
+              },
+            };
+          })(),
         };
 
         onSubmit(sessionData);
@@ -2995,20 +3066,77 @@ function FSession({
 
       {/* FireCapture .txt analyzer - planetary only */}
       {isPlanetary && (
-        <FireCaptureAnalyzer
-          value={fireCaptureData}
-          onChange={(r) => {
-            setFireCaptureData(r);
-            if (r) {
-              if (r.totals.frames > 0) setLights(r.totals.frames);
-              if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
-              if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
-              if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
-                setCamera(r.extractedInfo.camera);
+        <>
+          <FireCaptureAnalyzer
+            value={fireCaptureData}
+            onChange={(r) => {
+              setFireCaptureData(r);
+              if (r) {
+                if (r.totals.frames > 0) setLights(r.totals.frames);
+                if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
+                if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+                if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
+                  setCamera(r.extractedInfo.camera);
+                }
+                const f: any = r.files?.[0] || {};
+                if (r.totals.durationSec) setFcDuration(r.totals.durationSec.toFixed(2));
+                else if (f.duration !== undefined) setFcDuration(String(f.duration));
+                if (f.fps !== undefined) setFcFps(String(f.fps));
+                if (f.shutterMs !== undefined) setFcShutterMs(String(f.shutterMs));
+                if (f.gain) setFcGain(f.gain);
+                if (f.gamma !== undefined) setFcGamma(String(f.gamma));
+                if (f.roi) setFcRoi(f.roi);
+                if (f.binning) setFcBinning(f.binning);
+                if (f.histogramPct !== undefined) setFcHistogramPct(String(f.histogramPct));
+                if (f.sensorTempC !== undefined) setFcSensorTempC(String(f.sensorTempC));
+                if (f.profile) setFcProfile(f.profile);
               }
-            }
-          }}
-        />
+            }}
+          />
+
+          <div className="grid sm:grid-cols-3 gap-3">
+            <label className="grid gap-1">
+              <Label>Duración (s)</Label>
+              <input value={fcDuration} onChange={(e) => setFcDuration(e.target.value)} className={INPUT_CLS} placeholder="9.31" />
+            </label>
+            <label className="grid gap-1">
+              <Label>FPS</Label>
+              <input value={fcFps} onChange={(e) => setFcFps(e.target.value)} className={INPUT_CLS} placeholder="53" />
+            </label>
+            <label className="grid gap-1">
+              <Label>Shutter (ms)</Label>
+              <input value={fcShutterMs} onChange={(e) => setFcShutterMs(e.target.value)} className={INPUT_CLS} placeholder="1.5" />
+            </label>
+            <label className="grid gap-1">
+              <Label>Gain</Label>
+              <input value={fcGain} onChange={(e) => setFcGain(e.target.value)} className={INPUT_CLS} placeholder="200" />
+            </label>
+            <label className="grid gap-1">
+              <Label>Gamma</Label>
+              <input value={fcGamma} onChange={(e) => setFcGamma(e.target.value)} className={INPUT_CLS} placeholder="50" />
+            </label>
+            <label className="grid gap-1">
+              <Label>ROI</Label>
+              <input value={fcRoi} onChange={(e) => setFcRoi(e.target.value)} className={INPUT_CLS} placeholder="640x480" />
+            </label>
+            <label className="grid gap-1">
+              <Label>Binning</Label>
+              <input value={fcBinning} onChange={(e) => setFcBinning(e.target.value)} className={INPUT_CLS} placeholder="1x1" />
+            </label>
+            <label className="grid gap-1">
+              <Label>Histograma (%)</Label>
+              <input value={fcHistogramPct} onChange={(e) => setFcHistogramPct(e.target.value)} className={INPUT_CLS} placeholder="65" />
+            </label>
+            <label className="grid gap-1">
+              <Label>T sensor (°C)</Label>
+              <input value={fcSensorTempC} onChange={(e) => setFcSensorTempC(e.target.value)} className={INPUT_CLS} placeholder="22" />
+            </label>
+            <label className="grid gap-1 sm:col-span-3">
+              <Label>Perfil / Target</Label>
+              <input value={fcProfile} onChange={(e) => setFcProfile(e.target.value)} className={INPUT_CLS} placeholder="Moon" />
+            </label>
+          </div>
+        </>
       )}
 
       <label className="grid gap-1">
