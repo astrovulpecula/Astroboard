@@ -5434,8 +5434,27 @@ export default function AstroTracker() {
     // Prevent double initialization in Strict Mode - check synchronously BEFORE any async
     if (initializationStartedRef.current) return;
     initializationStartedRef.current = true; // Set immediately to block second call
-    
-    const loadData = async () => {
+
+    // EPHEMERAL MODE: The app must always start completely empty on page load.
+    // No data is restored from cloud or localStorage. Data only exists in memory
+    // after the user imports a JSON, and is discarded on reload.
+    try {
+      localStorage.removeItem("astroTrackerData");
+      localStorage.removeItem("astroTrackerSettings");
+      localStorage.removeItem("astroTrackerPlannedProjects");
+    } catch (e) {
+      // ignore
+    }
+    setObjects([]);
+    setPlannedProjects([]);
+    setHasImportedData(false);
+    cloudLoadedDataRef.current = { objects: [], planned: [] };
+    initializationCompleteRef.current = true;
+    pendingChangesRef.current = 0;
+    setCloudDataLoaded(true);
+
+    // Legacy loader kept disabled for reference (ephemeral mode is active above)
+    const _legacyLoadData = async () => {
       // Helper to apply settings
       const applySettings = (settings: any) => {
         if (settings.defaultTheme) {
@@ -5553,8 +5572,6 @@ export default function AstroTracker() {
       
       initializationCompleteRef.current = true;
     };
-
-    loadData();
 
     // Load ephemeris data
     const loadEphemerisData = async () => {
@@ -5686,6 +5703,9 @@ export default function AstroTracker() {
     plannedToSave: any[],
     importedSettings?: any
   ): Promise<boolean> => {
+    // EPHEMERAL MODE: never persist imported data anywhere.
+    return true;
+    // eslint-disable-next-line no-unreachable
     if (!cloudSyncRef.current.isCloudEnabled) {
       console.log('[CloudSync] Force sync skipped: cloud not enabled');
       return false;
@@ -5734,7 +5754,9 @@ export default function AstroTracker() {
   // Auto-save objects and plannedProjects to cloud whenever they change
   // Uses pendingChangesRef counter to distinguish user actions from initial load
   useEffect(() => {
-    // Skip if initialization is not complete or cloud is not enabled
+    // EPHEMERAL MODE: never persist to cloud. Data lives only in memory.
+    return;
+    // eslint-disable-next-line no-unreachable
     if (!initializationCompleteRef.current || !cloudSyncRef.current.isCloudEnabled || !cloudDataLoaded) return;
     
     // Only sync if user has made changes (pendingChangesRef > 0)
@@ -5801,6 +5823,9 @@ export default function AstroTracker() {
 
   // Auto-save to localStorage as backup
   useEffect(() => {
+    // EPHEMERAL MODE: never persist objects to localStorage.
+    return;
+    // eslint-disable-next-line no-unreachable
     const objectsString = JSON.stringify(objects);
     const dataSizeKB = (objectsString.length * 2) / 1024;
     
@@ -5833,7 +5858,7 @@ export default function AstroTracker() {
 
   // Auto-save planned projects to localStorage
   useEffect(() => {
-    localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(plannedProjects));
+    // EPHEMERAL MODE: never persist planned projects to localStorage.
   }, [plannedProjects]);
 
   // Cleanup cloud sync timeout on unmount and flush pending sync
@@ -5851,43 +5876,9 @@ export default function AstroTracker() {
 
   // Save settings to localStorage
   const saveSettings = useCallback(async () => {
-    const settings = {
-      defaultTheme,
-      jsonPath,
-      cameras: cameras.filter((c) => c.trim() !== ""),
-      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-      mainLocation,
-      locations: locations.filter((l) => l.name.trim() !== ""),
-      guideTelescope,
-      guideCamera,
-      mount,
-      userName,
-      dateFormat,
-      minAltitudeLimit,
-    };
-    
-    const saved = await safeLocalStorageSave(
-      "astroTrackerSettings",
-      JSON.stringify(settings),
-      (warningMessage) => {
-        toast({
-          title: "Aviso de almacenamiento",
-          description: warningMessage,
-          variant: "destructive",
-        });
-      }
-    );
-    
-    if (saved) {
-      setShowSettings(false);
-      setMainSection("dashboard");
-    } else {
-      toast({
-        title: "Error de almacenamiento",
-        description: "No se pudieron guardar los ajustes.",
-        variant: "destructive",
-      });
-    }
+    // EPHEMERAL MODE: settings are kept in memory only and discarded on reload.
+    setShowSettings(false);
+    setMainSection("dashboard");
   }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, toast]);
 
   useEffect(() => {
@@ -5898,16 +5889,8 @@ export default function AstroTracker() {
       document.documentElement.classList.remove("dark");
     }
     
-    // Persist theme to localStorage when it changes
-    try {
-      const savedSettings = localStorage.getItem("astroTrackerSettings");
-      const settings = savedSettings ? JSON.parse(savedSettings) : {};
-      settings.defaultTheme = theme;
-      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
-      setDefaultTheme(theme);
-    } catch (e) {
-      console.error("Error saving theme:", e);
-    }
+    // EPHEMERAL MODE: do not persist theme. Update in-memory default only.
+    setDefaultTheme(theme);
   }, [theme]);
 
   // Función para exportar JSON (reutilizable)
