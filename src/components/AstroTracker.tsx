@@ -2711,6 +2711,7 @@ function FSession({
   cameras,
   projectEquipment,
   telescopes,
+  objectCategory,
 }: {
   onSubmit: (session: any) => void;
   initial?: any;
@@ -2718,9 +2719,11 @@ function FSession({
   cameras: string[];
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
+  objectCategory?: "dso" | "planetary";
 }) {
   const init = initial || {};
   const { t } = useLanguage();
+  const isPlanetary = objectCategory === "planetary";
 
   // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
