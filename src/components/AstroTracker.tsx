@@ -8460,6 +8460,18 @@ export default function AstroTracker() {
                     {showFilters && (
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30">
                         <label className="grid gap-1">
+                          <Label>Categoría</Label>
+                          <select
+                            value={filterCategory}
+                            onChange={(e) => setFilterCategory(e.target.value)}
+                            className={INPUT_CLS}
+                          >
+                            <option value="all">Todas las categorías</option>
+                            <option value="dso">DSO (Cielo profundo)</option>
+                            <option value="planetary">Planetaria (Sistema Solar)</option>
+                          </select>
+                        </label>
+                        <label className="grid gap-1">
                           <Label>{t('filterByConstellation')}</Label>
                           <select
                             value={filterConstellation}
@@ -8498,7 +8510,7 @@ export default function AstroTracker() {
                             <option value="closed">{t('statusOptionClosed')}</option>
                           </select>
                         </label>
-                        {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all") && (
+                        {(filterConstellation !== "all" || filterType !== "all" || filterStatus !== "all" || filterCategory !== "all") && (
                           <div className="md:col-span-3">
                             <Btn
                               outline
@@ -8506,6 +8518,7 @@ export default function AstroTracker() {
                                 setFilterConstellation("all");
                                 setFilterType("all");
                                 setFilterStatus("all");
+                                setFilterCategory("all");
                               }}
                             >
                               {t('clearFilters')}
@@ -8515,7 +8528,7 @@ export default function AstroTracker() {
                       </div>
                     )}
 
-                    {(searchText || filterConstellation !== "all" || filterType !== "all") && (
+                    {(searchText || filterConstellation !== "all" || filterType !== "all" || filterCategory !== "all") && (
                       <div className="text-sm text-slate-600 dark:text-slate-400">
                         {filteredObjects.length} {t('objectsFound')}
                       </div>
