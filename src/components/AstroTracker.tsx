@@ -894,6 +894,9 @@ const WeatherCard = ({
 };
 
 function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
+  const [category, setCategory] = useState<"dso" | "planetary">("dso");
+  const [planetaryName, setPlanetaryName] = useState("");
+  const [planetaryCustom, setPlanetaryCustom] = useState("");
   const [id, setId] = useState("");
   const [commonName, setCommonName] = useState("");
   const [constellation, setConstellation] = useState("");
@@ -1007,8 +1010,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const x = id.trim();
-    if (!x) return;
 
     let imageData = undefined;
     if (imageFile) {
@@ -1019,11 +1020,78 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
       }
     }
 
-    onSubmit({ id: x, commonName, constellation, type, image: imageData });
+    if (category === "planetary") {
+      const name = planetaryName === "Otros" ? planetaryCustom.trim() : planetaryName;
+      if (!name) {
+        alert("Selecciona o introduce un nombre para el objeto planetario.");
+        return;
+      }
+      onSubmit({
+        id: name,
+        commonName: name,
+        constellation: "",
+        type: "Sistema Solar",
+        category: "planetary",
+        image: imageData,
+      });
+      return;
+    }
+
+    const x = id.trim();
+    if (!x) return;
+    onSubmit({ id: x, commonName, constellation, type, category: "dso", image: imageData });
   };
 
   return (
     <form className="grid gap-3" onSubmit={handleSubmit}>
+      <label className="grid gap-1">
+        <Label>Categoría</Label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as "dso" | "planetary")}
+          className={INPUT_CLS}
+        >
+          <option value="dso">DSO (Cielo profundo)</option>
+          <option value="planetary">Planetaria (Sistema Solar)</option>
+        </select>
+      </label>
+
+      {category === "planetary" ? (
+        <>
+          <label className="grid gap-1">
+            <Label>Nombre común</Label>
+            <select
+              value={planetaryName}
+              onChange={(e) => setPlanetaryName(e.target.value)}
+              className={INPUT_CLS}
+            >
+              <option value="">Selecciona un objeto…</option>
+              <option value="Luna">Luna</option>
+              <option value="Sol">Sol</option>
+              <option value="Mercurio">Mercurio</option>
+              <option value="Venus">Venus</option>
+              <option value="Marte">Marte</option>
+              <option value="Júpiter">Júpiter</option>
+              <option value="Saturno">Saturno</option>
+              <option value="Urano">Urano</option>
+              <option value="Neptuno">Neptuno</option>
+              <option value="Otros">Otros</option>
+            </select>
+          </label>
+          {planetaryName === "Otros" && (
+            <label className="grid gap-1">
+              <Label>Especifica el objeto</Label>
+              <input
+                value={planetaryCustom}
+                onChange={(e) => setPlanetaryCustom(e.target.value)}
+                className={INPUT_CLS}
+                placeholder="Ej. Cometa NEOWISE, Ío, Europa…"
+              />
+            </label>
+          )}
+        </>
+      ) : (
+        <>
       <label className="grid gap-1 relative">
         <Label>Código oficial</Label>
         <input 
@@ -1081,6 +1149,8 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
           placeholder="Galaxia espiral, Nebulosa de emisión, etc."
         />
       </label>
+        </>
+      )}
 
       <div className="grid gap-1">
         <Label>Imagen del objeto (opcional)</Label>
@@ -1117,6 +1187,8 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
             setConstellation("");
             setType("");
             setImageFile(null);
+            setPlanetaryName("");
+            setPlanetaryCustom("");
           }}
         >
           Limpiar
