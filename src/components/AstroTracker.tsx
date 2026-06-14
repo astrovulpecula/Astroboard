@@ -10702,6 +10702,7 @@ export default function AstroTracker() {
                 </Card>
 
                 {/* 2. Sesiones */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
                   <div className="text-xl font-semibold">
@@ -10711,6 +10712,7 @@ export default function AstroTracker() {
                     Última: {proj.sessions.length ? formatDateDisplay(proj.sessions[proj.sessions.length - 1].date, dateFormat) : "–"}
                   </div>
                 </Card>
+                )}
 
                 {/* 3. Estado */}
                 <Card className="p-4">
@@ -10790,18 +10792,40 @@ export default function AstroTracker() {
                 })()}
 
                 {/* 5. Lights totales acumulados */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Lights totales acumulados</div>
                   <div className="text-xl font-semibold">
                     {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
                   </div>
                 </Card>
+                )}
 
                 {/* 6. Exposición total */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Exposición total</div>
                   <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
                 </Card>
+                )}
+
+                {/* Highlights planetarios: Frames y Segundos */}
+                {(obj as any).category === "planetary" && (
+                  <>
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500">Frames</div>
+                      <div className="text-xl font-semibold">
+                        {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500">Segundos</div>
+                      <div className="text-xl font-semibold">
+                        {totalExposureSec(proj.sessions)}
+                      </div>
+                    </Card>
+                  </>
+                )}
 
                 {/* 7. Highlights de filtros (ej: "HA/OIII total") */}
                 {(() => {
