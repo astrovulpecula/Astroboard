@@ -5873,43 +5873,9 @@ export default function AstroTracker() {
 
   // Save settings to localStorage
   const saveSettings = useCallback(async () => {
-    const settings = {
-      defaultTheme,
-      jsonPath,
-      cameras: cameras.filter((c) => c.trim() !== ""),
-      telescopes: telescopes.filter((t) => t.name.trim() !== ""),
-      mainLocation,
-      locations: locations.filter((l) => l.name.trim() !== ""),
-      guideTelescope,
-      guideCamera,
-      mount,
-      userName,
-      dateFormat,
-      minAltitudeLimit,
-    };
-    
-    const saved = await safeLocalStorageSave(
-      "astroTrackerSettings",
-      JSON.stringify(settings),
-      (warningMessage) => {
-        toast({
-          title: "Aviso de almacenamiento",
-          description: warningMessage,
-          variant: "destructive",
-        });
-      }
-    );
-    
-    if (saved) {
-      setShowSettings(false);
-      setMainSection("dashboard");
-    } else {
-      toast({
-        title: "Error de almacenamiento",
-        description: "No se pudieron guardar los ajustes.",
-        variant: "destructive",
-      });
-    }
+    // EPHEMERAL MODE: settings are kept in memory only and discarded on reload.
+    setShowSettings(false);
+    setMainSection("dashboard");
   }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit, toast]);
 
   useEffect(() => {
@@ -5920,16 +5886,8 @@ export default function AstroTracker() {
       document.documentElement.classList.remove("dark");
     }
     
-    // Persist theme to localStorage when it changes
-    try {
-      const savedSettings = localStorage.getItem("astroTrackerSettings");
-      const settings = savedSettings ? JSON.parse(savedSettings) : {};
-      settings.defaultTheme = theme;
-      localStorage.setItem("astroTrackerSettings", JSON.stringify(settings));
-      setDefaultTheme(theme);
-    } catch (e) {
-      console.error("Error saving theme:", e);
-    }
+    // EPHEMERAL MODE: do not persist theme. Update in-memory default only.
+    setDefaultTheme(theme);
   }, [theme]);
 
   // Función para exportar JSON (reutilizable)
