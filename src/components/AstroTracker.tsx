@@ -5703,6 +5703,9 @@ export default function AstroTracker() {
     plannedToSave: any[],
     importedSettings?: any
   ): Promise<boolean> => {
+    // EPHEMERAL MODE: never persist imported data anywhere.
+    return true;
+    // eslint-disable-next-line no-unreachable
     if (!cloudSyncRef.current.isCloudEnabled) {
       console.log('[CloudSync] Force sync skipped: cloud not enabled');
       return false;
