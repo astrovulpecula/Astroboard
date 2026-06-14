@@ -11995,6 +11995,7 @@ export default function AstroTracker() {
               name: plannedFromPlan.name,
               encuadreImage: plannedFromPlan.encuadreImage,
             } : undefined}
+            objectCategory={obj?.category}
           />
         </Modal>
         <Modal 
