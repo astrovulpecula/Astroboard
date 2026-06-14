@@ -2993,6 +2993,25 @@ function FSession({
         </>
       )}
 
+      {/* FireCapture .txt analyzer - planetary only */}
+      {isPlanetary && (
+        <FireCaptureAnalyzer
+          value={fireCaptureData}
+          onChange={(r) => {
+            setFireCaptureData(r);
+            if (r) {
+              if (r.totals.frames > 0) setLights(r.totals.frames);
+              if (r.totals.durationSec > 0) setExposureSec(Math.max(1, Math.round(r.totals.durationSec)));
+              if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
+              if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+              if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
+                setCamera(r.extractedInfo.camera);
+              }
+            }
+          }}
+        />
+      )}
+
       <label className="grid gap-1">
         <Label>{t('sessionFormNotes')}</Label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} />
