@@ -93,6 +93,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
+import FireCaptureAnalyzer, { FireCaptureAnalysisResult } from "@/components/FireCaptureAnalyzer";
 import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
@@ -2744,6 +2745,7 @@ function FSession({
   const [notes, setNotes] = useState(init.notes ?? "");
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(init.fitsAnalysis || null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(init.phd2Analysis || null);
+  const [fireCaptureData, setFireCaptureData] = useState<FireCaptureAnalysisResult | null>(init.fireCaptureData || null);
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
@@ -2782,6 +2784,7 @@ function FSession({
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: fitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
+          fireCaptureData: fireCaptureData || undefined,
         };
 
         onSubmit(sessionData);
@@ -2990,6 +2993,24 @@ function FSession({
         </>
       )}
 
+      {/* FireCapture .txt analyzer - planetary only */}
+      {isPlanetary && (
+        <FireCaptureAnalyzer
+          value={fireCaptureData}
+          onChange={(r) => {
+            setFireCaptureData(r);
+            if (r) {
+              if (r.totals.frames > 0) setLights(r.totals.frames);
+              if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
+              if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+              if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
+                setCamera(r.extractedInfo.camera);
+              }
+            }
+          }}
+        />
+      )}
+
       <label className="grid gap-1">
         <Label>{t('sessionFormNotes')}</Label>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={INPUT_CLS} />
@@ -3027,6 +3048,7 @@ function FSessionAutomated({
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
+  const [fireCaptureData, setFireCaptureData] = useState<FireCaptureAnalysisResult | null>(null);
   
   // State for form fields
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -3162,6 +3184,7 @@ function FSessionAutomated({
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: finalFitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
+          fireCaptureData: fireCaptureData || undefined,
         };
 
         onSubmit(sessionData);
@@ -3172,6 +3195,26 @@ function FSessionAutomated({
         <div className="space-y-4 pb-4 border-b border-border">
           <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
           <PHD2Analyzer value={phd2Analysis} onChange={setPhd2Analysis} />
+        </div>
+      )}
+
+      {/* FireCapture .txt analyzer - planetary only */}
+      {isPlanetary && (
+        <div className="pb-4 border-b border-border">
+          <FireCaptureAnalyzer
+            value={fireCaptureData}
+            onChange={(r) => {
+              setFireCaptureData(r);
+              if (r) {
+                if (r.totals.frames > 0) setLights(r.totals.frames);
+                if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
+                if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
+                if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
+                  setCamera(r.extractedInfo.camera);
+                }
+              }
+            }}
+          />
         </div>
       )}
 
@@ -11262,11 +11305,11 @@ export default function AstroTracker() {
                                   <DialogTrigger asChild>
                                     <button
                                       className="p-1 md:p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors relative"
-                                      title={s.fitsAnalysis || s.phd2Analysis ? t('detailsAndAnalysis') : t('commentsLabel')}
+                                      title={s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? t('detailsAndAnalysis') : t('commentsLabel')}
                                     >
                                       <MessageCircle className="w-3 h-3 md:w-4 md:h-4" />
-                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis ? (
-                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis || s.phd2Analysis ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                                      {(s.notes && s.notes.trim() !== "") || s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? (
+                                        <span className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ${s.fitsAnalysis || s.phd2Analysis || s.fireCaptureData ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                                       ) : null}
                                     </button>
                                   </DialogTrigger>
@@ -11351,7 +11394,65 @@ export default function AstroTracker() {
                                     )}
                                     
                                     {/* Empty state if no notes and no FITS and no PHD2 */}
-                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && (
+                                    {s.fireCaptureData && (
+                                      <div className="mt-4">
+                                        <h4 className="text-sm font-medium mb-3">Metadata FireCapture</h4>
+                                        <div className="rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                          <table className="w-full text-xs md:text-sm">
+                                            <thead className="bg-slate-50 dark:bg-slate-900/50">
+                                              <tr className="text-left">
+                                                <th className="p-2">Archivo</th>
+                                                <th className="p-2">Fecha</th>
+                                                <th className="p-2">Hora (UT)</th>
+                                                <th className="p-2">Cámara</th>
+                                                <th className="p-2">Filtro</th>
+                                                <th className="p-2">Perfil</th>
+                                                <th className="p-2">Frames</th>
+                                                <th className="p-2">Dur (s)</th>
+                                                <th className="p-2">FPS</th>
+                                                <th className="p-2">Shutter (ms)</th>
+                                                <th className="p-2">Gain</th>
+                                                <th className="p-2">Gamma</th>
+                                                <th className="p-2">ROI</th>
+                                                <th className="p-2">Binning</th>
+                                                <th className="p-2">Hist %</th>
+                                                <th className="p-2">T sensor</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {s.fireCaptureData.files.map((f: any, idx: number) => (
+                                                <tr key={idx} className="border-t border-slate-200 dark:border-slate-800">
+                                                  <td className="p-2 whitespace-nowrap">{f.filename || f.sourceFile}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.date || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.startUT || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.camera || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.filter || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.profile || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.frames ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.duration?.toFixed(2) ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.fps ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.shutterMs ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.gain || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.gamma ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.roi || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.binning || "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.histogramPct ?? "–"}</td>
+                                                  <td className="p-2 whitespace-nowrap">{f.sensorTempC !== undefined ? `${f.sensorTempC}°C` : "–"}</td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        {s.fireCaptureData.files.length > 1 && (
+                                          <div className="text-xs text-muted-foreground mt-2">
+                                            Totales: {s.fireCaptureData.totals.frames} frames · {s.fireCaptureData.totals.durationSec.toFixed(2)}s
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Empty state if no notes and no analyses */}
+                                    {(!s.notes || s.notes.trim() === "") && !s.fitsAnalysis && !s.phd2Analysis && !s.fireCaptureData && (
                                       <div className="mt-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 text-center text-slate-500">
                                         {t('noNotesOrAnalysis')}
                                       </div>
