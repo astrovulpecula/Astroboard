@@ -2745,6 +2745,7 @@ function FSession({
   const [notes, setNotes] = useState(init.notes ?? "");
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(init.fitsAnalysis || null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(init.phd2Analysis || null);
+  const [fireCaptureData, setFireCaptureData] = useState<FireCaptureAnalysisResult | null>(init.fireCaptureData || null);
   // Filtros predeterminados como en FProject
   const predefinedFilters = ["UV/IR", "HA/OIII", "No Filter"];
 
@@ -2783,6 +2784,7 @@ function FSession({
           moonPhase: moonPhase ? formatMoonPhase(moonPhase) : undefined,
           fitsAnalysis: fitsAnalysis || undefined,
           phd2Analysis: phd2Analysis || undefined,
+          fireCaptureData: fireCaptureData || undefined,
         };
 
         onSubmit(sessionData);
