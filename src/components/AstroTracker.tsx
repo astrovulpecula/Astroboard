@@ -5751,7 +5751,9 @@ export default function AstroTracker() {
   // Auto-save objects and plannedProjects to cloud whenever they change
   // Uses pendingChangesRef counter to distinguish user actions from initial load
   useEffect(() => {
-    // Skip if initialization is not complete or cloud is not enabled
+    // EPHEMERAL MODE: never persist to cloud. Data lives only in memory.
+    return;
+    // eslint-disable-next-line no-unreachable
     if (!initializationCompleteRef.current || !cloudSyncRef.current.isCloudEnabled || !cloudDataLoaded) return;
     
     // Only sync if user has made changes (pendingChangesRef > 0)
@@ -5818,6 +5820,9 @@ export default function AstroTracker() {
 
   // Auto-save to localStorage as backup
   useEffect(() => {
+    // EPHEMERAL MODE: never persist objects to localStorage.
+    return;
+    // eslint-disable-next-line no-unreachable
     const objectsString = JSON.stringify(objects);
     const dataSizeKB = (objectsString.length * 2) / 1024;
     
@@ -5850,7 +5855,7 @@ export default function AstroTracker() {
 
   // Auto-save planned projects to localStorage
   useEffect(() => {
-    localStorage.setItem("astroTrackerPlannedProjects", JSON.stringify(plannedProjects));
+    // EPHEMERAL MODE: never persist planned projects to localStorage.
   }, [plannedProjects]);
 
   // Cleanup cloud sync timeout on unmount and flush pending sync
