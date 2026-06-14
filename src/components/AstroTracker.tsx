@@ -3001,7 +3001,6 @@ function FSession({
             setFireCaptureData(r);
             if (r) {
               if (r.totals.frames > 0) setLights(r.totals.frames);
-              if (r.totals.durationSec > 0) setExposureSec(Math.max(1, Math.round(r.totals.durationSec)));
               if (r.extractedInfo.dates[0]) setDate(r.extractedInfo.dates[0]);
               if (r.extractedInfo.filter) setFilter(r.extractedInfo.filter);
               if (r.extractedInfo.camera && cameras.some((c) => c === r.extractedInfo.camera)) {
