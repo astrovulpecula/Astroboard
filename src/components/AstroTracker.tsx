@@ -2711,6 +2711,7 @@ function FSession({
   cameras,
   projectEquipment,
   telescopes,
+  objectCategory,
 }: {
   onSubmit: (session: any) => void;
   initial?: any;
@@ -2718,9 +2719,11 @@ function FSession({
   cameras: string[];
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
+  objectCategory?: "dso" | "planetary";
 }) {
   const init = initial || {};
   const { t } = useLanguage();
+  const isPlanetary = objectCategory === "planetary";
 
   // Todos los useState deben ir primero
   const [date, setDate] = useState(init.date || new Date().toISOString().slice(0, 10));
@@ -2854,7 +2857,7 @@ function FSession({
           </div>
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormLights')}</Label>
+          <Label>{isPlanetary ? 'Frames' : t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -2864,7 +2867,7 @@ function FSession({
           />
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormExposurePerLight')}</Label>
+          <Label>{isPlanetary ? 'Segundos por frame' : t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -2935,6 +2938,7 @@ function FSession({
           </div>
         </div>
       )}
+      {!isPlanetary && (
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormSnrR')}</Label>
@@ -2949,7 +2953,9 @@ function FSession({
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} />
         </label>
       </div>
+      )}
 
+      {!isPlanetary && (
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsAccepted')}</Label>
@@ -2974,6 +2980,7 @@ function FSession({
           />
         </label>
       </div>
+      )}
 
       {/* FITS Analyzer - before notes */}
       <FitsAnalyzer value={fitsAnalysis} onChange={setFitsAnalysis} />
@@ -3004,14 +3011,17 @@ function FSessionAutomated({
   cameras,
   projectEquipment,
   telescopes,
+  objectCategory,
 }: {
   onSubmit: (session: any) => void;
   availableFilters: string[];
   cameras: string[];
   projectEquipment?: any;
   telescopes?: { name: string; focalLength: string }[];
+  objectCategory?: "dso" | "planetary";
 }) {
   const { t } = useLanguage();
+  const isPlanetary = objectCategory === "planetary";
   // State for FITS and PHD2 analysis (at the top)
   const [fitsAnalysis, setFitsAnalysis] = useState<FitsAnalysisResult | null>(null);
   const [phd2Analysis, setPhd2Analysis] = useState<PHD2AnalysisResult | null>(null);
@@ -3261,7 +3271,7 @@ function FSessionAutomated({
         </label>
 
         <label className="grid gap-1">
-          <Label>{t('sessionFormLights')}</Label>
+          <Label>{isPlanetary ? 'Frames' : t('sessionFormLights')}</Label>
           <input
             type="number"
             value={lights}
@@ -3271,7 +3281,7 @@ function FSessionAutomated({
           />
         </label>
         <label className="grid gap-1">
-          <Label>{t('sessionFormExposurePerLight')}</Label>
+          <Label>{isPlanetary ? 'Segundos por frame' : t('sessionFormExposurePerLight')}</Label>
           <input
             type="number"
             value={exposureSec}
@@ -3382,6 +3392,7 @@ function FSessionAutomated({
       )}
 
       {/* SNR fields - left blank for manual entry */}
+      {!isPlanetary && (
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormSnrR')}</Label>
@@ -3396,8 +3407,10 @@ function FSessionAutomated({
           <input value={snrB} onChange={(e) => setSnrB(e.target.value)} className={INPUT_CLS} placeholder={t('sessionFormOptional')} />
         </label>
       </div>
+      )}
 
       {/* Accepted/Rejected lights - left blank */}
+      {!isPlanetary && (
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsAccepted')}</Label>
@@ -3422,6 +3435,7 @@ function FSessionAutomated({
           />
         </label>
       </div>
+      )}
 
       {/* Manual environment data fields - shown when FITS lacks this data */}
       {(!fitsAnalysis?.averages?.mpsas || !fitsAnalysis?.averages?.ambientTemp || !fitsAnalysis?.averages?.humidity || !fitsAnalysis?.averages?.wind) && (
@@ -10688,6 +10702,7 @@ export default function AstroTracker() {
                 </Card>
 
                 {/* 2. Sesiones */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Sesiones</div>
                   <div className="text-xl font-semibold">
@@ -10697,6 +10712,7 @@ export default function AstroTracker() {
                     Última: {proj.sessions.length ? formatDateDisplay(proj.sessions[proj.sessions.length - 1].date, dateFormat) : "–"}
                   </div>
                 </Card>
+                )}
 
                 {/* 3. Estado */}
                 <Card className="p-4">
@@ -10776,18 +10792,40 @@ export default function AstroTracker() {
                 })()}
 
                 {/* 5. Lights totales acumulados */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Lights totales acumulados</div>
                   <div className="text-xl font-semibold">
                     {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
                   </div>
                 </Card>
+                )}
 
                 {/* 6. Exposición total */}
+                {(obj as any).category !== "planetary" && (
                 <Card className="p-4">
                   <div className="text-sm text-slate-500">Exposición total</div>
                   <div className="text-xl font-semibold">{hh(totalExposureSec(proj.sessions))}</div>
                 </Card>
+                )}
+
+                {/* Highlights planetarios: Frames y Segundos */}
+                {(obj as any).category === "planetary" && (
+                  <>
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500">Frames</div>
+                      <div className="text-xl font-semibold">
+                        {proj.sessions.reduce((a: number, s: any) => a + (s.lights || 0), 0)}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="text-sm text-slate-500">Segundos</div>
+                      <div className="text-xl font-semibold">
+                        {totalExposureSec(proj.sessions)}
+                      </div>
+                    </Card>
+                  </>
+                )}
 
                 {/* 7. Highlights de filtros (ej: "HA/OIII total") */}
                 {(() => {
@@ -11118,7 +11156,7 @@ export default function AstroTracker() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <ImageCard
-                  title={`Imagen inicial ${act?.name || tabLabel}`}
+                  title={`${(obj as any).category === "planetary" ? "Imagen apilada sin apilar" : "Imagen inicial"} ${act?.name || tabLabel}`}
                   keyName={`initial${keyPrefix}`}
                   proj={proj}
                   upImgs={upImgs}
@@ -11129,7 +11167,7 @@ export default function AstroTracker() {
                   }}
                 />
                 <ImageCard
-                  title={`Imagen final ${act?.name || tabLabel}`}
+                  title={`${(obj as any).category === "planetary" ? "Imagen apilada" : "Imagen final"} ${act?.name || tabLabel}`}
                   keyName={`final${keyPrefix}`}
                   proj={proj}
                   upImgs={upImgs}
@@ -11160,16 +11198,22 @@ export default function AstroTracker() {
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colMoonPhase')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colFilter')}</th>
                         <th className="p-2 md:p-3 whitespace-nowrap">{t('colCamera')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
-                        <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
+                        {(obj as any).category === "planetary" ? (
+                          <th className="p-2 md:p-3 whitespace-nowrap">Frames</th>
+                        ) : (
+                          <>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colExposureSec')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsSession')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colLightsCumulative')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSessionTime')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colTimeCumulative')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrMean')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrR')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrG')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colSnrB')}</th>
+                            <th className="p-2 md:p-3 whitespace-nowrap">{t('colIncrement')}</th>
+                          </>
+                        )}
                         <th className="p-2 md:p-3 whitespace-nowrap sticky right-0 bg-slate-50 dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 z-10">
                           {t('colActions')}
                         </th>
@@ -11201,24 +11245,30 @@ export default function AstroTracker() {
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{moonDisplay}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.filter ?? "–"}</td>
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.camera || "–"}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(m) ? m!.toFixed(2) : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrR) ? s.snrR : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrG) ? s.snrG : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">
-                              {Number.isFinite(s.snrB) ? s.snrB : "–"}
-                            </td>
-                            <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                            {(obj as any).category === "planetary" ? (
+                              <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                            ) : (
+                              <>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.exposureSec}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{s.lights}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{cumulativeLightsVal}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(sessionTime)}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{hh(cumulativeTime)}</td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(m) ? m!.toFixed(2) : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrR) ? s.snrR : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrG) ? s.snrG : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">
+                                  {Number.isFinite(s.snrB) ? s.snrB : "–"}
+                                </td>
+                                <td className="p-2 md:p-3 whitespace-nowrap align-middle">{i === 0 ? 0 : inc}</td>
+                              </>
+                            )}
                             <td className="p-2 md:p-3 whitespace-nowrap align-middle sticky right-0 bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-700">
                               <div className="inline-flex gap-1 md:gap-2">
                                 <Dialog>
@@ -12041,6 +12091,7 @@ export default function AstroTracker() {
             cameras={cameras}
             telescopes={telescopes}
             projectEquipment={(proj as any)?.equipment}
+            objectCategory={(obj as any)?.category}
           />
         </Modal>
         <Modal open={mSesAuto} onClose={() => setMSesAuto(false)} title={t('newSessionAutoTitle')} wide>
@@ -12050,6 +12101,7 @@ export default function AstroTracker() {
             cameras={cameras}
             telescopes={telescopes}
             projectEquipment={(proj as any)?.equipment}
+            objectCategory={(obj as any)?.category}
           />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
@@ -12064,6 +12116,7 @@ export default function AstroTracker() {
               cameras={cameras}
               telescopes={telescopes}
               projectEquipment={(proj as any)?.equipment}
+              objectCategory={(obj as any)?.category}
             />
           )}
         </Modal>
