@@ -10418,7 +10418,7 @@ export default function AstroTracker() {
               })()}
 
               {/* Visibility Chart Block */}
-              {mainLocation?.coords && (
+              {mainLocation?.coords && obj.id !== "Sol" && (
                 <Card className="p-4 md:p-6">
                   <Collapsible open={visibilitySectionExpanded} onOpenChange={setVisibilitySectionExpanded}>
                     <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
