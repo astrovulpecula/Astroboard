@@ -5920,11 +5920,14 @@ export default function AstroTracker() {
     }
     if (filterConstellation !== "all") filtered = filtered.filter((o) => o.constellation === filterConstellation);
     if (filterType !== "all") filtered = filtered.filter((o) => o.type === filterType);
+    if (filterCategory !== "all") {
+      filtered = filtered.filter((o) => (o.category || "dso") === filterCategory);
+    }
     if (filterStatus !== "all") {
       filtered = filtered.filter((o) => o.projects.some((p: any) => p.status === filterStatus));
     }
     return filtered;
-  }, [objects, searchText, filterConstellation, filterType, filterStatus]);
+  }, [objects, searchText, filterConstellation, filterType, filterStatus, filterCategory]);
 
   const constellations = useMemo(() => {
     const cons = new Set(objects.map((o) => o.constellation).filter(Boolean));
