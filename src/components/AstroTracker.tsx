@@ -4683,6 +4683,304 @@ const ImageCard = ({
   );
 };
 
+// Multi-version final image with active selection and before/after slider
+const FinalImageVersions = ({
+  proj,
+  upImgs,
+  rating,
+  onRatingChange,
+  theme,
+  onImageClick,
+}: {
+  proj: any;
+  upImgs: (patch: any) => Promise<void> | void;
+  rating?: number;
+  onRatingChange?: (rating: number) => void;
+  theme: string;
+  onImageClick?: (src: string) => void;
+}) => {
+  const storedVersions: string[] | undefined = proj?.images?.finalProjectVersions;
+  const legacyFinal: string | undefined = proj?.images?.finalProject;
+  const versions: string[] = React.useMemo(() => {
+    if (Array.isArray(storedVersions) && storedVersions.length > 0) return storedVersions;
+    return legacyFinal ? [legacyFinal] : [];
+  }, [storedVersions, legacyFinal]);
+
+  const [activeIdx, setActiveIdx] = useState(Math.max(0, versions.length - 1));
+  const [compareIdx, setCompareIdx] = useState(0);
+  const [compareMode, setCompareMode] = useState(false);
+  const [sliderPct, setSliderPct] = useState(50);
+  const [isUploading, setIsUploading] = useState(false);
+  const [currentRating, setCurrentRating] = useState(rating || 0);
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const draggingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (activeIdx > versions.length - 1) setActiveIdx(Math.max(0, versions.length - 1));
+    if (compareIdx > versions.length - 1) setCompareIdx(0);
+    if (versions.length < 2 && compareMode) setCompareMode(false);
+  }, [versions.length, activeIdx, compareIdx, compareMode]);
+
+  const handleAddVersion = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const url = await compressImage(file);
+      const next = [...versions, url];
+      await upImgs({ finalProjectVersions: next });
+      setActiveIdx(next.length - 1);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleReplaceActive = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const url = await compressImage(file);
+      const next = versions.map((v, i) => (i === activeIdx ? url : v));
+      await upImgs({ finalProjectVersions: next });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRemoveActive = async () => {
+    const next = versions.filter((_, i) => i !== activeIdx);
+    if (next.length === 0) {
+      await upImgs({ finalProjectVersions: [], finalProject: undefined });
+      setActiveIdx(0);
+      setCompareMode(false);
+      return;
+    }
+    await upImgs({ finalProjectVersions: next });
+    setActiveIdx(Math.min(activeIdx, next.length - 1));
+  };
+
+  const handleRatingClick = (newRating: number) => {
+    const finalRating = newRating === currentRating ? 0 : newRating;
+    setCurrentRating(finalRating);
+    onRatingChange?.(finalRating);
+  };
+
+  const updateSliderFromEvent = (clientX: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const pct = ((clientX - rect.left) / rect.width) * 100;
+    setSliderPct(Math.max(0, Math.min(100, pct)));
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    draggingRef.current = true;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    updateSliderFromEvent(e.clientX);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!draggingRef.current) return;
+    updateSliderFromEvent(e.clientX);
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    draggingRef.current = false;
+    (e.target as Element).releasePointerCapture?.(e.pointerId);
+  };
+
+  const hasImage = versions.length > 0;
+  const activeSrc = versions[activeIdx];
+  const compareSrc = versions[compareIdx];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-3">
+        <SectionTitle title="Imagen final" />
+        {onRatingChange && (
+          <div className="flex gap-1">
+            {[1, 2, 3].map((star) => (
+              <button
+                key={star}
+                onClick={() => handleRatingClick(star)}
+                className="transition-transform hover:scale-110"
+              >
+                <Star
+                  className={`w-5 h-5 ${
+                    star <= currentRating
+                      ? theme === "astro"
+                        ? "fill-blue-400 text-blue-400"
+                        : "fill-yellow-400 text-yellow-400"
+                      : "text-slate-300 dark:text-slate-600"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {hasImage ? (
+        <div className="space-y-3">
+          {compareMode && versions.length >= 2 && compareSrc && activeSrc ? (
+            <div
+              ref={containerRef}
+              className="relative w-full rounded-xl border overflow-hidden select-none touch-none"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              onPointerCancel={onPointerUp}
+              style={{ cursor: "ew-resize" }}
+            >
+              <img src={compareSrc} alt="Comparar" className="block w-full h-auto" draggable={false} />
+              <div
+                className="absolute inset-y-0 left-0 overflow-hidden"
+                style={{ width: `${sliderPct}%` }}
+              >
+                <img
+                  src={activeSrc}
+                  alt="Versión activa"
+                  className="block h-full w-auto max-w-none"
+                  style={{ width: containerRef.current?.clientWidth ?? "100%" }}
+                  draggable={false}
+                />
+              </div>
+              <div
+                className="absolute inset-y-0 w-0.5 bg-white shadow-[0_0_0_1px_rgba(0,0,0,0.4)]"
+                style={{ left: `${sliderPct}%`, transform: "translateX(-50%)" }}
+              >
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-slate-700 text-xs font-bold">
+                  ⇆
+                </div>
+              </div>
+              <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
+                v{activeIdx + 1}
+              </div>
+              <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded">
+                v{compareIdx + 1}
+              </div>
+            </div>
+          ) : (
+            <img
+              src={activeSrc}
+              alt="Imagen final"
+              className="w-full rounded-xl border cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => onImageClick && onImageClick(activeSrc)}
+            />
+          )}
+
+          {/* Version thumbnails */}
+          <div className="flex flex-wrap gap-2">
+            {versions.map((src, i) => {
+              const isActive = i === activeIdx;
+              const isCompare = compareMode && i === compareIdx;
+              const isLatest = i === versions.length - 1;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (compareMode && i !== activeIdx) {
+                      setCompareIdx(i);
+                    } else {
+                      setActiveIdx(i);
+                    }
+                  }}
+                  className={`relative rounded-lg overflow-hidden border-2 transition ${
+                    isActive
+                      ? "border-blue-500"
+                      : isCompare
+                      ? "border-emerald-500"
+                      : "border-transparent hover:border-slate-400"
+                  }`}
+                  title={`Versión ${i + 1}${isLatest ? " (principal)" : ""}`}
+                >
+                  <img src={src} alt={`v${i + 1}`} className="w-16 h-16 object-cover block" />
+                  <span className="absolute bottom-0 left-0 right-0 text-[10px] text-white bg-black/60 text-center leading-tight py-0.5">
+                    v{i + 1}
+                    {isLatest ? " ★" : ""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Controls */}
+          <div className="flex flex-wrap gap-2">
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
+              <Plus className="w-4 h-4" /> Añadir versión
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (f) await handleAddVersion(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900">
+              <Upload className="w-4 h-4" /> Reemplazar
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (f) await handleReplaceActive(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {versions.length >= 2 && (
+              <Btn
+                outline
+                onClick={() => {
+                  if (!compareMode) {
+                    // Pick a sensible compare index (previous version)
+                    const other = activeIdx === 0 ? Math.min(1, versions.length - 1) : activeIdx - 1;
+                    setCompareIdx(other);
+                    setSliderPct(50);
+                  }
+                  setCompareMode(!compareMode);
+                }}
+              >
+                {compareMode ? "Salir comparar" : "Comparar"}
+              </Btn>
+            )}
+            <Btn outline onClick={handleRemoveActive}>
+              <Trash2 className="w-4 h-4" /> Quitar versión
+            </Btn>
+          </div>
+          {isUploading && (
+            <div className="text-xs text-slate-500">Subiendo imagen…</div>
+          )}
+          <div className="text-[11px] text-slate-500">
+            La última versión (v{versions.length}) se usa como imagen principal del objeto.
+          </div>
+        </div>
+      ) : (
+        <div className="grid place-items-center h-52 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="final-versions-initial-upload"
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (f) await handleAddVersion(f);
+              e.target.value = "";
+            }}
+          />
+          <label
+            htmlFor="final-versions-initial-upload"
+            className="text-center text-sm text-slate-500 cursor-pointer w-full h-full flex flex-col items-center justify-center"
+          >
+            <Upload className="w-5 h-5 mx-auto mb-1" />
+            <p className="mb-1">Arrastra una imagen aquí o haz clic</p>
+            <p className="text-xs text-slate-400">para subir la imagen final</p>
+          </label>
+        </div>
+      )}
+    </Card>
+  );
+};
+
 // Función para generar el reporte PDF con la configuración seleccionada
 const generatePDFReport = async (
   obj: any,
@@ -6550,7 +6848,21 @@ export default function AstroTracker() {
       // Process each image in the patch
       const processedPatch: any = {};
       for (const [key, value] of Object.entries(patch)) {
-        if (value && typeof value === 'string' && value.startsWith('data:') && cloudSync.isCloudEnabled) {
+        if (Array.isArray(value)) {
+          // Process arrays of image URLs/data URLs (e.g. finalProjectVersions)
+          const processedArr: string[] = [];
+          for (let i = 0; i < value.length; i++) {
+            const item = value[i];
+            if (typeof item === 'string' && item.startsWith('data:') && cloudSync.isCloudEnabled) {
+              const imageName = `${obj.id}-${proj.id}-${key}-${Date.now()}-${i}.jpg`;
+              const cloudUrl = await cloudSync.uploadImageToCloud(item, imageName);
+              processedArr.push(cloudUrl);
+            } else if (typeof item === 'string') {
+              processedArr.push(item);
+            }
+          }
+          processedPatch[key] = processedArr;
+        } else if (value && typeof value === 'string' && value.startsWith('data:') && cloudSync.isCloudEnabled) {
           // Upload to cloud storage
           const imageName = `${obj.id}-${proj.id}-${key}-${Date.now()}.jpg`;
           const cloudUrl = await cloudSync.uploadImageToCloud(value, imageName);
@@ -6559,7 +6871,14 @@ export default function AstroTracker() {
           processedPatch[key] = value;
         }
       }
-      
+
+      // Keep images.finalProject (the "main" image) in sync with the last
+      // entry of finalProjectVersions. Latest version = main object image.
+      if (Array.isArray(processedPatch.finalProjectVersions)) {
+        const arr = processedPatch.finalProjectVersions as string[];
+        processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
+      }
+
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
         objects.map((o) =>
@@ -11176,9 +11495,7 @@ export default function AstroTracker() {
               })()}
 
               <SectionTitle title="Imagen final del proyecto" />
-              <ImageCard
-                title="Imagen final"
-                keyName="finalProject"
+              <FinalImageVersions
                 proj={proj}
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
