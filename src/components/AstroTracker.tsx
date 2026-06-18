@@ -6550,7 +6550,21 @@ export default function AstroTracker() {
       // Process each image in the patch
       const processedPatch: any = {};
       for (const [key, value] of Object.entries(patch)) {
-        if (value && typeof value === 'string' && value.startsWith('data:') && cloudSync.isCloudEnabled) {
+        if (Array.isArray(value)) {
+          // Process arrays of image URLs/data URLs (e.g. finalProjectVersions)
+          const processedArr: string[] = [];
+          for (let i = 0; i < value.length; i++) {
+            const item = value[i];
+            if (typeof item === 'string' && item.startsWith('data:') && cloudSync.isCloudEnabled) {
+              const imageName = `${obj.id}-${proj.id}-${key}-${Date.now()}-${i}.jpg`;
+              const cloudUrl = await cloudSync.uploadImageToCloud(item, imageName);
+              processedArr.push(cloudUrl);
+            } else if (typeof item === 'string') {
+              processedArr.push(item);
+            }
+          }
+          processedPatch[key] = processedArr;
+        } else if (value && typeof value === 'string' && value.startsWith('data:') && cloudSync.isCloudEnabled) {
           // Upload to cloud storage
           const imageName = `${obj.id}-${proj.id}-${key}-${Date.now()}.jpg`;
           const cloudUrl = await cloudSync.uploadImageToCloud(value, imageName);
@@ -6559,7 +6573,14 @@ export default function AstroTracker() {
           processedPatch[key] = value;
         }
       }
-      
+
+      // Keep images.finalProject (the "main" image) in sync with the last
+      // entry of finalProjectVersions. Latest version = main object image.
+      if (Array.isArray(processedPatch.finalProjectVersions)) {
+        const arr = processedPatch.finalProjectVersions as string[];
+        processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
+      }
+
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
         objects.map((o) =>
