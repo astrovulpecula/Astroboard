@@ -11495,9 +11495,7 @@ export default function AstroTracker() {
               })()}
 
               <SectionTitle title="Imagen final del proyecto" />
-              <ImageCard
-                title="Imagen final"
-                keyName="finalProject"
+              <FinalImageVersions
                 proj={proj}
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
