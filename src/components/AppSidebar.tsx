@@ -32,7 +32,7 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
 
   return (
     <nav
-      className="w-full border-b border-border/60 bg-surface-base/70 backdrop-blur-sm"
+      className="w-full border-b border-border/30 bg-gradient-to-b from-surface-base/40 via-surface-base/20 to-transparent backdrop-blur-sm"
       aria-label="Navegación principal"
     >
       <div className="max-w-7xl mx-auto px-3 md:px-4">
