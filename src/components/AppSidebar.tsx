@@ -1,6 +1,4 @@
 import { CloudSun, Calendar, Telescope, BarChart3, Image as ImageIcon, Home, Settings, type LucideIcon } from "lucide-react";
-import logoLight from "@/assets/logo-light.png";
-import logoDark from "@/assets/logo-dark.png";
 
 export type MainSection = "dashboard" | "pronostico" | "planificacion" | "objetos" | "estadisticas" | "galeria" | "configuracion";
 
@@ -33,47 +31,25 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
   ];
 
   return (
-    <aside
-      className="hidden md:flex fixed inset-y-0 left-0 z-50 w-60 flex-col border-r border-border bg-surface-base/95 backdrop-blur-sm"
+    <nav
+      className="w-full border-b border-border/60 bg-surface-base/70 backdrop-blur-sm"
       aria-label="Navegación principal"
     >
-      {/* Brand */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-border/60">
-        <img
-          src={theme === "dark" ? logoDark : logoLight}
-          alt="AstroBoard"
-          className="h-9 w-9"
-        />
-        <div className="font-display font-semibold tracking-tight text-base">
-          AstroBoard
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2">
-        <div className="px-3 pb-2 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground/70">
-          Navegación
-        </div>
-        <ul className="space-y-0.5">
+      <div className="max-w-7xl mx-auto px-3 md:px-4">
+        <ul className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {items.map(({ id, icon: Icon, label }) => {
             const active = mainSection === id;
             return (
-              <li key={id}>
+              <li key={id} className="shrink-0">
                 <button
                   onClick={() => setMainSection(id)}
                   className={[
-                    "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ease-out relative",
+                    "group relative flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm transition-all duration-200 ease-out",
                     active
-                      ? "bg-primary/12 text-foreground font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-surface-elevated/60",
+                      ? "text-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground",
                   ].join(" ")}
                 >
-                  {active && (
-                    <span
-                      aria-hidden
-                      className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-gradient-to-b from-primary to-primary-glow"
-                    />
-                  )}
                   <Icon
                     className={[
                       "w-4 h-4 shrink-0 transition-colors",
@@ -81,28 +57,34 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
                     ].join(" ")}
                   />
                   <span className="truncate">{label}</span>
+                  {active && (
+                    <span
+                      aria-hidden
+                      className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-gradient-to-r from-primary to-primary-glow"
+                    />
+                  )}
                 </button>
               </li>
             );
           })}
+          {onOpenSettings && (
+            <li className="ml-auto shrink-0">
+              <button
+                onClick={onOpenSettings}
+                className={[
+                  "flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm transition-colors",
+                  mainSection === "configuracion"
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+              >
+                <Settings className="w-4 h-4 shrink-0" />
+                <span className="truncate hidden sm:inline">{labels.settings}</span>
+              </button>
+            </li>
+          )}
         </ul>
-      </nav>
-
-      {/* Footer */}
-      <div className="border-t border-border/60 p-2">
-        {onOpenSettings && (
-          <button
-            onClick={onOpenSettings}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-surface-elevated/60 transition-colors duration-200"
-          >
-            <Settings className="w-4 h-4 shrink-0" />
-            <span className="truncate">{labels.settings}</span>
-          </button>
-        )}
-        <div className="px-3 pt-2 pb-1 text-[10px] font-mono uppercase tracking-[0.14em] text-muted-foreground/60">
-          v1 · Desktop
-        </div>
       </div>
-    </aside>
+    </nav>
   );
 }
