@@ -341,3 +341,12 @@ button, a, [role="button"] {
               box-shadow var(--duration-base) var(--ease-out),
               transform var(--duration-fast) var(--ease-out);
 }
+
+/* Hide scrollbar utility */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
