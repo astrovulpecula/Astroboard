@@ -32,11 +32,11 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
 
   return (
     <nav
-      className="w-full border-b border-border/30 bg-gradient-to-b from-surface-base/40 via-surface-base/20 to-transparent backdrop-blur-sm"
+      className="w-full pt-4 md:pt-5 pb-2"
       aria-label="Navegación principal"
     >
       <div className="max-w-7xl mx-auto px-3 md:px-4">
-        <ul className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+        <ul className="flex items-center gap-1 overflow-x-auto no-scrollbar rounded-xl border border-border/60 bg-surface-card/60 backdrop-blur-md shadow-sm px-1.5 py-1">
           {items.map(({ id, icon: Icon, label }) => {
             const active = mainSection === id;
             return (
@@ -44,9 +44,9 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
                 <button
                   onClick={() => setMainSection(id)}
                   className={[
-                    "group relative flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm transition-all duration-200 ease-out",
+                    "group relative flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm transition-all duration-200 ease-out",
                     active
-                      ? "text-foreground font-medium"
+                      ? "bg-primary/15 text-foreground font-medium shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.25)]"
                       : "text-muted-foreground hover:text-foreground",
                   ].join(" ")}
                 >
@@ -57,12 +57,6 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
                     ].join(" ")}
                   />
                   <span className="truncate">{label}</span>
-                  {active && (
-                    <span
-                      aria-hidden
-                      className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full bg-gradient-to-r from-primary to-primary-glow"
-                    />
-                  )}
                 </button>
               </li>
             );
@@ -72,9 +66,9 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
               <button
                 onClick={onOpenSettings}
                 className={[
-                  "flex items-center gap-2 px-3 md:px-4 py-2.5 text-sm transition-colors",
+                  "flex items-center gap-2 px-3 md:px-4 py-2 rounded-lg text-sm transition-colors",
                   mainSection === "configuracion"
-                    ? "text-foreground font-medium"
+                    ? "bg-primary/15 text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground",
                 ].join(" ")}
               >
