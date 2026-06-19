@@ -7861,6 +7861,38 @@ export default function AstroTracker() {
           </div>
         </header>
 
+        <AppSidebar
+          mainSection={mainSection}
+          setMainSection={(s) => {
+            setView("objects");
+            setSelectedObjectId(null);
+            setSelectedProjectId(null);
+            setMainSection(s);
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }
+          }}
+          theme={theme}
+          onOpenSettings={() => {
+            setView("objects");
+            setSelectedObjectId(null);
+            setSelectedProjectId(null);
+            setMainSection("configuracion");
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "auto" });
+            }
+          }}
+          labels={{
+            dashboard: language === 'en' ? 'Dashboard' : 'Dashboard',
+            forecast: t('forecast'),
+            planning: t('planning'),
+            objects: t('objectsSection'),
+            metrics: t('statisticsSection'),
+            gallery: t('gallery'),
+            settings: language === 'en' ? 'Settings' : 'Configuración',
+          }}
+        />
+
         <main className="max-w-7xl mx-auto px-4 py-6 pb-24 md:pb-6">
           {view === "objects" && (
             <div className="grid gap-4" key="view-objects">
