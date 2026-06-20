@@ -189,6 +189,26 @@ const cumulativeLights = (sessions: any[], i: number) =>
 const cumulativeHours = (sessions: any[], i: number) =>
   sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0) / 3600;
 
+const getLatestFinalProjectImage = (project: any): string | null => {
+  const versions = project?.images?.finalProjectVersions;
+  if (Array.isArray(versions)) {
+    const latestVersion = [...versions].reverse().find((src) => typeof src === "string" && src.trim());
+    if (latestVersion) return latestVersion;
+  }
+  const finalProject = project?.images?.finalProject;
+  return typeof finalProject === "string" && finalProject.trim() ? finalProject : null;
+};
+
+const getFinalProjectImageTimestamp = (project: any): number => {
+  const ts = new Date(
+    project?.images?.finalProjectUpdatedAt
+      || project?.updatedAt
+      || project?.createdAt
+      || 0,
+  ).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+};
+
 const sampleSessions = [
   {
     id: uid("ses"),
@@ -1748,10 +1768,7 @@ function FPlanned({
   const existingObjectImage = useMemo(() => {
     if (!existingObject) return null;
     const lastProj: any = existingObject.projects?.[existingObject.projects.length - 1];
-    const lastFinal = lastProj?.images?.finalProject
-      || (Array.isArray(lastProj?.images?.finalProjectVersions)
-        ? lastProj.images.finalProjectVersions[lastProj.images.finalProjectVersions.length - 1]
-        : null);
+    const lastFinal = getLatestFinalProjectImage(lastProj);
     return existingObject.image || lastFinal || null;
   }, [existingObject]);
 
@@ -6472,7 +6489,7 @@ export default function AstroTracker() {
           : null,
         ...obj.projects.flatMap((proj) =>
           Object.entries(proj.images || {})
-            .filter(([key]) => key !== "panelSchema") // Excluir imagen del esquema de paneles
+            .filter(([key, src]) => key !== "panelSchema" && typeof src === "string") // Excluir esquema y arrays de versiones
             .map(([key, src]) => ({
               src: src as string,
               title: `${obj.id} - ${proj.name}`,
@@ -6880,6 +6897,9 @@ export default function AstroTracker() {
       if (Array.isArray(processedPatch.finalProjectVersions)) {
         const arr = processedPatch.finalProjectVersions as string[];
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
+        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
+      } else if (Object.prototype.hasOwnProperty.call(processedPatch, "finalProject")) {
+        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       }
 
       pendingChangesRef.current++; // Mark as user modification
@@ -6890,7 +6910,9 @@ export default function AstroTracker() {
             : {
                 ...o,
                 projects: o.projects.map((p) =>
-                  p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...processedPatch } },
+                  p.id !== proj.id
+                    ? p
+                    : { ...p, updatedAt: new Date().toISOString(), images: { ...(p.images || {}), ...processedPatch } },
                 ),
               },
         ),
@@ -8079,9 +8101,9 @@ export default function AstroTracker() {
                 let latest: { src: string; objectId: string; projectId: string; title: string; subtitle: string; ts: number } | null = null;
                 for (const o of objects) {
                   for (const p of (o.projects || [])) {
-                    const src = (p as any)?.images?.finalProject;
+                    const src = getLatestFinalProjectImage(p);
                     if (!src) continue;
-                    const ts = new Date((p as any).updatedAt || (p as any).createdAt || 0).getTime();
+                    const ts = getFinalProjectImageTimestamp(p);
                     if (!latest || ts > latest.ts) {
                       latest = {
                         src,
