@@ -189,6 +189,24 @@ const cumulativeLights = (sessions: any[], i: number) =>
 const cumulativeHours = (sessions: any[], i: number) =>
   sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0) / 3600;
 
+const getLatestFinalProjectImage = (project: any): string | null => {
+  const versions = project?.images?.finalProjectVersions;
+  if (Array.isArray(versions)) {
+    const latestVersion = [...versions].reverse().find((src) => typeof src === "string" && src.trim());
+    if (latestVersion) return latestVersion;
+  }
+  const finalProject = project?.images?.finalProject;
+  return typeof finalProject === "string" && finalProject.trim() ? finalProject : null;
+};
+
+const getFinalProjectImageTimestamp = (project: any): number =>
+  new Date(
+    project?.images?.finalProjectUpdatedAt
+      || project?.updatedAt
+      || project?.createdAt
+      || 0,
+  ).getTime();
+
 const sampleSessions = [
   {
     id: uid("ses"),
