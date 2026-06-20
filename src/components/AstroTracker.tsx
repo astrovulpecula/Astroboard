@@ -8097,9 +8097,9 @@ export default function AstroTracker() {
                 let latest: { src: string; objectId: string; projectId: string; title: string; subtitle: string; ts: number } | null = null;
                 for (const o of objects) {
                   for (const p of (o.projects || [])) {
-                    const src = (p as any)?.images?.finalProject;
+                    const src = getLatestFinalProjectImage(p);
                     if (!src) continue;
-                    const ts = new Date((p as any).updatedAt || (p as any).createdAt || 0).getTime();
+                    const ts = getFinalProjectImageTimestamp(p);
                     if (!latest || ts > latest.ts) {
                       latest = {
                         src,
