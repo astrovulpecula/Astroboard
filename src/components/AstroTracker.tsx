@@ -1747,9 +1747,12 @@ function FPlanned({
   // Get the image from the existing object (if any)
   const existingObjectImage = useMemo(() => {
     if (!existingObject) return null;
-    return existingObject.image || 
-      (existingObject.projects?.[existingObject.projects.length - 1] as any)?.finalImage || 
-      null;
+    const lastProj: any = existingObject.projects?.[existingObject.projects.length - 1];
+    const lastFinal = lastProj?.images?.finalProject
+      || (Array.isArray(lastProj?.images?.finalProjectVersions)
+        ? lastProj.images.finalProjectVersions[lastProj.images.finalProjectVersions.length - 1]
+        : null);
+    return existingObject.image || lastFinal || null;
   }, [existingObject]);
 
   // Determine if the object image uploader should be disabled
@@ -8652,8 +8655,12 @@ export default function AstroTracker() {
                           const existingObj = objects.find(
                             (o) => o.id.toLowerCase() === planned.objectId.toLowerCase()
                           );
-                          const existingObjImage = existingObj?.image || 
-                            (existingObj?.projects[existingObj.projects.length - 1] as any)?.finalImage;
+                          const _lastProj: any = existingObj?.projects[existingObj.projects.length - 1];
+                          const _lastFinal = _lastProj?.images?.finalProject
+                            || (Array.isArray(_lastProj?.images?.finalProjectVersions)
+                              ? _lastProj.images.finalProjectVersions[_lastProj.images.finalProjectVersions.length - 1]
+                              : null);
+                          const existingObjImage = existingObj?.image || _lastFinal;
                           
                           // Priority: existing object image > planned.objectImage (custom uploaded)
                           const thumbnailImage = existingObjImage || planned.objectImage || null;
@@ -9062,7 +9069,11 @@ export default function AstroTracker() {
                       const seconds = totalExposureSec(all);
                       const nights = new Set(all.map((s: any) => s.date)).size;
                       // Prioridad: imagen final del último proyecto > imagen propia del objeto
-                      const lastProjectFinal = o.projects.length > 0 ? (o.projects[o.projects.length - 1] as any)?.finalImage : null;
+                      const _lp: any = o.projects.length > 0 ? o.projects[o.projects.length - 1] : null;
+                      const lastProjectFinal = _lp?.images?.finalProject
+                        || (Array.isArray(_lp?.images?.finalProjectVersions)
+                          ? _lp.images.finalProjectVersions[_lp.images.finalProjectVersions.length - 1]
+                          : null);
                       const displayImage = lastProjectFinal || o.image || null;
                       
                       return (
@@ -10446,8 +10457,11 @@ export default function AstroTracker() {
               {(() => {
                 // Buscar la imagen final del último proyecto
                 const lastProjectFinalImage = (() => {
-                  const lastProject = obj.projects[obj.projects.length - 1];
-                  return (lastProject as any)?.finalImage || "";
+                  const lastProject: any = obj.projects[obj.projects.length - 1];
+                  return lastProject?.images?.finalProject
+                    || (Array.isArray(lastProject?.images?.finalProjectVersions)
+                      ? lastProject.images.finalProjectVersions[lastProject.images.finalProjectVersions.length - 1]
+                      : "") || "";
                 })();
 
                 const objectImages: ImageItem[] = [
@@ -12497,8 +12511,11 @@ export default function AstroTracker() {
                     
                     // Obtener imagen del objeto o del último proyecto
                     const lastProjectFinalImage = (() => {
-                      const lastProject = obj.projects[obj.projects.length - 1];
-                      return (lastProject as any)?.finalImage || "";
+                      const lastProject: any = obj.projects[obj.projects.length - 1];
+                      return lastProject?.images?.finalProject
+                        || (Array.isArray(lastProject?.images?.finalProjectVersions)
+                          ? lastProject.images.finalProjectVersions[lastProject.images.finalProjectVersions.length - 1]
+                          : "") || "";
                     })();
                     const objectImage = obj.image || lastProjectFinalImage;
                     
