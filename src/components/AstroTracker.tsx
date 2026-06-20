@@ -1766,10 +1766,7 @@ function FPlanned({
   const existingObjectImage = useMemo(() => {
     if (!existingObject) return null;
     const lastProj: any = existingObject.projects?.[existingObject.projects.length - 1];
-    const lastFinal = lastProj?.images?.finalProject
-      || (Array.isArray(lastProj?.images?.finalProjectVersions)
-        ? lastProj.images.finalProjectVersions[lastProj.images.finalProjectVersions.length - 1]
-        : null);
+    const lastFinal = getLatestFinalProjectImage(lastProj);
     return existingObject.image || lastFinal || null;
   }, [existingObject]);
 
@@ -6898,6 +6895,7 @@ export default function AstroTracker() {
       if (Array.isArray(processedPatch.finalProjectVersions)) {
         const arr = processedPatch.finalProjectVersions as string[];
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
+        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       }
 
       pendingChangesRef.current++; // Mark as user modification
@@ -6908,7 +6906,9 @@ export default function AstroTracker() {
             : {
                 ...o,
                 projects: o.projects.map((p) =>
-                  p.id !== proj.id ? p : { ...p, images: { ...(p.images || {}), ...processedPatch } },
+                  p.id !== proj.id
+                    ? p
+                    : { ...p, updatedAt: new Date().toISOString(), images: { ...(p.images || {}), ...processedPatch } },
                 ),
               },
         ),
