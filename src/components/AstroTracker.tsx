@@ -6896,6 +6896,8 @@ export default function AstroTracker() {
         const arr = processedPatch.finalProjectVersions as string[];
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
         processedPatch.finalProjectUpdatedAt = new Date().toISOString();
+      } else if (Object.prototype.hasOwnProperty.call(processedPatch, "finalProject")) {
+        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       }
 
       pendingChangesRef.current++; // Mark as user modification
