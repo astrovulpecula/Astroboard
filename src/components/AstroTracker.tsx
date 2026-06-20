@@ -4721,19 +4721,29 @@ const FinalImageVersions = ({
 }) => {
   const storedVersions: string[] | undefined = proj?.images?.finalProjectVersions;
   const legacyFinal: string | undefined = proj?.images?.finalProject;
-  const versions: string[] = React.useMemo(() => {
-    if (Array.isArray(storedVersions) && storedVersions.length > 0) return storedVersions;
-    return legacyFinal ? [legacyFinal] : [];
+  const propVersions: string[] = React.useMemo(() => {
+    const validStoredVersions = Array.isArray(storedVersions)
+      ? storedVersions.filter((src): src is string => typeof src === "string" && src.trim().length > 0)
+      : [];
+    if (validStoredVersions.length > 0) return validStoredVersions;
+    return typeof legacyFinal === "string" && legacyFinal.trim() ? [legacyFinal] : [];
   }, [storedVersions, legacyFinal]);
 
-  const [activeIdx, setActiveIdx] = useState(Math.max(0, versions.length - 1));
+  const [localVersions, setLocalVersions] = useState<string[]>(propVersions);
+  const versions = localVersions;
+  const [activeIdx, setActiveIdx] = useState(Math.max(0, propVersions.length - 1));
   const [compareIdx, setCompareIdx] = useState(0);
   const [compareMode, setCompareMode] = useState(false);
   const [sliderPct, setSliderPct] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [currentRating, setCurrentRating] = useState(rating || 0);
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const draggingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    setLocalVersions(propVersions);
+  }, [propVersions]);
 
   React.useEffect(() => {
     if (activeIdx > versions.length - 1) setActiveIdx(Math.max(0, versions.length - 1));
@@ -4743,11 +4753,18 @@ const FinalImageVersions = ({
 
   const handleAddVersion = async (file: File) => {
     setIsUploading(true);
+    setUploadError(null);
+    const previous = versions;
     try {
       const url = await compressImage(file);
       const next = [...versions, url];
+      setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
       setActiveIdx(next.length - 1);
+      if (next.length >= 2) setCompareIdx(Math.max(0, next.length - 2));
+    } catch (error) {
+      setLocalVersions(previous);
+      setUploadError(error instanceof Error ? error.message : "No se pudo añadir la versión");
     } finally {
       setIsUploading(false);
     }
@@ -4755,25 +4772,44 @@ const FinalImageVersions = ({
 
   const handleReplaceActive = async (file: File) => {
     setIsUploading(true);
+    setUploadError(null);
+    const previous = versions;
     try {
       const url = await compressImage(file);
       const next = versions.map((v, i) => (i === activeIdx ? url : v));
+      setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
+    } catch (error) {
+      setLocalVersions(previous);
+      setUploadError(error instanceof Error ? error.message : "No se pudo reemplazar la versión");
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleRemoveActive = async () => {
+    setUploadError(null);
+    const previous = versions;
     const next = versions.filter((_, i) => i !== activeIdx);
+    setLocalVersions(next);
     if (next.length === 0) {
-      await upImgs({ finalProjectVersions: [], finalProject: undefined });
+      try {
+        await upImgs({ finalProjectVersions: [], finalProject: undefined });
+      } catch (error) {
+        setLocalVersions(previous);
+        setUploadError(error instanceof Error ? error.message : "No se pudo quitar la versión");
+      }
       setActiveIdx(0);
       setCompareMode(false);
       return;
     }
-    await upImgs({ finalProjectVersions: next });
-    setActiveIdx(Math.min(activeIdx, next.length - 1));
+    try {
+      await upImgs({ finalProjectVersions: next });
+      setActiveIdx(Math.min(activeIdx, next.length - 1));
+    } catch (error) {
+      setLocalVersions(previous);
+      setUploadError(error instanceof Error ? error.message : "No se pudo quitar la versión");
+    }
   };
 
   const handleRatingClick = (newRating: number) => {
@@ -4969,6 +5005,9 @@ const FinalImageVersions = ({
           </div>
           {isUploading && (
             <div className="text-xs text-slate-500">Subiendo imagen…</div>
+          )}
+          {uploadError && (
+            <div className="text-xs text-destructive">{uploadError}</div>
           )}
           <div className="text-[11px] text-slate-500">
             La última versión (v{versions.length}) se usa como imagen principal del objeto.
