@@ -199,13 +199,15 @@ const getLatestFinalProjectImage = (project: any): string | null => {
   return typeof finalProject === "string" && finalProject.trim() ? finalProject : null;
 };
 
-const getFinalProjectImageTimestamp = (project: any): number =>
-  new Date(
+const getFinalProjectImageTimestamp = (project: any): number => {
+  const ts = new Date(
     project?.images?.finalProjectUpdatedAt
       || project?.updatedAt
       || project?.createdAt
       || 0,
   ).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+};
 
 const sampleSessions = [
   {
