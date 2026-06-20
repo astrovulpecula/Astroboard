@@ -6487,7 +6487,7 @@ export default function AstroTracker() {
           : null,
         ...obj.projects.flatMap((proj) =>
           Object.entries(proj.images || {})
-            .filter(([key]) => key !== "panelSchema") // Excluir imagen del esquema de paneles
+            .filter(([key, src]) => key !== "panelSchema" && typeof src === "string") // Excluir esquema y arrays de versiones
             .map(([key, src]) => ({
               src: src as string,
               title: `${obj.id} - ${proj.name}`,
