@@ -4746,6 +4746,10 @@ const FinalImageVersions = ({
   }, [propVersions]);
 
   React.useEffect(() => {
+    setCurrentRating(rating || 0);
+  }, [rating]);
+
+  React.useEffect(() => {
     if (activeIdx > versions.length - 1) setActiveIdx(Math.max(0, versions.length - 1));
     if (compareIdx > versions.length - 1) setCompareIdx(0);
     if (versions.length < 2 && compareMode) setCompareMode(false);
