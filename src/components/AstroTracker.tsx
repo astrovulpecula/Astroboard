@@ -191,11 +191,11 @@ const cumulativeHours = (sessions: any[], i: number) =>
 
 const getLatestFinalProjectImage = (project: any): string | null => {
   const versions = project?.images?.finalProjectVersions;
+  const finalProject = project?.images?.finalProject;
   if (Array.isArray(versions)) {
     const latestVersion = [...versions].reverse().find((src) => typeof src === "string" && src.trim());
     if (latestVersion) return latestVersion;
   }
-  const finalProject = project?.images?.finalProject;
   return typeof finalProject === "string" && finalProject.trim() ? finalProject : null;
 };
 
@@ -6940,7 +6940,8 @@ export default function AstroTracker() {
       // Keep images.finalProject (the "main" image) in sync with the last
       // entry of finalProjectVersions. Latest version = main object image.
       if (Array.isArray(processedPatch.finalProjectVersions)) {
-        const arr = processedPatch.finalProjectVersions as string[];
+        const arr = (processedPatch.finalProjectVersions as string[]).filter((src) => typeof src === "string" && src.trim().length > 0);
+        processedPatch.finalProjectVersions = arr;
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
         processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       } else if (Object.prototype.hasOwnProperty.call(processedPatch, "finalProject")) {
@@ -6948,8 +6949,8 @@ export default function AstroTracker() {
       }
 
       pendingChangesRef.current++; // Mark as user modification
-      setObjects(
-        objects.map((o) =>
+      setObjects((prevObjects) =>
+        prevObjects.map((o) =>
           o.id !== obj.id
             ? o
             : {
@@ -8143,13 +8144,15 @@ export default function AstroTracker() {
 
               {/* Latest final image uploaded */}
               {(() => {
-                let latest: { src: string; objectId: string; projectId: string; title: string; subtitle: string; ts: number } | null = null;
+                let latest: { src: string; objectId: string; projectId: string; title: string; subtitle: string; ts: number; order: number } | null = null;
+                let order = 0;
                 for (const o of objects) {
                   for (const p of (o.projects || [])) {
+                    order += 1;
                     const src = getLatestFinalProjectImage(p);
                     if (!src) continue;
                     const ts = getFinalProjectImageTimestamp(p);
-                    if (!latest || ts > latest.ts) {
+                    if (!latest || ts > latest.ts || (ts === latest.ts && order > latest.order)) {
                       latest = {
                         src,
                         objectId: o.id,
@@ -8157,6 +8160,7 @@ export default function AstroTracker() {
                         title: `${o.id}${o.commonName ? " · " + o.commonName : ""}`,
                         subtitle: p.name || '',
                         ts,
+                        order,
                       };
                     }
                   }
