@@ -4853,12 +4853,14 @@ const FinalImageVersions = ({
       <div className="flex items-center justify-between mb-3">
         <SectionTitle title="Imagen final" />
         {onRatingChange && (
-          <div className="flex gap-1">
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">Valoración:</span>
             {[1, 2, 3].map((star) => (
               <button
                 key={star}
                 onClick={() => handleRatingClick(star)}
                 className="transition-transform hover:scale-110"
+                aria-label={`Valorar con ${star} estrella${star > 1 ? "s" : ""}`}
               >
                 <Star
                   className={`w-5 h-5 ${
@@ -4866,7 +4868,7 @@ const FinalImageVersions = ({
                       ? theme === "astro"
                         ? "fill-blue-400 text-blue-400"
                         : "fill-yellow-400 text-yellow-400"
-                      : "text-slate-300 dark:text-slate-600"
+                      : "text-slate-400 dark:text-slate-500"
                   }`}
                 />
               </button>
