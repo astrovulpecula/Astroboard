@@ -178,6 +178,101 @@ const parseDateSafe = (dateStr: string): Date | null => {
   }
   return isNaN(date.getTime()) ? null : date;
 };
+
+const parseTimestampSafe = (value: any): number => {
+  if (!value) return 0;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value > 0 && value < 1_000_000_000_000 ? value * 1000 : value;
+  }
+  if (typeof value !== "string") return 0;
+  const parsed = parseDateSafe(value) || new Date(value);
+  const ts = parsed.getTime();
+  return Number.isFinite(ts) ? ts : 0;
+};
+
+const extractUploadTimestampFromImageSrc = (src: any): number => {
+  if (typeof src !== "string" || !src.trim() || src.startsWith("data:")) return 0;
+  const decoded = decodeURIComponent(src);
+  const matches: string[] = decoded.match(/\d{13}/g) || [];
+  const min = new Date("2020-01-01T00:00:00Z").getTime();
+  const max = new Date("2100-01-01T00:00:00Z").getTime();
+  return matches.reduce((latest, raw) => {
+    const ts = Number(raw);
+    return Number.isFinite(ts) && ts >= min && ts <= max ? Math.max(latest, ts) : latest;
+  }, 0);
+};
+
+const getLatestSessionTimestamp = (project: any): number => {
+  const sessions = Array.isArray(project?.sessions) ? project.sessions : [];
+  return sessions.reduce((latest: number, session: any) => {
+    const date = parseDateSafe(session?.date);
+    return date ? Math.max(latest, date.getTime()) : latest;
+  }, 0);
+};
+
+const getFinalProjectVersionTimestamp = (project: any, index: number): number => {
+  const images = project?.images || {};
+  const timestampArrays = [
+    images.finalProjectVersionTimestamps,
+    images.finalProjectVersionDates,
+    images.finalProjectVersionsUpdatedAt,
+    images.finalProjectUploadDates,
+  ];
+  for (const arr of timestampArrays) {
+    if (Array.isArray(arr)) {
+      const ts = parseTimestampSafe(arr[index]);
+      if (ts > 0) return ts;
+    }
+  }
+  return 0;
+};
+
+const getProjectFinalImageFallbackTimestamp = (project: any): number => Math.max(
+  parseTimestampSafe(project?.images?.finalProjectUpdatedAt),
+  parseTimestampSafe(project?.finalProjectUpdatedAt),
+  parseTimestampSafe(project?.updatedAt),
+  getLatestSessionTimestamp(project),
+  parseTimestampSafe(project?.completedDate),
+  parseTimestampSafe(project?.startDate),
+  parseTimestampSafe(project?.createdAt),
+);
+
+const getFinalProjectImageCandidates = (project: any): Array<{ src: string; ts: number; order: number }> => {
+  const versions = project?.images?.finalProjectVersions;
+  const finalProject = project?.images?.finalProject;
+  const candidates: Array<{ src: string; ts: number; order: number }> = [];
+
+  if (Array.isArray(versions)) {
+    versions.forEach((src, index) => {
+      if (typeof src === "string" && src.trim()) {
+        candidates.push({
+          src,
+          ts: Math.max(getFinalProjectVersionTimestamp(project, index), extractUploadTimestampFromImageSrc(src)),
+          order: index,
+        });
+      }
+    });
+  }
+
+  if (typeof finalProject === "string" && finalProject.trim()) {
+    candidates.push({
+      src: finalProject,
+      ts: Math.max(parseTimestampSafe(project?.images?.finalProjectUpdatedAt), extractUploadTimestampFromImageSrc(finalProject)),
+      order: candidates.length,
+    });
+  }
+
+  return candidates;
+};
+
+const getLatestFinalProjectImageCandidate = (project: any): { src: string; ts: number; order: number } | null => {
+  const candidates = getFinalProjectImageCandidates(project);
+  if (candidates.length === 0) return null;
+  return candidates.reduce((latest, candidate) => (
+    candidate.ts > latest.ts || (candidate.ts === latest.ts && candidate.order > latest.order) ? candidate : latest
+  ), candidates[0]);
+};
+
 const mean = (s: any) => {
   if (!s) return null;
   const a = [s.snrR, s.snrG, s.snrB].filter((v: any) => Number.isFinite(v));
@@ -190,23 +285,24 @@ const cumulativeHours = (sessions: any[], i: number) =>
   sessions.slice(0, i + 1).reduce((a, s) => a + (s.lights || 0) * (s.exposureSec || 0), 0) / 3600;
 
 const getLatestFinalProjectImage = (project: any): string | null => {
-  const versions = project?.images?.finalProjectVersions;
-  const finalProject = project?.images?.finalProject;
-  if (Array.isArray(versions)) {
-    const latestVersion = [...versions].reverse().find((src) => typeof src === "string" && src.trim());
-    if (latestVersion) return latestVersion;
-  }
-  return typeof finalProject === "string" && finalProject.trim() ? finalProject : null;
+  return getLatestFinalProjectImageCandidate(project)?.src || null;
 };
 
 const getFinalProjectImageTimestamp = (project: any): number => {
-  const ts = new Date(
-    project?.images?.finalProjectUpdatedAt
-      || project?.updatedAt
-      || project?.createdAt
-      || 0,
-  ).getTime();
-  return Number.isFinite(ts) ? ts : 0;
+  const imageTs = getLatestFinalProjectImageCandidate(project)?.ts || 0;
+  return imageTs > 0 ? imageTs : getProjectFinalImageFallbackTimestamp(project);
+};
+
+const normalizeFinalProjectImages = (project: any): any => {
+  const images = project?.images || {};
+  const latest = getLatestFinalProjectImage(project);
+  if (!latest) return images;
+  const ts = getFinalProjectImageTimestamp(project);
+  return {
+    ...images,
+    finalProject: latest,
+    ...(ts <= 0 || (images.finalProjectUpdatedAt && images.finalProject === latest) ? {} : { finalProjectUpdatedAt: new Date(ts).toISOString() }),
+  };
 };
 
 const sampleSessions = [
@@ -6941,9 +7037,24 @@ export default function AstroTracker() {
       // entry of finalProjectVersions. Latest version = main object image.
       if (Array.isArray(processedPatch.finalProjectVersions)) {
         const arr = (processedPatch.finalProjectVersions as string[]).filter((src) => typeof src === "string" && src.trim().length > 0);
+        const previousVersions = Array.isArray(proj?.images?.finalProjectVersions)
+          ? proj.images.finalProjectVersions.filter((src: any) => typeof src === "string" && src.trim().length > 0)
+          : [];
+        const previousTimestamps = Array.isArray(proj?.images?.finalProjectVersionTimestamps)
+          ? proj.images.finalProjectVersionTimestamps
+          : [];
+        const nowIso = new Date().toISOString();
+        const versionTimestamps = arr.map((src, index) => {
+          const sameIndexTs = previousVersions[index] === src ? parseTimestampSafe(previousTimestamps[index]) : 0;
+          const previousIndex = previousVersions.indexOf(src);
+          const existingTs = sameIndexTs || (previousIndex >= 0 ? parseTimestampSafe(previousTimestamps[previousIndex]) : 0);
+          const urlTs = extractUploadTimestampFromImageSrc(src);
+          return new Date(Math.max(existingTs, urlTs) || Date.parse(nowIso)).toISOString();
+        });
         processedPatch.finalProjectVersions = arr;
+        processedPatch.finalProjectVersionTimestamps = versionTimestamps;
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
-        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
+        processedPatch.finalProjectUpdatedAt = versionTimestamps.length > 0 ? versionTimestamps[versionTimestamps.length - 1] : nowIso;
       } else if (Object.prototype.hasOwnProperty.call(processedPatch, "finalProject")) {
         processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       }
@@ -7779,6 +7890,7 @@ export default function AstroTracker() {
                           return {
                             ...proj,
                             filters: combinedFilters,
+                            images: normalizeFinalProjectImages(proj),
                           };
                         });
 
