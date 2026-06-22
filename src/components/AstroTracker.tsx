@@ -12153,6 +12153,92 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
               </div>
               )}
+
+              {/* Sección de Actividad */}
+              <div className="mt-4">
+                <SectionTitle icon={Activity} title="Actividad" />
+                <Card className="p-4">
+                  {(() => {
+                    type ActivityItem = { ts: number; label: string; dateStr: string };
+                    const items: ActivityItem[] = [];
+                    const sessionsArr = Array.isArray((proj as any)?.sessions) ? (proj as any).sessions : [];
+                    const sortedSes = sessionsArr.slice().sort((a: any, b: any) =>
+                      String(a.date || "").localeCompare(String(b.date || ""))
+                    );
+                    sortedSes.forEach((s: any, idx: number) => {
+                      const ts = parseDateSafe(s.date)?.getTime?.() || parseTimestampSafe(s.createdAt) || 0;
+                      if (ts > 0) {
+                        items.push({
+                          ts,
+                          label: `Se añadió la sesión #${idx + 1}`,
+                          dateStr: formatDateDisplay(s.date, dateFormat),
+                        });
+                      }
+                    });
+                    const images = (proj as any)?.images || {};
+                    const versions: string[] = Array.isArray(images.finalProjectVersions) ? images.finalProjectVersions : [];
+                    const versionTs: any[] = Array.isArray(images.finalProjectVersionTimestamps) ? images.finalProjectVersionTimestamps : [];
+                    versions.forEach((src: any, i: number) => {
+                      if (typeof src !== "string" || !src) return;
+                      const ts =
+                        parseTimestampSafe(versionTs[i]) ||
+                        extractUploadTimestampFromImageSrc(src) ||
+                        (i === versions.length - 1 ? parseTimestampSafe(images.finalProjectUpdatedAt) : 0);
+                      if (ts > 0) {
+                        items.push({
+                          ts,
+                          label: `Se subió la imagen final (versión ${i + 1})`,
+                          dateStr: new Date(ts).toLocaleDateString(),
+                        });
+                      }
+                    });
+                    if ((!versions || versions.length === 0) && typeof images.finalProject === "string" && images.finalProject) {
+                      const ts =
+                        parseTimestampSafe(images.finalProjectUpdatedAt) ||
+                        extractUploadTimestampFromImageSrc(images.finalProject);
+                      if (ts > 0) {
+                        items.push({
+                          ts,
+                          label: "Se subió la imagen final",
+                          dateStr: new Date(ts).toLocaleDateString(),
+                        });
+                      }
+                    }
+                    const projCreated = parseTimestampSafe((proj as any)?.createdAt);
+                    if (projCreated > 0) {
+                      items.push({
+                        ts: projCreated,
+                        label: "Se creó el proyecto",
+                        dateStr: new Date(projCreated).toLocaleDateString(),
+                      });
+                    }
+                    items.sort((a, b) => b.ts - a.ts);
+                    if (items.length === 0) {
+                      return (
+                        <p className="text-sm text-muted-foreground">
+                          No hay actividad registrada todavía.
+                        </p>
+                      );
+                    }
+                    return (
+                      <ul className="space-y-2">
+                        {items.map((it, i) => (
+                          <li
+                            key={`${it.ts}-${i}`}
+                            className="flex items-start gap-3 text-sm border-b border-border/40 last:border-0 pb-2 last:pb-0"
+                          >
+                            <div className="mt-1 w-2 h-2 rounded-full bg-primary shrink-0" />
+                            <div className="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                              <span>{it.label}</span>
+                              <span className="text-xs text-muted-foreground">{it.dateStr}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    );
+                  })()}
+                </Card>
+              </div>
             </div>
           )}
 
