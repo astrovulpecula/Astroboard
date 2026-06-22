@@ -301,7 +301,7 @@ const normalizeFinalProjectImages = (project: any): any => {
   return {
     ...images,
     finalProject: latest,
-    ...(images.finalProjectUpdatedAt || ts <= 0 ? {} : { finalProjectUpdatedAt: new Date(ts).toISOString() }),
+    ...(ts <= 0 || (images.finalProjectUpdatedAt && images.finalProject === latest) ? {} : { finalProjectUpdatedAt: new Date(ts).toISOString() }),
   };
 };
 
