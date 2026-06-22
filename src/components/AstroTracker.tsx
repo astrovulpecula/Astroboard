@@ -7037,9 +7037,24 @@ export default function AstroTracker() {
       // entry of finalProjectVersions. Latest version = main object image.
       if (Array.isArray(processedPatch.finalProjectVersions)) {
         const arr = (processedPatch.finalProjectVersions as string[]).filter((src) => typeof src === "string" && src.trim().length > 0);
+        const previousVersions = Array.isArray(proj?.images?.finalProjectVersions)
+          ? proj.images.finalProjectVersions.filter((src: any) => typeof src === "string" && src.trim().length > 0)
+          : [];
+        const previousTimestamps = Array.isArray(proj?.images?.finalProjectVersionTimestamps)
+          ? proj.images.finalProjectVersionTimestamps
+          : [];
+        const nowIso = new Date().toISOString();
+        const versionTimestamps = arr.map((src, index) => {
+          const sameIndexTs = previousVersions[index] === src ? parseTimestampSafe(previousTimestamps[index]) : 0;
+          const previousIndex = previousVersions.indexOf(src);
+          const existingTs = sameIndexTs || (previousIndex >= 0 ? parseTimestampSafe(previousTimestamps[previousIndex]) : 0);
+          const urlTs = extractUploadTimestampFromImageSrc(src);
+          return new Date(Math.max(existingTs, urlTs) || Date.parse(nowIso)).toISOString();
+        });
         processedPatch.finalProjectVersions = arr;
+        processedPatch.finalProjectVersionTimestamps = versionTimestamps;
         processedPatch.finalProject = arr.length > 0 ? arr[arr.length - 1] : undefined;
-        processedPatch.finalProjectUpdatedAt = new Date().toISOString();
+        processedPatch.finalProjectUpdatedAt = versionTimestamps.length > 0 ? versionTimestamps[versionTimestamps.length - 1] : nowIso;
       } else if (Object.prototype.hasOwnProperty.call(processedPatch, "finalProject")) {
         processedPatch.finalProjectUpdatedAt = new Date().toISOString();
       }
