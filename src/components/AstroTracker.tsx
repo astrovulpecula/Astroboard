@@ -7890,6 +7890,7 @@ export default function AstroTracker() {
                           return {
                             ...proj,
                             filters: combinedFilters,
+                            images: normalizeFinalProjectImages(proj),
                           };
                         });
 
