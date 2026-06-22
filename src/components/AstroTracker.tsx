@@ -193,7 +193,7 @@ const parseTimestampSafe = (value: any): number => {
 const extractUploadTimestampFromImageSrc = (src: any): number => {
   if (typeof src !== "string" || !src.trim() || src.startsWith("data:")) return 0;
   const decoded = decodeURIComponent(src);
-  const matches = decoded.match(/\d{13}/g) || [];
+  const matches: string[] = decoded.match(/\d{13}/g) || [];
   const min = new Date("2020-01-01T00:00:00Z").getTime();
   const max = new Date("2100-01-01T00:00:00Z").getTime();
   return matches.reduce((latest, raw) => {
