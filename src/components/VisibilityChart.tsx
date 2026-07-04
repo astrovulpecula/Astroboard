@@ -27,6 +27,7 @@ import {
   getPlanetaryCoordinates,
   calculatePlanetaryNightVisibility,
   calculatePlanetaryAnnualVisibility,
+  calculatePlanetaryDayVisibility,
 } from '@/lib/planet-position';
 import { Clock, ArrowUp, Sunrise, Sunset, Calendar, Moon } from 'lucide-react';
 
@@ -60,6 +61,7 @@ export default function VisibilityChart({
 
   const coords = useMemo(() => parseCoordinates(coordinates), [coordinates]);
   const planetary = isPlanetaryBody(objectCode);
+  const isSun = objectCode === 'Sol';
   const objectCoords = useMemo(() => {
     if (planetary) return getPlanetaryCoordinates(objectCode, date);
     return getObjectCoordinates(objectCode);
@@ -68,15 +70,16 @@ export default function VisibilityChart({
   const visibility = useMemo(() => {
     if (!coords || !objectCoords) return null;
     if (planetary) {
+      if (isSun) return calculatePlanetaryDayVisibility(objectCode as any, coords, date);
       return calculatePlanetaryNightVisibility(objectCode as any, coords, date);
     }
     return calculateNightVisibility(objectCoords.ra, objectCoords.dec, coords, date);
-  }, [objectCoords, coords, date, planetary, objectCode]);
+  }, [objectCoords, coords, date, planetary, objectCode, isSun]);
 
   const moonData = useMemo(() => {
-    if (!coords || objectCode === 'Luna') return [];
+    if (!coords || objectCode === 'Luna' || isSun) return [];
     return calculateMoonNightVisibility(coords, date);
-  }, [coords, date, objectCode]);
+  }, [coords, date, objectCode, isSun]);
 
   const annualVisibility = useMemo(() => {
     if (!coords || !objectCoords) return null;
@@ -411,8 +414,12 @@ export default function VisibilityChart({
 
           <p className="text-xs text-muted-foreground text-center">
             {language === 'en'
-              ? `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} White line: Moon.`
-              : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea blanca: Luna.`}
+              ? isSun
+                ? `Altitude curve from 04:00 to 22:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''}`
+                : `Altitude curve from 18:00 to 06:00.${altitudeLimit ? ` Yellow line: your ${altitudeLimit}° limit.` : ''} White line: Moon.`
+              : isSun
+                ? `Curva de altitud de 04:00 a 22:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''}`
+                : `Curva de altitud de 18:00 a 06:00.${altitudeLimit ? ` Línea amarilla: tu límite de ${altitudeLimit}°.` : ''} Línea blanca: Luna.`}
           </p>
         </>
       ) : (
