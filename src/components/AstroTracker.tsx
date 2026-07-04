@@ -1329,6 +1329,14 @@ function FProject({
   guideTelescope,
   guideCamera,
   mount,
+  guideTelescopes = [],
+  guideCameras = [],
+  mounts = [],
+  onAddCamera,
+  onAddTelescope,
+  onAddGuideTelescope,
+  onAddGuideCamera,
+  onAddMount,
   initialData,
   objectCategory,
 }: {
@@ -1340,6 +1348,14 @@ function FProject({
   guideTelescope?: { name: string; focalLength: string };
   guideCamera?: string;
   mount?: string;
+  guideTelescopes?: { name: string; focalLength: string }[];
+  guideCameras?: string[];
+  mounts?: string[];
+  onAddCamera?: (name: string) => void;
+  onAddTelescope?: (name: string) => void;
+  onAddGuideTelescope?: (name: string) => void;
+  onAddGuideCamera?: (name: string) => void;
+  onAddMount?: (name: string) => void;
   initialData?: {
     name?: string;
     description?: string;
@@ -1384,6 +1400,13 @@ function FProject({
   const [selectedGuideCamera, setSelectedGuideCamera] = useState(guideCamera || "");
   const [selectedGuideTelescope, setSelectedGuideTelescope] = useState(guideTelescope?.name || "");
   const [selectedMount, setSelectedMount] = useState(mount || "");
+  const [customGuideTelescope, setCustomGuideTelescope] = useState("");
+  const [customGuideCamera, setCustomGuideCamera] = useState("");
+  const [customMount, setCustomMount] = useState("");
+  const [showCustomGuideTelescope, setShowCustomGuideTelescope] = useState(false);
+  const [showCustomGuideCamera, setShowCustomGuideCamera] = useState(false);
+  const [showCustomMount, setShowCustomMount] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [encuadreImage] = useState(initialData?.encuadreImage || null);
 
   const handleAddFilter = () => {
@@ -1408,6 +1431,9 @@ function FProject({
     const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
     const finalLocation = selectedLocation === "Otro" ? customLocation.trim() : location;
     const finalGoogleCoords = selectedLocation === "Otro" ? customGoogleCoords.trim() : googleCoords;
+    const finalGuideTelescope = selectedGuideTelescope === "Otro" ? customGuideTelescope.trim() : selectedGuideTelescope;
+    const finalGuideCamera = selectedGuideCamera === "Otro" ? customGuideCamera.trim() : selectedGuideCamera;
+    const finalMount = selectedMount === "Otro" ? customMount.trim() : selectedMount;
     // Convertir objetivos por filtro a números; omitir vacíos o inválidos.
     const cleanFilterGoalHours: Record<string, number> = {};
     for (const f of filters) {
@@ -1428,9 +1454,9 @@ function FProject({
       equipment: {
         camera: finalCamera,
         telescope: finalTelescope,
-        guideCamera: selectedGuideCamera,
-        guideTelescope: selectedGuideTelescope,
-        mount: selectedMount,
+        guideCamera: finalGuideCamera,
+        guideTelescope: finalGuideTelescope,
+        mount: finalMount,
       },
       numPanels,
       goalHours: goalHours === "" ? undefined : goalHours,
@@ -1646,6 +1672,10 @@ function FProject({
       <div className="grid gap-3">
         <Label>Equipo</Label>
 
+        {savedNotice && (
+          <div className="text-xs text-emerald-600 dark:text-emerald-400">{savedNotice}</div>
+        )}
+
         <div className="grid gap-3">
           <label className="grid gap-1">
             <Label>Cámara</Label>
@@ -1668,12 +1698,31 @@ function FProject({
               <option value="Otro">+ Añadir nueva cámara</option>
             </select>
             {showCustomCamera && (
-              <input
-                value={customCamera}
-                onChange={(e) => setCustomCamera(e.target.value)}
-                className={`${INPUT_CLS} mt-2`}
-                placeholder="Nombre de la nueva cámara..."
-              />
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customCamera}
+                  onChange={(e) => setCustomCamera(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva cámara..."
+                />
+                {onAddCamera && customCamera.trim() && !cameras.some((c) => c.trim().toLowerCase() === customCamera.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customCamera.trim();
+                      onAddCamera(name);
+                      setSelectedCamera(name);
+                      setShowCustomCamera(false);
+                      setCustomCamera("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
             )}
           </label>
 
@@ -1698,43 +1747,169 @@ function FProject({
               <option value="Otro">+ Añadir nuevo telescopio</option>
             </select>
             {showCustomTelescope && (
-              <input
-                value={customTelescope}
-                onChange={(e) => setCustomTelescope(e.target.value)}
-                className={`${INPUT_CLS} mt-2`}
-                placeholder="Nombre del nuevo telescopio..."
-              />
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customTelescope}
+                  onChange={(e) => setCustomTelescope(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre del nuevo telescopio..."
+                />
+                {onAddTelescope && customTelescope.trim() && !telescopes.some((t) => t.name.trim().toLowerCase() === customTelescope.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customTelescope.trim();
+                      onAddTelescope(name);
+                      setSelectedTelescope(name);
+                      setShowCustomTelescope(false);
+                      setCustomTelescope("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
             )}
           </label>
 
           <label className="grid gap-1">
             <Label>Telescopio guía</Label>
-            <input
+            <select
               value={selectedGuideTelescope}
-              onChange={(e) => setSelectedGuideTelescope(e.target.value)}
+              onChange={(e) => {
+                setSelectedGuideTelescope(e.target.value);
+                setShowCustomGuideTelescope(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin telescopio guía</option>
+              {guideTelescopes.filter((t) => t.name.trim()).map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
+                </option>
+              ))}
+              <option value="Otro">+ Añadir nuevo telescopio guía</option>
+            </select>
+            {showCustomGuideTelescope && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customGuideTelescope}
+                  onChange={(e) => setCustomGuideTelescope(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre del nuevo telescopio guía..."
+                />
+                {onAddGuideTelescope && customGuideTelescope.trim() && !guideTelescopes.some((t) => t.name.trim().toLowerCase() === customGuideTelescope.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customGuideTelescope.trim();
+                      onAddGuideTelescope(name);
+                      setSelectedGuideTelescope(name);
+                      setShowCustomGuideTelescope(false);
+                      setCustomGuideTelescope("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <label className="grid gap-1">
             <Label>Cámara guía</Label>
-            <input
+            <select
               value={selectedGuideCamera}
-              onChange={(e) => setSelectedGuideCamera(e.target.value)}
+              onChange={(e) => {
+                setSelectedGuideCamera(e.target.value);
+                setShowCustomGuideCamera(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin cámara guía</option>
+              {guideCameras.filter((c) => c.trim()).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="Otro">+ Añadir nueva cámara guía</option>
+            </select>
+            {showCustomGuideCamera && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customGuideCamera}
+                  onChange={(e) => setCustomGuideCamera(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva cámara guía..."
+                />
+                {onAddGuideCamera && customGuideCamera.trim() && !guideCameras.some((c) => c.trim().toLowerCase() === customGuideCamera.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customGuideCamera.trim();
+                      onAddGuideCamera(name);
+                      setSelectedGuideCamera(name);
+                      setShowCustomGuideCamera(false);
+                      setCustomGuideCamera("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <label className="grid gap-1">
             <Label>Montura</Label>
-            <input
+            <select
               value={selectedMount}
-              onChange={(e) => setSelectedMount(e.target.value)}
+              onChange={(e) => {
+                setSelectedMount(e.target.value);
+                setShowCustomMount(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin montura</option>
+              {mounts.filter((m) => m.trim()).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+              <option value="Otro">+ Añadir nueva montura</option>
+            </select>
+            {showCustomMount && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customMount}
+                  onChange={(e) => setCustomMount(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva montura..."
+                />
+                {onAddMount && customMount.trim() && !mounts.some((m) => m.trim().toLowerCase() === customMount.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customMount.trim();
+                      onAddMount(name);
+                      setSelectedMount(name);
+                      setShowCustomMount(false);
+                      setCustomMount("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
         </div>
       </div>
@@ -6146,6 +6321,9 @@ export default function AstroTracker() {
   const [guideTelescope, setGuideTelescope] = useState<{ name: string; focalLength: string }>({ name: "", focalLength: "" });
   const [guideCamera, setGuideCamera] = useState<string>("");
   const [mount, setMount] = useState<string>("");
+  const [guideTelescopes, setGuideTelescopes] = useState<{ name: string; focalLength: string }[]>([]);
+  const [guideCameras, setGuideCameras] = useState<string[]>([]);
+  const [mounts, setMounts] = useState<string[]>([]);
   const [minAltitudeLimit, setMinAltitudeLimit] = useState<number>(0);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState("");
@@ -6305,6 +6483,12 @@ export default function AstroTracker() {
         if (settings.guideTelescope) setGuideTelescope(settings.guideTelescope);
         if (settings.guideCamera) setGuideCamera(settings.guideCamera);
         if (settings.mount) setMount(settings.mount);
+        if (Array.isArray(settings.guideTelescopes)) setGuideTelescopes(settings.guideTelescopes);
+        else if (settings.guideTelescope?.name) setGuideTelescopes([settings.guideTelescope]);
+        if (Array.isArray(settings.guideCameras)) setGuideCameras(settings.guideCameras);
+        else if (settings.guideCamera) setGuideCameras([settings.guideCamera]);
+        if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
+        else if (settings.mount) setMounts([settings.mount]);
         if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       };
@@ -6506,6 +6690,9 @@ export default function AstroTracker() {
     guideTelescope,
     guideCamera,
     mount,
+    guideTelescopes,
+    guideCameras,
+    mounts,
     userName,
     dateFormat,
     minAltitudeLimit,
@@ -6523,11 +6710,14 @@ export default function AstroTracker() {
       guideTelescope,
       guideCamera,
       mount,
+      guideTelescopes,
+      guideCameras,
+      mounts,
       userName,
       dateFormat,
       minAltitudeLimit,
     };
-  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, guideTelescopes, guideCameras, mounts, userName, dateFormat, minAltitudeLimit]);
 
 
   // Force cloud sync - used after import to ensure data is saved immediately
@@ -6562,6 +6752,9 @@ export default function AstroTracker() {
       guideTelescope: settingsRef.current.guideTelescope,
       guideCamera: settingsRef.current.guideCamera,
       mount: settingsRef.current.mount,
+      guideTelescopes: settingsRef.current.guideTelescopes,
+      guideCameras: settingsRef.current.guideCameras,
+      mounts: settingsRef.current.mounts,
       userName: settingsRef.current.userName,
       dateFormat: settingsRef.current.dateFormat,
       minAltitudeLimit: settingsRef.current.minAltitudeLimit,
@@ -6622,6 +6815,9 @@ export default function AstroTracker() {
       guideTelescope: currentSettings.guideTelescope,
       guideCamera: currentSettings.guideCamera,
       mount: currentSettings.mount,
+      guideTelescopes: currentSettings.guideTelescopes,
+      guideCameras: currentSettings.guideCameras,
+      mounts: currentSettings.mounts,
       userName: currentSettings.userName,
       dateFormat: currentSettings.dateFormat,
       minAltitudeLimit: currentSettings.minAltitudeLimit,
@@ -6741,6 +6937,9 @@ export default function AstroTracker() {
         guideTelescope,
         guideCamera,
         mount,
+        guideTelescopes,
+        guideCameras,
+        mounts,
         dateFormat,
         defaultTheme,
         jsonPath,
@@ -8162,6 +8361,12 @@ export default function AstroTracker() {
                       if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                       if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                       if (settingsData.mount) setMount(settingsData.mount);
+                      if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                      else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                      if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                      else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                      if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                      else if (settingsData.mount) setMounts([settingsData.mount]);
                       if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                       if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                       if (settingsData.defaultTheme) {
@@ -8185,6 +8390,9 @@ export default function AstroTracker() {
                         guideTelescope: settingsData.guideTelescope || guideTelescope,
                         guideCamera: settingsData.guideCamera || guideCamera,
                         mount: settingsData.mount || mount,
+                        guideTelescopes: Array.isArray(settingsData.guideTelescopes) ? settingsData.guideTelescopes : guideTelescopes,
+                        guideCameras: Array.isArray(settingsData.guideCameras) ? settingsData.guideCameras : guideCameras,
+                        mounts: Array.isArray(settingsData.mounts) ? settingsData.mounts : mounts,
                         dateFormat: settingsData.dateFormat || dateFormat,
                         userName: settingsData.userName || userName,
                         visibleHighlights: settingsData.visibleHighlights || visibleHighlights,
@@ -8224,6 +8432,9 @@ export default function AstroTracker() {
                         guideTelescope: settingsData?.guideTelescope || guideTelescope,
                         guideCamera: settingsData?.guideCamera || guideCamera,
                         mount: settingsData?.mount || mount,
+                        guideTelescopes: Array.isArray(settingsData?.guideTelescopes) ? settingsData?.guideTelescopes : guideTelescopes,
+                        guideCameras: Array.isArray(settingsData?.guideCameras) ? settingsData?.guideCameras : guideCameras,
+                        mounts: Array.isArray(settingsData?.mounts) ? settingsData?.mounts : mounts,
                         userName: settingsData?.userName || userName,
                         dateFormat: settingsData?.dateFormat || dateFormat,
                         minAltitudeLimit: settingsData?.minAltitudeLimit !== undefined ? settingsData.minAltitudeLimit : minAltitudeLimit,
@@ -13176,6 +13387,49 @@ export default function AstroTracker() {
             guideTelescope={guideTelescope}
             guideCamera={guideCamera}
             mount={mount}
+            guideTelescopes={guideTelescopes}
+            guideCameras={guideCameras}
+            mounts={mounts}
+            onAddCamera={(name) => {
+              pendingChangesRef.current++;
+              setCameras((prev) => {
+                const clean = prev.filter((c) => c.trim() !== "");
+                if (clean.some((c) => c.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...clean, name];
+              });
+            }}
+            onAddTelescope={(name) => {
+              pendingChangesRef.current++;
+              setTelescopes((prev) => {
+                const clean = prev.filter((t) => t.name.trim() !== "");
+                if (clean.some((t) => t.name.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...clean, { name, focalLength: "" }];
+              });
+            }}
+            onAddGuideTelescope={(name) => {
+              pendingChangesRef.current++;
+              setGuideTelescopes((prev) => {
+                if (prev.some((t) => t.name.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, { name, focalLength: "" }];
+              });
+              if (!guideTelescope?.name) setGuideTelescope({ name, focalLength: "" });
+            }}
+            onAddGuideCamera={(name) => {
+              pendingChangesRef.current++;
+              setGuideCameras((prev) => {
+                if (prev.some((c) => c.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, name];
+              });
+              if (!guideCamera) setGuideCamera(name);
+            }}
+            onAddMount={(name) => {
+              pendingChangesRef.current++;
+              setMounts((prev) => {
+                if (prev.some((m) => m.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, name];
+              });
+              if (!mount) setMount(name);
+            }}
             initialData={plannedFromPlan ? {
               name: plannedFromPlan.name,
               encuadreImage: plannedFromPlan.encuadreImage,
@@ -13458,6 +13712,12 @@ export default function AstroTracker() {
                         if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                         if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                         if (settingsData.mount) setMount(settingsData.mount);
+                        if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                        else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                        if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                        else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                        if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                        else if (settingsData.mount) setMounts([settingsData.mount]);
                         if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                         
                         const settings = {
@@ -13470,6 +13730,9 @@ export default function AstroTracker() {
                           guideTelescope: settingsData.guideTelescope || guideTelescope,
                           guideCamera: settingsData.guideCamera || guideCamera,
                           mount: settingsData.mount || mount,
+                          guideTelescopes: Array.isArray(settingsData.guideTelescopes) ? settingsData.guideTelescopes : guideTelescopes,
+                          guideCameras: Array.isArray(settingsData.guideCameras) ? settingsData.guideCameras : guideCameras,
+                          mounts: Array.isArray(settingsData.mounts) ? settingsData.mounts : mounts,
                           dateFormat: settingsData.dateFormat || dateFormat,
                           userName: settingsData.userName || userName,
                         };
@@ -13489,6 +13752,9 @@ export default function AstroTracker() {
                           guideTelescope: settingsData?.guideTelescope || guideTelescope,
                           guideCamera: settingsData?.guideCamera || guideCamera,
                           mount: settingsData?.mount || mount,
+                          guideTelescopes: Array.isArray(settingsData?.guideTelescopes) ? settingsData?.guideTelescopes : guideTelescopes,
+                          guideCameras: Array.isArray(settingsData?.guideCameras) ? settingsData?.guideCameras : guideCameras,
+                          mounts: Array.isArray(settingsData?.mounts) ? settingsData?.mounts : mounts,
                           dateFormat: settingsData?.dateFormat || dateFormat,
                           userName: settingsData?.userName || userName,
                         };
@@ -13661,6 +13927,21 @@ export default function AstroTracker() {
                     className={INPUT_CLS + " w-48"}
                   />
                 </div>
+                {guideTelescopes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {guideTelescopes.map((gt, i) => (
+                      <span key={`${gt.name}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {gt.name}{gt.focalLength ? ` (${gt.focalLength}mm)` : ""}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setGuideTelescopes(guideTelescopes.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Cámara guía */}
@@ -13673,6 +13954,21 @@ export default function AstroTracker() {
                   placeholder={t('guideCameraPlaceholderExample')}
                   className={INPUT_CLS}
                 />
+                {guideCameras.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {guideCameras.map((c, i) => (
+                      <span key={`${c}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {c}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setGuideCameras(guideCameras.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Montura */}
@@ -13685,6 +13981,21 @@ export default function AstroTracker() {
                   placeholder={t('mountPlaceholderExample')}
                   className={INPUT_CLS}
                 />
+                {mounts.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {mounts.map((m, i) => (
+                      <span key={`${m}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {m}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setMounts(mounts.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Límite mínimo de altitud */}
@@ -14507,6 +14818,12 @@ export default function AstroTracker() {
                     if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                     if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                     if (settingsData.mount) setMount(settingsData.mount);
+                    if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                    else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                    if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                    else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                    if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                    else if (settingsData.mount) setMounts([settingsData.mount]);
                     if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                     if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                     if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
@@ -14523,6 +14840,9 @@ export default function AstroTracker() {
                       guideTelescope: settingsData.guideTelescope || guideTelescope,
                       guideCamera: settingsData.guideCamera || guideCamera,
                       mount: settingsData.mount || mount,
+                      guideTelescopes: Array.isArray(settingsData.guideTelescopes) ? settingsData.guideTelescopes : guideTelescopes,
+                      guideCameras: Array.isArray(settingsData.guideCameras) ? settingsData.guideCameras : guideCameras,
+                      mounts: Array.isArray(settingsData.mounts) ? settingsData.mounts : mounts,
                       dateFormat: settingsData.dateFormat || dateFormat,
                       userName: settingsData.userName || userName,
                       language: settingsData.language || language,
@@ -14544,6 +14864,9 @@ export default function AstroTracker() {
                       guideTelescope: settingsData?.guideTelescope || guideTelescope,
                       guideCamera: settingsData?.guideCamera || guideCamera,
                       mount: settingsData?.mount || mount,
+                      guideTelescopes: Array.isArray(settingsData?.guideTelescopes) ? settingsData?.guideTelescopes : guideTelescopes,
+                      guideCameras: Array.isArray(settingsData?.guideCameras) ? settingsData?.guideCameras : guideCameras,
+                      mounts: Array.isArray(settingsData?.mounts) ? settingsData?.mounts : mounts,
                       dateFormat: settingsData?.dateFormat || dateFormat,
                       userName: settingsData?.userName || userName,
                       language: settingsData?.language || language,
