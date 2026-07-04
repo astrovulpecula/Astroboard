@@ -1365,6 +1365,9 @@ function FProject({
   );
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
+  // Objetivo de horas por filtro: se genera automáticamente un campo por cada
+  // filtro seleccionado o añadido por el usuario.
+  const [filterGoalHours, setFilterGoalHours] = useState<Record<string, string>>({});
   const [selectedCamera, setSelectedCamera] = useState("");
   const [selectedTelescope, setSelectedTelescope] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
@@ -1385,13 +1388,19 @@ function FProject({
 
   const handleAddFilter = () => {
     if (newFilter.trim() && !filters.includes(newFilter.trim())) {
-      setFilters([...filters, newFilter.trim()]);
+      const f = newFilter.trim();
+      setFilters([...filters, f]);
+      setFilterGoalHours((prev) => ({ ...prev, [f]: prev[f] ?? "" }));
       setNewFilter("");
     }
   };
 
   const handleRemoveFilter = (filter: string) => {
     setFilters(filters.filter((f) => f !== filter));
+    setFilterGoalHours((prev) => {
+      const { [filter]: _removed, ...rest } = prev;
+      return rest;
+    });
   };
 
   const handleSubmit = () => {
@@ -1399,6 +1408,15 @@ function FProject({
     const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
     const finalLocation = selectedLocation === "Otro" ? customLocation.trim() : location;
     const finalGoogleCoords = selectedLocation === "Otro" ? customGoogleCoords.trim() : googleCoords;
+    // Convertir objetivos por filtro a números; omitir vacíos o inválidos.
+    const cleanFilterGoalHours: Record<string, number> = {};
+    for (const f of filters) {
+      const raw = filterGoalHours[f];
+      if (raw !== undefined && raw !== "") {
+        const val = parseFloat(raw);
+        if (Number.isFinite(val) && val > 0) cleanFilterGoalHours[f] = val;
+      }
+    }
     onSubmit({
       name,
       description,
@@ -1406,6 +1424,7 @@ function FProject({
       googleCoords: finalGoogleCoords,
       projectType,
       filters,
+      filterGoalHours: cleanFilterGoalHours,
       equipment: {
         camera: finalCamera,
         telescope: finalTelescope,
@@ -1595,6 +1614,34 @@ function FProject({
           </button>
         </div>
       </div>
+
+      {!isPlanetary && filters.length > 0 && (
+        <div className="grid gap-2">
+          <Label>Objetivo de horas por filtro (opcional)</Label>
+          <div className="grid gap-2">
+            {filters.map((f) => (
+              <div key={f} className="flex items-center gap-2">
+                <span className="text-sm min-w-[6rem] truncate text-slate-700 dark:text-slate-300">{f}</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={filterGoalHours[f] ?? ""}
+                  onChange={(e) =>
+                    setFilterGoalHours((prev) => ({ ...prev, [f]: e.target.value }))
+                  }
+                  className={`${INPUT_CLS} flex-1`}
+                  placeholder={`Horas objetivo ${f}`}
+                />
+                <span className="text-xs text-slate-500">h</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            Se creará un objetivo de horas independiente por cada filtro. El progreso se mostrará en los highlights de sesiones.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-3">
         <Label>Equipo</Label>
@@ -11584,14 +11631,48 @@ export default function AstroTracker() {
                   });
 
                   // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
-                  const sortedFilters = Object.entries(filterHours).sort(([, a], [, b]) => b - a);
+                  const filterGoals: Record<string, number> = (proj as any).filterGoalHours || {};
+                  // Combinar filtros con sesiones + filtros con objetivo pero sin sesiones
+                  const allFilterNames = new Set<string>([
+                    ...Object.keys(filterHours),
+                    ...Object.keys(filterGoals).filter((k) => filterGoals[k] > 0),
+                  ]);
+                  const sortedFilters = [...allFilterNames]
+                    .map((name) => [name, filterHours[name] || 0] as [string, number])
+                    .sort(([, a], [, b]) => b - a);
 
-                  return sortedFilters.map(([filterName, seconds]) => (
-                    <Card key={filterName} className="p-4">
-                      <div className="text-sm text-slate-500">{filterName} total</div>
-                      <div className="text-xl font-semibold">{hh(seconds)}</div>
-                    </Card>
-                  ));
+                  return sortedFilters.map(([filterName, seconds]) => {
+                    const goal = filterGoals[filterName];
+                    const currentHours = seconds / 3600;
+                    if (goal && goal > 0) {
+                      const percentage = Math.min(100, (currentHours / goal) * 100);
+                      return (
+                        <Card key={filterName} className="p-4">
+                          <div className="text-sm text-slate-500 mb-2">{filterName} objetivo</div>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-semibold">{percentage.toFixed(0)}%</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">
+                                {currentHours.toFixed(1)}h / {goal}h
+                              </span>
+                            </div>
+                            <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-500 transition-all duration-300"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    }
+                    return (
+                      <Card key={filterName} className="p-4">
+                        <div className="text-sm text-slate-500">{filterName} total</div>
+                        <div className="text-xl font-semibold">{hh(seconds)}</div>
+                      </Card>
+                    );
+                  });
                 })()}
 
                 {/* 8. Progreso/Objetivo (si no hay paneles) o Horas totales por panel (si hay paneles) */}
@@ -13821,6 +13902,55 @@ export default function AstroTracker() {
               </p>
             </div>
 
+            {/* Objetivo de horas por filtro */}
+            {(() => {
+              const projFilters: string[] = Array.isArray((proj as any)?.filters)
+                ? [...new Set<string>((proj as any).filters.filter((f: any) => typeof f === "string" && f.trim()))]
+                : [];
+              if (projFilters.length === 0) return null;
+              const currentGoals: Record<string, number | string> =
+                projectSettingsData.filterGoalHours !== undefined
+                  ? projectSettingsData.filterGoalHours
+                  : (proj as any)?.filterGoalHours || {};
+              return (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Objetivo de horas por filtro</label>
+                  <div className="grid gap-2">
+                    {projFilters.map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <span className="text-sm min-w-[6rem] truncate text-slate-700 dark:text-slate-300">{f}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={
+                            currentGoals[f] !== undefined && currentGoals[f] !== null
+                              ? currentGoals[f] === "" ? "" : String(currentGoals[f])
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setProjectSettingsData({
+                              ...projectSettingsData,
+                              filterGoalHours: {
+                                ...currentGoals,
+                                [f]: e.target.value === "" ? "" : parseFloat(e.target.value),
+                              },
+                            })
+                          }
+                          className={`${INPUT_CLS} flex-1`}
+                          placeholder={`Horas objetivo ${f}`}
+                        />
+                        <span className="text-xs text-slate-500">h</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Cada filtro tiene su propio objetivo. El progreso aparecerá en los highlights de sesiones.
+                  </p>
+                </div>
+              );
+            })()}
+
             <div className="grid gap-2">
               <label className="text-sm font-medium">Fecha de inicio del proyecto</label>
               <input
@@ -13979,6 +14109,17 @@ export default function AstroTracker() {
                           : projectSettingsData.goalHours
                         : (proj as any).goalHours,
                   };
+
+                  // Objetivo de horas por filtro
+                  if (projectSettingsData.filterGoalHours !== undefined) {
+                    const clean: Record<string, number> = {};
+                    for (const [k, v] of Object.entries(projectSettingsData.filterGoalHours as Record<string, any>)) {
+                      if (v === "" || v === null || v === undefined) continue;
+                      const n = typeof v === "number" ? v : parseFloat(v);
+                      if (Number.isFinite(n) && n > 0) clean[k] = n;
+                    }
+                    updates.filterGoalHours = clean;
+                  }
 
                   // Actualizar visibilidad de gráficas si se modificó
                   if (projectSettingsData.chartVisibility !== undefined) {
