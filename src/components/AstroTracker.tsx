@@ -4971,9 +4971,11 @@ const FinalImageVersions = ({
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <SectionTitle title="Imagen final" />
-        {onRatingChange && (
+        {(onRatingChange || onVersionRatingChange) && (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">Valoración:</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">
+              Valoración{versions.length > 1 ? ` v${activeIdx + 1}` : ""}:
+            </span>
             {[1, 2, 3].map((star) => (
               <button
                 key={star}
