@@ -5473,21 +5473,62 @@ const generatePDFReport = async (
   // ======== SECTION 3: Imágenes de filtros ========
   if (config.includeFilterImages) {
     const filterImages: Record<string, {filter: string; initial?: string; final?: string}> = {};
-    
+
+    // Exclude metadata / non-filter keys that also start with initial/final
+    const metadataKeySuffixes = [
+      'Project', 'ProjectVersions', 'ProjectVersionTimestamps', 'ProjectVersionDates',
+      'ProjectVersionsUpdatedAt', 'ProjectUpdatedAt', 'ProjectUploadDates', 'ProjectRating',
+    ];
+    const isMetadataKey = (key: string, prefix: 'initial' | 'final') =>
+      metadataKeySuffixes.some((suffix) => key === `${prefix}${suffix}`);
+
     Object.entries(proj.images || {}).forEach(([key, src]) => {
-      if (key.startsWith('initial') && key !== 'initialProject' && src) {
+      if (typeof src !== 'string' || !src.trim()) return;
+      if (key.startsWith('initial') && !isMetadataKey(key, 'initial')) {
         const filterName = key.replace('initial', '');
+        if (!filterName) return;
         if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
-        filterImages[filterName].initial = src as string;
-      } else if (key.startsWith('final') && key !== 'finalProject' && src) {
+        filterImages[filterName].initial = src;
+      } else if (key.startsWith('final') && !isMetadataKey(key, 'final')) {
         const filterName = key.replace('final', '');
+        if (!filterName) return;
         if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
-        filterImages[filterName].final = src as string;
+        filterImages[filterName].final = src;
       }
     });
     
     const filterImagesArray = Object.values(filterImages);
-    
+
+    // ======== SECTION 3a: Versiones de la Imagen Final del Proyecto ========
+    const finalVersions: string[] = Array.isArray(proj?.images?.finalProjectVersions)
+      ? proj.images.finalProjectVersions.filter((s: any) => typeof s === 'string' && s.trim())
+      : [];
+    const singleFinal = (!finalVersions.length && typeof proj?.images?.finalProject === 'string' && proj.images.finalProject.trim())
+      ? [proj.images.finalProject]
+      : [];
+    const versionsToRender = finalVersions.length ? finalVersions : singleFinal;
+
+    if (versionsToRender.length > 0) {
+      html += `
+      <div class="section">
+        <h2 class="section-title">Imágenes Finales del Proyecto</h2>
+        <div style="display: grid; grid-template-columns: ${versionsToRender.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))'}; gap: 1.5rem;">`;
+      versionsToRender.forEach((src, i) => {
+        const ts = finalVersions.length
+          ? Math.max(getFinalProjectVersionTimestamp(proj, i), extractUploadTimestampFromImageSrc(src))
+          : parseTimestampSafe(proj?.images?.finalProjectUpdatedAt);
+        const dateLabel = ts > 0 ? new Date(ts).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+        const versionLabel = versionsToRender.length > 1 ? `Versión ${i + 1}` : 'Imagen Final';
+        html += `
+          <div class="filter-img-container" style="text-align: center; page-break-inside: avoid; break-inside: avoid;">
+            <p style="font-size: 0.95rem; color: ${theme.textAccent}; margin-bottom: 0.5rem; font-weight: 600;">${escapeHtml(versionLabel)}${i === versionsToRender.length - 1 && versionsToRender.length > 1 ? ' (actual)' : ''}</p>
+            ${dateLabel ? `<p style="font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem;">${escapeHtml(dateLabel)}</p>` : ''}
+            <img src="${escapeHtml(src)}" alt="${escapeHtml(versionLabel)}" />
+          </div>`;
+      });
+      html += `</div></div>`;
+    }
+
     if (filterImagesArray.length > 0) {
       html += `
       <div class="section">
@@ -5579,6 +5620,39 @@ const generatePDFReport = async (
       <h2 class="section-title">Exposición por Filtro</h2>
       <div class="chart-container">
         <canvas id="filterChart"></canvas>
+      </div>
+    </div>`;
+  }
+
+  // Evolución de exposición acumulada por filtro
+  const sessionsByDate = [...proj.sessions]
+    .filter((s: any) => s.date)
+    .sort((a: any, b: any) => {
+      const da = new Date(toISODate(a.date)).getTime();
+      const db = new Date(toISODate(b.date)).getTime();
+      return da - db;
+    });
+  const uniqueDateStrs: string[] = Array.from(new Set(sessionsByDate.map((s: any) => s.date)));
+  const filtersUsedList: string[] = Array.from(new Set(sessionsByDate.map((s: any) => s.filter).filter(Boolean)));
+  const filterEvolutionLabels = uniqueDateStrs.map((d) => formatDateDisplay(d, dateFormat));
+  const filterEvolutionSeries: Record<string, number[]> = {};
+  filtersUsedList.forEach((f) => {
+    let acc = 0;
+    filterEvolutionSeries[f] = uniqueDateStrs.map((d) => {
+      const sec = sessionsByDate
+        .filter((s: any) => s.date === d && s.filter === f)
+        .reduce((sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0), 0);
+      acc += sec;
+      return parseFloat((acc / 3600).toFixed(2));
+    });
+  });
+  const showFilterEvolution = config.includeCharts.filterChart && filtersUsedList.length > 0 && uniqueDateStrs.length > 0;
+  if (showFilterEvolution) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Evolución de Exposición Acumulada por Filtro</h2>
+      <div class="chart-container">
+        <canvas id="filterEvolutionChart"></canvas>
       </div>
     </div>`;
   }
@@ -5789,8 +5863,43 @@ const generatePDFReport = async (
         const range = getYAxisRange(d);
         new Chart(el.getContext('2d'), {
           type: 'bar',
-          data: { labels: ${JSON.stringify(filterData.map((d: any) => d.filter))}, datasets: [{ label: 'Horas', data: d, backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'] }] },
-          options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+          data: { labels: ${JSON.stringify(filterData.map((d: any) => d.filter))}, datasets: [{ label: 'Horas', data: d, backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'], barPercentage: 0.5, categoryPercentage: 0.6, maxBarThickness: 120 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, min: 0, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+        });
+      }
+    }
+    ` : ''}
+
+    ${showFilterEvolution ? `
+    {
+      const el = document.getElementById('filterEvolutionChart');
+      if (el) {
+        const palette = ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399', '#facc15', '#f87171', '#38bdf8'];
+        const seriesData = ${JSON.stringify(filterEvolutionSeries)};
+        const filters = ${JSON.stringify(filtersUsedList)};
+        const datasets = filters.map((f, i) => ({
+          label: f,
+          data: seriesData[f] || [],
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + '22',
+          tension: 0.3,
+          fill: false,
+          borderWidth: 2,
+          pointRadius: 3,
+        }));
+        const allVals = datasets.flatMap(ds => ds.data).filter(v => v != null);
+        const range = getYAxisRange(allVals);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: { labels: ${JSON.stringify(filterEvolutionLabels)}, datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } }, title: { display: false } },
+            scales: {
+              y: { beginAtZero: true, min: 0, max: range.max, title: { display: true, text: 'Horas acumuladas', color: chartColor }, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+              x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+            }
+          }
         });
       }
     }
