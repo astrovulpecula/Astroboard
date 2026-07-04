@@ -6905,6 +6905,39 @@ export default function AstroTracker() {
     [objects, obj, proj, selectedPanel],
   );
 
+  const addSessionsBatch = useCallback(
+    (bases: any[]) => {
+      if (!obj || !proj || !bases?.length) return;
+      const stamped = bases.map((b) => ({ ...b, id: uid("ses") }));
+      const newFilters = [...new Set(stamped.map((s) => s.filter || "RGB"))];
+      pendingChangesRef.current++;
+      setObjects(
+        objects.map((o: any) =>
+          o.id !== obj.id
+            ? o
+            : {
+                ...o,
+                projects: o.projects.map((p: any) =>
+                  p.id === proj.id
+                    ? {
+                        ...p,
+                        sessions: [...p.sessions, ...stamped],
+                        panels: {
+                          ...(p.panels || {}),
+                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                        },
+                        filters: [...new Set([...(p.filters || []), ...newFilters])],
+                      }
+                    : p,
+                ),
+              },
+        ),
+      );
+      setMSesBatch(false);
+    },
+    [objects, obj, proj, selectedPanel],
+  );
+
   const editSession = useCallback(
     (sid: string, data: any) => {
       if (!obj || !proj) return;
