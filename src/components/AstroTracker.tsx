@@ -1329,6 +1329,14 @@ function FProject({
   guideTelescope,
   guideCamera,
   mount,
+  guideTelescopes = [],
+  guideCameras = [],
+  mounts = [],
+  onAddCamera,
+  onAddTelescope,
+  onAddGuideTelescope,
+  onAddGuideCamera,
+  onAddMount,
   initialData,
   objectCategory,
 }: {
@@ -1340,6 +1348,14 @@ function FProject({
   guideTelescope?: { name: string; focalLength: string };
   guideCamera?: string;
   mount?: string;
+  guideTelescopes?: { name: string; focalLength: string }[];
+  guideCameras?: string[];
+  mounts?: string[];
+  onAddCamera?: (name: string) => void;
+  onAddTelescope?: (name: string) => void;
+  onAddGuideTelescope?: (name: string) => void;
+  onAddGuideCamera?: (name: string) => void;
+  onAddMount?: (name: string) => void;
   initialData?: {
     name?: string;
     description?: string;
