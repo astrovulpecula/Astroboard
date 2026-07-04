@@ -11753,6 +11753,28 @@ export default function AstroTracker() {
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
                 onRatingChange={(rating) => updateRating("finalProject", rating)}
+                versionRatings={(() => {
+                  const r = (proj as any)?.ratings || {};
+                  const out: Record<number, number> = {};
+                  Object.keys(r).forEach((k) => {
+                    const m = k.match(/^finalProject_v(\d+)$/);
+                    if (m) out[parseInt(m[1], 10)] = r[k] || 0;
+                  });
+                  return out;
+                })()}
+                onVersionRatingChange={(idx, newRating) => {
+                  updateRating(`finalProject_v${idx}`, newRating);
+                  // Keep the legacy `finalProject` key in sync with the latest
+                  // version so the gallery still shows the current rating.
+                  const versions: string[] = Array.isArray((proj as any)?.images?.finalProjectVersions)
+                    ? (proj as any).images.finalProjectVersions
+                    : (proj as any)?.images?.finalProject
+                      ? [(proj as any).images.finalProject]
+                      : [];
+                  if (idx === versions.length - 1) {
+                    updateRating("finalProject", newRating);
+                  }
+                }}
                 theme={theme}
                 onImageClick={(src) => {
                   setImageModalSrc(src);
