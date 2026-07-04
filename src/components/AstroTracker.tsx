@@ -6489,12 +6489,6 @@ export default function AstroTracker() {
         else if (settings.guideCamera) setGuideCameras([settings.guideCamera]);
         if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
         else if (settings.mount) setMounts([settings.mount]);
-        if (Array.isArray(settings.guideTelescopes)) setGuideTelescopes(settings.guideTelescopes);
-        else if (settings.guideTelescope?.name) setGuideTelescopes([settings.guideTelescope]);
-        if (Array.isArray(settings.guideCameras)) setGuideCameras(settings.guideCameras);
-        else if (settings.guideCamera) setGuideCameras([settings.guideCamera]);
-        if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
-        else if (settings.mount) setMounts([settings.mount]);
         if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       };
