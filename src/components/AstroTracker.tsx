@@ -14110,6 +14110,17 @@ export default function AstroTracker() {
                         : (proj as any).goalHours,
                   };
 
+                  // Objetivo de horas por filtro
+                  if (projectSettingsData.filterGoalHours !== undefined) {
+                    const clean: Record<string, number> = {};
+                    for (const [k, v] of Object.entries(projectSettingsData.filterGoalHours as Record<string, any>)) {
+                      if (v === "" || v === null || v === undefined) continue;
+                      const n = typeof v === "number" ? v : parseFloat(v);
+                      if (Number.isFinite(n) && n > 0) clean[k] = n;
+                    }
+                    updates.filterGoalHours = clean;
+                  }
+
                   // Actualizar visibilidad de gráficas si se modificó
                   if (projectSettingsData.chartVisibility !== undefined) {
                     updates.chartVisibility = projectSettingsData.chartVisibility;
