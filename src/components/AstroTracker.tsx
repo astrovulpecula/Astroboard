@@ -1067,10 +1067,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     if (value.trim().length > 0) {
       try {
         const results = await searchCelestialObjects(value.trim());
-        console.log("Resultados de búsqueda:", results);
-        if (results.length > 0) {
-          console.log("Primer resultado:", results[0]);
-        }
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
         setSelectedIndex(-1);
@@ -1086,11 +1082,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   };
 
   const handleSelectSuggestion = (obj: any) => {
-    console.log("Objeto seleccionado:", obj);
-    console.log("nameEsp:", obj.nameEsp);
-    console.log("constellation:", obj.constellation);
-    console.log("objectType:", obj.objectType);
-    
     setId(obj.code || "");
     setCommonName(obj.nameEsp || "");
     setConstellation(obj.constellation || "");
@@ -7262,8 +7253,6 @@ export default function AstroTracker() {
 
   const addSes = useCallback(
     (base: any) => {
-      console.log("addSes called with:", { base, obj, proj, selectedPanel });
-
       if (!obj || !proj) {
         console.error("Cannot add session: obj or proj is null", { obj, proj });
         return;
@@ -7271,8 +7260,6 @@ export default function AstroTracker() {
 
       const s = { ...base, id: uid("ses") };
       const sessionFilter = s.filter || "RGB";
-
-      console.log("Adding session:", s);
 
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
@@ -7300,7 +7287,6 @@ export default function AstroTracker() {
       );
       setMSes(false);
       setMSesAuto(false);
-      console.log("Session added successfully");
     },
     [objects, obj, proj, selectedPanel],
   );
@@ -7600,18 +7586,8 @@ export default function AstroTracker() {
     }
 
     const projectFilters = (proj as any).filters || [];
-    console.log("🔍 Proyecto cargado:", proj.name);
-    console.log("🔍 Filtros del proyecto:", projectFilters);
-
-    // Convertir filtros a string para comparación estable
-    const filterString = JSON.stringify([...projectFilters].sort());
 
     setTabs((currentTabs) => {
-      console.log(
-        "🔍 Tabs actuales:",
-        currentTabs.map((t) => `${t.name} (${t.custom ? "custom" : "auto"})`),
-      );
-
       // Obtener nombres de tabs automáticas actuales (excluyendo la tab "?")
       const currentAutoTabNames = currentTabs
         .filter((t) => !t.custom && t.id !== "unclassified")
@@ -7621,8 +7597,6 @@ export default function AstroTracker() {
 
       // Comparar arrays
       const tabsMatchFilters = JSON.stringify(currentAutoTabNames) === JSON.stringify(projectFilterNames);
-
-      console.log("🔍 ¿Tabs coinciden con filtros?", tabsMatchFilters);
 
       // Verificar si hay sesiones sin clasificar
       const up = (x: string) => (x || "").toUpperCase().trim();
@@ -7639,14 +7613,12 @@ export default function AstroTracker() {
       });
 
       const hasUnclassifiedSessions = unclassifiedSessions.length > 0;
-      console.log("🔍 Sesiones sin clasificar:", unclassifiedSessions.length);
 
       if (tabsMatchFilters && currentTabs.length > 0) {
         // Verificar si necesitamos agregar/quitar la tab "?"
         const hasUnclassifiedTab = currentTabs.some((t) => t.id === "unclassified");
         
         if (hasUnclassifiedSessions && !hasUnclassifiedTab) {
-          console.log("➕ Agregando tab '?' para sesiones sin clasificar");
           return [
             ...currentTabs,
             {
@@ -7656,7 +7628,6 @@ export default function AstroTracker() {
             },
           ];
         } else if (!hasUnclassifiedSessions && hasUnclassifiedTab) {
-          console.log("➖ Eliminando tab '?' (ya no hay sesiones sin clasificar)");
           const newTabs = currentTabs.filter((t) => t.id !== "unclassified");
           if (active === "unclassified") {
             setActive(newTabs[0]?.id || "");
@@ -7664,12 +7635,10 @@ export default function AstroTracker() {
           return newTabs;
         }
         
-        console.log("✅ Manteniendo tabs existentes");
         return currentTabs;
       }
 
       if (projectFilters.length > 0) {
-        console.log("🔄 Recreando tabs desde filtros del proyecto");
         // Crear tabs automáticamente basadas en los filtros del proyecto
         const newTabs: TabType[] = projectFilters.map((filter: string) => ({
           id: `filter-${filter.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
@@ -7686,11 +7655,6 @@ export default function AstroTracker() {
           });
         }
 
-        console.log(
-          "📋 Nuevas tabs creadas:",
-          newTabs.map((t) => t.name),
-        );
-
         // Preservar tabs personalizadas
         const customTabs = currentTabs.filter((t) => t.custom);
         const allTabs = [...newTabs, ...customTabs];
@@ -7698,12 +7662,10 @@ export default function AstroTracker() {
         // Actualizar tab activa solo si la actual ya no existe
         if (!allTabs.find((t) => t.id === active)) {
           setActive(allTabs[0]?.id || "");
-          console.log("🎯 Tab activa cambiada a:", allTabs[0]?.name);
         }
 
         return allTabs;
       } else {
-        console.log("⚠️ Proyecto sin filtros, solo tabs personalizadas");
         // Si el proyecto no tiene filtros definidos, solo mantener tabs personalizadas
         const customTabs = currentTabs.filter((t) => t.custom && t.id !== "unclassified");
         
@@ -8291,14 +8253,10 @@ export default function AstroTracker() {
                           // Recopilar todos los filtros únicos de las sesiones
                           const allFiltersFromSessions = new Set<string>();
 
-                          console.log("📦 Procesando proyecto:", proj.name);
-                          console.log("📦 Sesiones en proyecto:", proj.sessions);
-
                           // Buscar filtros directamente en proj.sessions
                           if (proj.sessions && Array.isArray(proj.sessions)) {
                             proj.sessions.forEach((session: any) => {
                               if (session.filter) {
-                                console.log("✅ Filtro encontrado:", session.filter);
                                 allFiltersFromSessions.add(session.filter);
                               }
                             });
@@ -8310,7 +8268,6 @@ export default function AstroTracker() {
                               if (panel.sessions && Array.isArray(panel.sessions)) {
                                 panel.sessions.forEach((session: any) => {
                                   if (session.filter) {
-                                    console.log("✅ Filtro encontrado en panel:", session.filter);
                                     allFiltersFromSessions.add(session.filter);
                                   }
                                 });
@@ -8323,8 +8280,6 @@ export default function AstroTracker() {
                           const combinedFilters = [
                             ...new Set([...existingFilters, ...Array.from(allFiltersFromSessions)]),
                           ];
-
-                          console.log("🎯 Filtros finales para proyecto:", proj.name, combinedFilters);
 
                           return {
                             ...proj,
