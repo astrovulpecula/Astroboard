@@ -5473,21 +5473,62 @@ const generatePDFReport = async (
   // ======== SECTION 3: Imágenes de filtros ========
   if (config.includeFilterImages) {
     const filterImages: Record<string, {filter: string; initial?: string; final?: string}> = {};
-    
+
+    // Exclude metadata / non-filter keys that also start with initial/final
+    const metadataKeySuffixes = [
+      'Project', 'ProjectVersions', 'ProjectVersionTimestamps', 'ProjectVersionDates',
+      'ProjectVersionsUpdatedAt', 'ProjectUpdatedAt', 'ProjectUploadDates', 'ProjectRating',
+    ];
+    const isMetadataKey = (key: string, prefix: 'initial' | 'final') =>
+      metadataKeySuffixes.some((suffix) => key === `${prefix}${suffix}`);
+
     Object.entries(proj.images || {}).forEach(([key, src]) => {
-      if (key.startsWith('initial') && key !== 'initialProject' && src) {
+      if (typeof src !== 'string' || !src.trim()) return;
+      if (key.startsWith('initial') && !isMetadataKey(key, 'initial')) {
         const filterName = key.replace('initial', '');
+        if (!filterName) return;
         if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
-        filterImages[filterName].initial = src as string;
-      } else if (key.startsWith('final') && key !== 'finalProject' && src) {
+        filterImages[filterName].initial = src;
+      } else if (key.startsWith('final') && !isMetadataKey(key, 'final')) {
         const filterName = key.replace('final', '');
+        if (!filterName) return;
         if (!filterImages[filterName]) filterImages[filterName] = { filter: filterName };
-        filterImages[filterName].final = src as string;
+        filterImages[filterName].final = src;
       }
     });
     
     const filterImagesArray = Object.values(filterImages);
-    
+
+    // ======== SECTION 3a: Versiones de la Imagen Final del Proyecto ========
+    const finalVersions: string[] = Array.isArray(proj?.images?.finalProjectVersions)
+      ? proj.images.finalProjectVersions.filter((s: any) => typeof s === 'string' && s.trim())
+      : [];
+    const singleFinal = (!finalVersions.length && typeof proj?.images?.finalProject === 'string' && proj.images.finalProject.trim())
+      ? [proj.images.finalProject]
+      : [];
+    const versionsToRender = finalVersions.length ? finalVersions : singleFinal;
+
+    if (versionsToRender.length > 0) {
+      html += `
+      <div class="section">
+        <h2 class="section-title">Imágenes Finales del Proyecto</h2>
+        <div style="display: grid; grid-template-columns: ${versionsToRender.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))'}; gap: 1.5rem;">`;
+      versionsToRender.forEach((src, i) => {
+        const ts = finalVersions.length
+          ? Math.max(getFinalProjectVersionTimestamp(proj, i), extractUploadTimestampFromImageSrc(src))
+          : parseTimestampSafe(proj?.images?.finalProjectUpdatedAt);
+        const dateLabel = ts > 0 ? new Date(ts).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+        const versionLabel = versionsToRender.length > 1 ? `Versión ${i + 1}` : 'Imagen Final';
+        html += `
+          <div class="filter-img-container" style="text-align: center; page-break-inside: avoid; break-inside: avoid;">
+            <p style="font-size: 0.95rem; color: ${theme.textAccent}; margin-bottom: 0.5rem; font-weight: 600;">${escapeHtml(versionLabel)}${i === versionsToRender.length - 1 && versionsToRender.length > 1 ? ' (actual)' : ''}</p>
+            ${dateLabel ? `<p style="font-size: 0.8rem; color: ${theme.textSecondary}; margin-bottom: 0.75rem;">${escapeHtml(dateLabel)}</p>` : ''}
+            <img src="${escapeHtml(src)}" alt="${escapeHtml(versionLabel)}" />
+          </div>`;
+      });
+      html += `</div></div>`;
+    }
+
     if (filterImagesArray.length > 0) {
       html += `
       <div class="section">
