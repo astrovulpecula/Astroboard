@@ -7587,9 +7587,6 @@ export default function AstroTracker() {
 
     const projectFilters = (proj as any).filters || [];
 
-    // Convertir filtros a string para comparación estable
-    const filterString = JSON.stringify([...projectFilters].sort());
-
     setTabs((currentTabs) => {
       // Obtener nombres de tabs automáticas actuales (excluyendo la tab "?")
       const currentAutoTabNames = currentTabs
