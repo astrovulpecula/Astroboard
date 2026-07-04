@@ -1365,6 +1365,9 @@ function FProject({
   );
   const [filters, setFilters] = useState<string[]>(["UV/IR", "HA/OIII", "No Filter"]);
   const [newFilter, setNewFilter] = useState("");
+  // Objetivo de horas por filtro: se genera automáticamente un campo por cada
+  // filtro seleccionado o añadido por el usuario.
+  const [filterGoalHours, setFilterGoalHours] = useState<Record<string, string>>({});
   const [selectedCamera, setSelectedCamera] = useState("");
   const [selectedTelescope, setSelectedTelescope] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
@@ -1385,13 +1388,19 @@ function FProject({
 
   const handleAddFilter = () => {
     if (newFilter.trim() && !filters.includes(newFilter.trim())) {
-      setFilters([...filters, newFilter.trim()]);
+      const f = newFilter.trim();
+      setFilters([...filters, f]);
+      setFilterGoalHours((prev) => ({ ...prev, [f]: prev[f] ?? "" }));
       setNewFilter("");
     }
   };
 
   const handleRemoveFilter = (filter: string) => {
     setFilters(filters.filter((f) => f !== filter));
+    setFilterGoalHours((prev) => {
+      const { [filter]: _removed, ...rest } = prev;
+      return rest;
+    });
   };
 
   const handleSubmit = () => {
@@ -1399,6 +1408,15 @@ function FProject({
     const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
     const finalLocation = selectedLocation === "Otro" ? customLocation.trim() : location;
     const finalGoogleCoords = selectedLocation === "Otro" ? customGoogleCoords.trim() : googleCoords;
+    // Convertir objetivos por filtro a números; omitir vacíos o inválidos.
+    const cleanFilterGoalHours: Record<string, number> = {};
+    for (const f of filters) {
+      const raw = filterGoalHours[f];
+      if (raw !== undefined && raw !== "") {
+        const val = parseFloat(raw);
+        if (Number.isFinite(val) && val > 0) cleanFilterGoalHours[f] = val;
+      }
+    }
     onSubmit({
       name,
       description,
@@ -1406,6 +1424,7 @@ function FProject({
       googleCoords: finalGoogleCoords,
       projectType,
       filters,
+      filterGoalHours: cleanFilterGoalHours,
       equipment: {
         camera: finalCamera,
         telescope: finalTelescope,
