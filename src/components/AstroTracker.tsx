@@ -11947,7 +11947,7 @@ export default function AstroTracker() {
                 )}
 
                 {/* 7. Highlights de filtros (ej: "HA/OIII total") */}
-                {(() => {
+                {(obj as any).id !== 'Sol' && (() => {
                   // Calcular horas totales por cada filtro en TODO el proyecto
                   const filterHours: Record<string, number> = {};
                   proj.sessions.forEach((s: any) => {
@@ -12003,7 +12003,7 @@ export default function AstroTracker() {
                 })()}
 
                 {/* 8. Progreso/Objetivo (si no hay paneles) o Horas totales por panel (si hay paneles) */}
-                {(() => {
+                {(obj as any).id !== 'Sol' && (() => {
                   // Highlight de objetivo de horas
                   const goalHours = (proj as any).goalHours;
                   if (!goalHours) return null;
