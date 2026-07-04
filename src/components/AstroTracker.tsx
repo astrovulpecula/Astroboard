@@ -5053,6 +5053,7 @@ const FinalImageVersions = ({
               const isActive = i === activeIdx;
               const isCompare = compareMode && i === compareIdx;
               const isLatest = i === versions.length - 1;
+              const thumbRating = getActiveVersionRating(i, versions.length);
               return (
                 <button
                   key={i}
@@ -5073,6 +5074,12 @@ const FinalImageVersions = ({
                   title={`Versión ${i + 1}${isLatest ? " (principal)" : ""}`}
                 >
                   <img src={src} alt={`v${i + 1}`} className="w-16 h-16 object-cover block" />
+                  {thumbRating > 0 && (
+                    <span className="absolute top-0.5 right-0.5 bg-black/60 rounded px-1 flex items-center gap-0.5 text-[10px] leading-none text-white">
+                      {thumbRating}
+                      <Star className={`w-2.5 h-2.5 ${theme === "astro" ? "fill-blue-400 text-blue-400" : "fill-yellow-400 text-yellow-400"}`} />
+                    </span>
+                  )}
                   <span className="absolute bottom-0 left-0 right-0 text-[10px] text-white bg-black/60 text-center leading-tight py-0.5">
                     v{i + 1}
                     {isLatest ? " ★" : ""}
