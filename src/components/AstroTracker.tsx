@@ -1431,6 +1431,9 @@ function FProject({
     const finalTelescope = selectedTelescope === "Otro" ? customTelescope.trim() : selectedTelescope;
     const finalLocation = selectedLocation === "Otro" ? customLocation.trim() : location;
     const finalGoogleCoords = selectedLocation === "Otro" ? customGoogleCoords.trim() : googleCoords;
+    const finalGuideTelescope = selectedGuideTelescope === "Otro" ? customGuideTelescope.trim() : selectedGuideTelescope;
+    const finalGuideCamera = selectedGuideCamera === "Otro" ? customGuideCamera.trim() : selectedGuideCamera;
+    const finalMount = selectedMount === "Otro" ? customMount.trim() : selectedMount;
     // Convertir objetivos por filtro a números; omitir vacíos o inválidos.
     const cleanFilterGoalHours: Record<string, number> = {};
     for (const f of filters) {
@@ -1451,9 +1454,9 @@ function FProject({
       equipment: {
         camera: finalCamera,
         telescope: finalTelescope,
-        guideCamera: selectedGuideCamera,
-        guideTelescope: selectedGuideTelescope,
-        mount: selectedMount,
+        guideCamera: finalGuideCamera,
+        guideTelescope: finalGuideTelescope,
+        mount: finalMount,
       },
       numPanels,
       goalHours: goalHours === "" ? undefined : goalHours,
