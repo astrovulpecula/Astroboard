@@ -4807,6 +4807,8 @@ const FinalImageVersions = ({
   upImgs,
   rating,
   onRatingChange,
+  versionRatings,
+  onVersionRatingChange,
   theme,
   onImageClick,
 }: {
@@ -4814,6 +4816,8 @@ const FinalImageVersions = ({
   upImgs: (patch: any) => Promise<void> | void;
   rating?: number;
   onRatingChange?: (rating: number) => void;
+  versionRatings?: Record<number, number>;
+  onVersionRatingChange?: (versionIdx: number, rating: number) => void;
   theme: string;
   onImageClick?: (src: string) => void;
 }) => {
@@ -4835,7 +4839,19 @@ const FinalImageVersions = ({
   const [sliderPct, setSliderPct] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [currentRating, setCurrentRating] = useState(rating || 0);
+  // Rating shown reflects the active version. When per-version ratings are
+  // provided we use them; otherwise fall back to the legacy single rating
+  // (which represents the latest version).
+  const getActiveVersionRating = (idx: number, total: number) => {
+    if (versionRatings && Object.prototype.hasOwnProperty.call(versionRatings, idx)) {
+      return versionRatings[idx] || 0;
+    }
+    if (idx === total - 1) return rating || 0;
+    return 0;
+  };
+  const [currentRating, setCurrentRating] = useState(
+    getActiveVersionRating(Math.max(0, propVersions.length - 1), propVersions.length),
+  );
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const draggingRef = React.useRef(false);
 
@@ -4844,8 +4860,9 @@ const FinalImageVersions = ({
   }, [propVersions]);
 
   React.useEffect(() => {
-    setCurrentRating(rating || 0);
-  }, [rating]);
+    setCurrentRating(getActiveVersionRating(activeIdx, versions.length));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rating, versionRatings, activeIdx, versions.length]);
 
   React.useEffect(() => {
     if (activeIdx > versions.length - 1) setActiveIdx(Math.max(0, versions.length - 1));
@@ -4862,6 +4879,20 @@ const FinalImageVersions = ({
       const next = [...versions, url];
       setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
+      // Preserve the previous latest version's rating under its version key,
+      // then reset the new latest version's rating to 0. This keeps every
+      // version's rating independent while the gallery (which reads the
+      // legacy `finalProject` rating) tracks the newest version.
+      if (onVersionRatingChange && previous.length > 0) {
+        const prevLastIdx = previous.length - 1;
+        const preservedRating = versionRatings && Object.prototype.hasOwnProperty.call(versionRatings, prevLastIdx)
+          ? versionRatings[prevLastIdx]
+          : rating || 0;
+        if (preservedRating > 0) {
+          onVersionRatingChange(prevLastIdx, preservedRating);
+        }
+        onVersionRatingChange(next.length - 1, 0);
+      }
       setActiveIdx(next.length - 1);
       if (next.length >= 2) setCompareIdx(Math.max(0, next.length - 2));
     } catch (error) {
@@ -4917,7 +4948,11 @@ const FinalImageVersions = ({
   const handleRatingClick = (newRating: number) => {
     const finalRating = newRating === currentRating ? 0 : newRating;
     setCurrentRating(finalRating);
-    onRatingChange?.(finalRating);
+    if (onVersionRatingChange) {
+      onVersionRatingChange(activeIdx, finalRating);
+    } else {
+      onRatingChange?.(finalRating);
+    }
   };
 
   const updateSliderFromEvent = (clientX: number) => {
@@ -4950,9 +4985,11 @@ const FinalImageVersions = ({
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <SectionTitle title="Imagen final" />
-        {onRatingChange && (
+        {(onRatingChange || onVersionRatingChange) && (
           <div className="flex items-center gap-1">
-            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">Valoración:</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1">
+              Valoración{versions.length > 1 ? ` v${activeIdx + 1}` : ""}:
+            </span>
             {[1, 2, 3].map((star) => (
               <button
                 key={star}
@@ -5030,6 +5067,7 @@ const FinalImageVersions = ({
               const isActive = i === activeIdx;
               const isCompare = compareMode && i === compareIdx;
               const isLatest = i === versions.length - 1;
+              const thumbRating = getActiveVersionRating(i, versions.length);
               return (
                 <button
                   key={i}
@@ -5050,6 +5088,12 @@ const FinalImageVersions = ({
                   title={`Versión ${i + 1}${isLatest ? " (principal)" : ""}`}
                 >
                   <img src={src} alt={`v${i + 1}`} className="w-16 h-16 object-cover block" />
+                  {thumbRating > 0 && (
+                    <span className="absolute top-0.5 right-0.5 bg-black/60 rounded px-1 flex items-center gap-0.5 text-[10px] leading-none text-white">
+                      {thumbRating}
+                      <Star className={`w-2.5 h-2.5 ${theme === "astro" ? "fill-blue-400 text-blue-400" : "fill-yellow-400 text-yellow-400"}`} />
+                    </span>
+                  )}
                   <span className="absolute bottom-0 left-0 right-0 text-[10px] text-white bg-black/60 text-center leading-tight py-0.5">
                     v{i + 1}
                     {isLatest ? " ★" : ""}
@@ -11723,6 +11767,28 @@ export default function AstroTracker() {
                 upImgs={upImgs}
                 rating={(proj as any)?.ratings?.finalProject || 0}
                 onRatingChange={(rating) => updateRating("finalProject", rating)}
+                versionRatings={(() => {
+                  const r = (proj as any)?.ratings || {};
+                  const out: Record<number, number> = {};
+                  Object.keys(r).forEach((k) => {
+                    const m = k.match(/^finalProject_v(\d+)$/);
+                    if (m) out[parseInt(m[1], 10)] = r[k] || 0;
+                  });
+                  return out;
+                })()}
+                onVersionRatingChange={(idx, newRating) => {
+                  updateRating(`finalProject_v${idx}`, newRating);
+                  // Keep the legacy `finalProject` key in sync with the latest
+                  // version so the gallery still shows the current rating.
+                  const versions: string[] = Array.isArray((proj as any)?.images?.finalProjectVersions)
+                    ? (proj as any).images.finalProjectVersions
+                    : (proj as any)?.images?.finalProject
+                      ? [(proj as any).images.finalProject]
+                      : [];
+                  if (idx === versions.length - 1) {
+                    updateRating("finalProject", newRating);
+                  }
+                }}
                 theme={theme}
                 onImageClick={(src) => {
                   setImageModalSrc(src);
