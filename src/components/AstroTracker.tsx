@@ -5624,6 +5624,39 @@ const generatePDFReport = async (
     </div>`;
   }
 
+  // Evolución de exposición acumulada por filtro
+  const sessionsByDate = [...proj.sessions]
+    .filter((s: any) => s.date)
+    .sort((a: any, b: any) => {
+      const da = new Date(toISODate(a.date)).getTime();
+      const db = new Date(toISODate(b.date)).getTime();
+      return da - db;
+    });
+  const uniqueDateStrs: string[] = Array.from(new Set(sessionsByDate.map((s: any) => s.date)));
+  const filtersUsedList: string[] = Array.from(new Set(sessionsByDate.map((s: any) => s.filter).filter(Boolean)));
+  const filterEvolutionLabels = uniqueDateStrs.map((d) => formatDateDisplay(d, dateFormat));
+  const filterEvolutionSeries: Record<string, number[]> = {};
+  filtersUsedList.forEach((f) => {
+    let acc = 0;
+    filterEvolutionSeries[f] = uniqueDateStrs.map((d) => {
+      const sec = sessionsByDate
+        .filter((s: any) => s.date === d && s.filter === f)
+        .reduce((sum: number, s: any) => sum + (s.lights || 0) * (s.exposureSec || 0), 0);
+      acc += sec;
+      return parseFloat((acc / 3600).toFixed(2));
+    });
+  });
+  const showFilterEvolution = config.includeCharts.filterChart && filtersUsedList.length > 0 && uniqueDateStrs.length > 0;
+  if (showFilterEvolution) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Evolución de Exposición Acumulada por Filtro</h2>
+      <div class="chart-container">
+        <canvas id="filterEvolutionChart"></canvas>
+      </div>
+    </div>`;
+  }
+
   // Lights per session
   if (config.includeCharts.lightsChart) {
     html += `
