@@ -94,6 +94,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
+import FSessionBatch from "@/components/FSessionBatch";
 import FireCaptureAnalyzer, { FireCaptureAnalysisResult } from "@/components/FireCaptureAnalyzer";
 import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
@@ -5900,6 +5901,7 @@ export default function AstroTracker() {
   const [mProj, setMProj] = useState(false);
   const [mSes, setMSes] = useState(false);
   const [mSesAuto, setMSesAuto] = useState(false);
+  const [mSesBatch, setMSesBatch] = useState(false);
   const [editSes, setEditSes] = useState<any>(null);
   const [sortObjects, setSortObjects] = useState("recent");
   const [searchText, setSearchText] = useState("");
@@ -6899,6 +6901,39 @@ export default function AstroTracker() {
       setMSes(false);
       setMSesAuto(false);
       console.log("Session added successfully");
+    },
+    [objects, obj, proj, selectedPanel],
+  );
+
+  const addSessionsBatch = useCallback(
+    (bases: any[]) => {
+      if (!obj || !proj || !bases?.length) return;
+      const stamped = bases.map((b) => ({ ...b, id: uid("ses") }));
+      const newFilters = [...new Set(stamped.map((s) => s.filter || "RGB"))];
+      pendingChangesRef.current++;
+      setObjects(
+        objects.map((o: any) =>
+          o.id !== obj.id
+            ? o
+            : {
+                ...o,
+                projects: o.projects.map((p: any) =>
+                  p.id === proj.id
+                    ? {
+                        ...p,
+                        sessions: [...p.sessions, ...stamped],
+                        panels: {
+                          ...(p.panels || {}),
+                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                        },
+                        filters: [...new Set([...(p.filters || []), ...newFilters])],
+                      }
+                    : p,
+                ),
+              },
+        ),
+      );
+      setMSesBatch(false);
     },
     [objects, obj, proj, selectedPanel],
   );
@@ -11847,6 +11882,9 @@ export default function AstroTracker() {
                 <Btn onClick={() => setMSesAuto(true)}>
                   <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSession')}
                 </Btn>
+                <Btn outline onClick={() => setMSesBatch(true)}>
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión por lotes
+                </Btn>
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
@@ -12943,6 +12981,15 @@ export default function AstroTracker() {
             telescopes={telescopes}
             projectEquipment={(proj as any)?.equipment}
             objectCategory={(obj as any)?.category}
+          />
+        </Modal>
+        <Modal open={mSesBatch} onClose={() => setMSesBatch(false)} title="Nueva sesión por lotes" wide>
+          <FSessionBatch
+            onSubmit={addSessionsBatch}
+            availableFilters={availableFilters}
+            cameras={cameras}
+            telescopes={telescopes}
+            projectEquipment={(proj as any)?.equipment}
           />
         </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
