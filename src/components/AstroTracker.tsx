@@ -7890,11 +7890,14 @@ export default function AstroTracker() {
 
     objects.forEach((obj) => {
       let objExposure = 0;
+      const isSun = (obj as any).id === 'Sol';
       obj.projects.forEach((proj) => {
         proj.sessions.forEach((session: any) => {
           const sessionExposure = ((session.lights || 0) * (session.exposureSec || 0)) / 3600;
-          totalHours += sessionExposure;
-          objExposure += sessionExposure;
+          if (!isSun) {
+            totalHours += sessionExposure;
+            objExposure += sessionExposure;
+          }
           totalLights += session.lights || 0;
           uniqueDates.add(session.date);
           totalSessions++;
@@ -11944,7 +11947,7 @@ export default function AstroTracker() {
                 )}
 
                 {/* 7. Highlights de filtros (ej: "HA/OIII total") */}
-                {(() => {
+                {(obj as any).id !== 'Sol' && (() => {
                   // Calcular horas totales por cada filtro en TODO el proyecto
                   const filterHours: Record<string, number> = {};
                   proj.sessions.forEach((s: any) => {
@@ -12000,7 +12003,7 @@ export default function AstroTracker() {
                 })()}
 
                 {/* 8. Progreso/Objetivo (si no hay paneles) o Horas totales por panel (si hay paneles) */}
-                {(() => {
+                {(obj as any).id !== 'Sol' && (() => {
                   // Highlight de objetivo de horas
                   const goalHours = (proj as any).goalHours;
                   if (!goalHours) return null;
