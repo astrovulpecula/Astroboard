@@ -5863,8 +5863,43 @@ const generatePDFReport = async (
         const range = getYAxisRange(d);
         new Chart(el.getContext('2d'), {
           type: 'bar',
-          data: { labels: ${JSON.stringify(filterData.map((d: any) => d.filter))}, datasets: [{ label: 'Horas', data: d, backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'] }] },
-          options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { min: range.min, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+          data: { labels: ${JSON.stringify(filterData.map((d: any) => d.filter))}, datasets: [{ label: 'Horas', data: d, backgroundColor: ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399'], barPercentage: 0.5, categoryPercentage: 0.6, maxBarThickness: 120 }] },
+          options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, min: 0, max: range.max, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } }, x: { ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } } } }
+        });
+      }
+    }
+    ` : ''}
+
+    ${showFilterEvolution ? `
+    {
+      const el = document.getElementById('filterEvolutionChart');
+      if (el) {
+        const palette = ['#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#34d399', '#facc15', '#f87171', '#38bdf8'];
+        const seriesData = ${JSON.stringify(filterEvolutionSeries)};
+        const filters = ${JSON.stringify(filtersUsedList)};
+        const datasets = filters.map((f, i) => ({
+          label: f,
+          data: seriesData[f] || [],
+          borderColor: palette[i % palette.length],
+          backgroundColor: palette[i % palette.length] + '22',
+          tension: 0.3,
+          fill: false,
+          borderWidth: 2,
+          pointRadius: 3,
+        }));
+        const allVals = datasets.flatMap(ds => ds.data).filter(v => v != null);
+        const range = getYAxisRange(allVals);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: { labels: ${JSON.stringify(filterEvolutionLabels)}, datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } }, title: { display: false } },
+            scales: {
+              y: { beginAtZero: true, min: 0, max: range.max, title: { display: true, text: 'Horas acumuladas', color: chartColor }, ticks: { color: chartColor, font: { size: 10 } }, grid: { color: gridColor } },
+              x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+            }
+          }
         });
       }
     }
