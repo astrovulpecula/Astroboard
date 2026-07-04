@@ -11631,14 +11631,48 @@ export default function AstroTracker() {
                   });
 
                   // Ordenar filtros por horas (descendente) y mostrar todos los que tienen horas
-                  const sortedFilters = Object.entries(filterHours).sort(([, a], [, b]) => b - a);
+                  const filterGoals: Record<string, number> = (proj as any).filterGoalHours || {};
+                  // Combinar filtros con sesiones + filtros con objetivo pero sin sesiones
+                  const allFilterNames = new Set<string>([
+                    ...Object.keys(filterHours),
+                    ...Object.keys(filterGoals).filter((k) => filterGoals[k] > 0),
+                  ]);
+                  const sortedFilters = [...allFilterNames]
+                    .map((name) => [name, filterHours[name] || 0] as [string, number])
+                    .sort(([, a], [, b]) => b - a);
 
-                  return sortedFilters.map(([filterName, seconds]) => (
-                    <Card key={filterName} className="p-4">
-                      <div className="text-sm text-slate-500">{filterName} total</div>
-                      <div className="text-xl font-semibold">{hh(seconds)}</div>
-                    </Card>
-                  ));
+                  return sortedFilters.map(([filterName, seconds]) => {
+                    const goal = filterGoals[filterName];
+                    const currentHours = seconds / 3600;
+                    if (goal && goal > 0) {
+                      const percentage = Math.min(100, (currentHours / goal) * 100);
+                      return (
+                        <Card key={filterName} className="p-4">
+                          <div className="text-sm text-slate-500 mb-2">{filterName} objetivo</div>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xl font-semibold">{percentage.toFixed(0)}%</span>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">
+                                {currentHours.toFixed(1)}h / {goal}h
+                              </span>
+                            </div>
+                            <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-500 transition-all duration-300"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                          </div>
+                        </Card>
+                      );
+                    }
+                    return (
+                      <Card key={filterName} className="p-4">
+                        <div className="text-sm text-slate-500">{filterName} total</div>
+                        <div className="text-xl font-semibold">{hh(seconds)}</div>
+                      </Card>
+                    );
+                  });
                 })()}
 
                 {/* 8. Progreso/Objetivo (si no hay paneles) o Horas totales por panel (si hay paneles) */}
