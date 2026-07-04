@@ -11567,14 +11567,18 @@ export default function AstroTracker() {
               })()}
 
               {/* Visibility Chart Block */}
-              {mainLocation?.coords && obj.id !== "Sol" && (
+              {mainLocation?.coords && (
                 <Card className="p-4 md:p-6">
                   <Collapsible open={visibilitySectionExpanded} onOpenChange={setVisibilitySectionExpanded}>
                     <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
                       <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                       <Eye className="w-5 h-5 text-primary" />
                       <h3 className="text-lg font-semibold">
-                        {language === 'en' ? 'Night Visibility' : 'Visibilidad Nocturna'}
+                        {obj.id === 'Sol'
+                          ? (language === 'en' ? 'Day Visibility' : 'Visibilidad diurna')
+                          : obj.id === 'Luna'
+                            ? (language === 'en' ? 'Night Visibility' : 'Visibilidad nocturna')
+                            : (language === 'en' ? 'Night Visibility' : 'Visibilidad Nocturna')}
                       </h3>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-4">
@@ -11585,7 +11589,7 @@ export default function AstroTracker() {
                         compact={false}
                         language={language}
                         altitudeLimit={minAltitudeLimit}
-                        showToggle={true}
+                        showToggle={(obj as any).category !== 'planetary'}
                       />
                     </CollapsibleContent>
                   </Collapsible>
