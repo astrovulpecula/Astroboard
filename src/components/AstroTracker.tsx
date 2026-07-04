@@ -6690,6 +6690,9 @@ export default function AstroTracker() {
     guideTelescope,
     guideCamera,
     mount,
+    guideTelescopes,
+    guideCameras,
+    mounts,
     userName,
     dateFormat,
     minAltitudeLimit,
@@ -6707,11 +6710,14 @@ export default function AstroTracker() {
       guideTelescope,
       guideCamera,
       mount,
+      guideTelescopes,
+      guideCameras,
+      mounts,
       userName,
       dateFormat,
       minAltitudeLimit,
     };
-  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, userName, dateFormat, minAltitudeLimit]);
+  }, [defaultTheme, jsonPath, cameras, telescopes, mainLocation, locations, guideTelescope, guideCamera, mount, guideTelescopes, guideCameras, mounts, userName, dateFormat, minAltitudeLimit]);
 
 
   // Force cloud sync - used after import to ensure data is saved immediately
