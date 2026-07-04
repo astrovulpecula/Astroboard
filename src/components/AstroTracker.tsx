@@ -6321,6 +6321,9 @@ export default function AstroTracker() {
   const [guideTelescope, setGuideTelescope] = useState<{ name: string; focalLength: string }>({ name: "", focalLength: "" });
   const [guideCamera, setGuideCamera] = useState<string>("");
   const [mount, setMount] = useState<string>("");
+  const [guideTelescopes, setGuideTelescopes] = useState<{ name: string; focalLength: string }[]>([]);
+  const [guideCameras, setGuideCameras] = useState<string[]>([]);
+  const [mounts, setMounts] = useState<string[]>([]);
   const [minAltitudeLimit, setMinAltitudeLimit] = useState<number>(0);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [imageModalSrc, setImageModalSrc] = useState("");
