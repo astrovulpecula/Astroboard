@@ -56,7 +56,7 @@ interface FitsAnalyzerProps {
 }
 
 // Parse FITS header to extract metadata
-async function parseFitsHeader(file: File): Promise<FitsMetadata> {
+export async function parseFitsHeader(file: File): Promise<FitsMetadata> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -172,7 +172,7 @@ async function parseFitsHeader(file: File): Promise<FitsMetadata> {
 }
 
 // Calculate averages from array of metadata
-function calculateAverages(files: FitsMetadata[]): FitsAnalysisResult["averages"] {
+export function calculateAverages(files: FitsMetadata[]): FitsAnalysisResult["averages"] {
   const keys: (keyof FitsMetadata)[] = [
     "mpsas", "cloudCover", "ambientTemp", "skyTemp", 
     "humidity", "dewPoint", "pressure", "wind", "windGust",
