@@ -210,6 +210,29 @@ export function calculatePlanetaryNightVisibility(
   observer: ObserverLocation,
   date: Date = new Date(),
 ): VisibilityResult {
+  return computePlanetaryVisibilityWindow(name, observer, date, 18, 6);
+}
+
+/**
+ * Daytime visibility curve for a planetary body (default 04:00–22:00 same day).
+ * Intended for the Sun.
+ */
+export function calculatePlanetaryDayVisibility(
+  name: PlanetaryBody,
+  observer: ObserverLocation,
+  date: Date = new Date(),
+): VisibilityResult {
+  return computePlanetaryVisibilityWindow(name, observer, date, 4, 22, /*sameDay*/ true);
+}
+
+function computePlanetaryVisibilityWindow(
+  name: PlanetaryBody,
+  observer: ObserverLocation,
+  date: Date,
+  startHour: number,
+  endHour: number,
+  sameDay = false,
+): VisibilityResult {
   const data: AltitudeDataPoint[] = [];
   let maxAltitude = -90;
   let transitTime: Date | null = null;
@@ -218,10 +241,10 @@ export function calculatePlanetaryNightVisibility(
   let wasAbove = false;
 
   const start = new Date(date);
-  start.setHours(18, 0, 0, 0);
+  start.setHours(startHour, 0, 0, 0);
   const end = new Date(start);
-  end.setDate(end.getDate() + 1);
-  end.setHours(6, 0, 0, 0);
+  if (!sameDay) end.setDate(end.getDate() + 1);
+  end.setHours(endHour, 0, 0, 0);
 
   const stepMin = 15;
   const cur = new Date(start);
