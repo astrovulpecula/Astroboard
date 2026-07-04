@@ -1615,6 +1615,34 @@ function FProject({
         </div>
       </div>
 
+      {!isPlanetary && filters.length > 0 && (
+        <div className="grid gap-2">
+          <Label>Objetivo de horas por filtro (opcional)</Label>
+          <div className="grid gap-2">
+            {filters.map((f) => (
+              <div key={f} className="flex items-center gap-2">
+                <span className="text-sm min-w-[6rem] truncate text-slate-700 dark:text-slate-300">{f}</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={filterGoalHours[f] ?? ""}
+                  onChange={(e) =>
+                    setFilterGoalHours((prev) => ({ ...prev, [f]: e.target.value }))
+                  }
+                  className={`${INPUT_CLS} flex-1`}
+                  placeholder={`Horas objetivo ${f}`}
+                />
+                <span className="text-xs text-slate-500">h</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500">
+            Se creará un objetivo de horas independiente por cada filtro. El progreso se mostrará en los highlights de sesiones.
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-3">
         <Label>Equipo</Label>
 
