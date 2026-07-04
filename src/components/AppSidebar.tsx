@@ -32,7 +32,7 @@ export function AppSidebar({ mainSection, setMainSection, theme, labels, onOpenS
 
   return (
     <nav
-      className="w-full pt-4 md:pt-5 pb-2"
+      className="w-full pt-4 md:pt-5 pb-2 hidden md:block"
       aria-label="Navegación principal"
     >
       <div className="max-w-7xl mx-auto px-3 md:px-4">
