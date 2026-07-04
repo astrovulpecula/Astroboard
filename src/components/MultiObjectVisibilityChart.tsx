@@ -41,7 +41,7 @@ interface MultiObjectVisibilityChartProps {
 // Color palette for different objects.
 // NOTE: no color must clash with the altitude-limit line (hsl(45 93% 47%), amber),
 // so amber/yellow tones are intentionally excluded.
-const OBJECT_COLORS = [
+export const OBJECT_COLORS = [
   'hsl(0, 84%, 60%)',   // red
   'hsl(142, 76%, 36%)', // emerald
   'hsl(199, 89%, 48%)', // cyan
