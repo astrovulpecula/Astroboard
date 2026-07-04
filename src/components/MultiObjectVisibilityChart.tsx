@@ -38,18 +38,22 @@ interface MultiObjectVisibilityChartProps {
   title?: string;
 }
 
-// Color palette for different objects
+// Color palette for different objects.
+// NOTE: no color must clash with the altitude-limit line (hsl(45 93% 47%), amber),
+// so amber/yellow tones are intentionally excluded.
 const OBJECT_COLORS = [
+  'hsl(0, 84%, 60%)',   // red
   'hsl(142, 76%, 36%)', // emerald
-  'hsl(346, 77%, 49%)', // rose
   'hsl(199, 89%, 48%)', // cyan
   'hsl(262, 83%, 58%)', // purple
   'hsl(25, 95%, 53%)',  // orange
-  'hsl(47, 96%, 53%)',  // amber
   'hsl(221, 83%, 53%)', // blue
   'hsl(160, 84%, 39%)', // teal
   'hsl(291, 64%, 42%)', // fuchsia
-  'hsl(0, 84%, 60%)',   // red
+  'hsl(346, 77%, 49%)', // rose
+  'hsl(180, 70%, 45%)', // turquoise
+  'hsl(210, 90%, 65%)', // sky
+  'hsl(320, 70%, 55%)', // pink
 ];
 
 export default function MultiObjectVisibilityChart({
