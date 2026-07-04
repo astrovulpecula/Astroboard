@@ -11882,6 +11882,9 @@ export default function AstroTracker() {
                 <Btn onClick={() => setMSesAuto(true)}>
                   <Plus className="w-3 h-3 md:w-4 md:h-4" /> {t('btnNewSession')}
                 </Btn>
+                <Btn outline onClick={() => setMSesBatch(true)}>
+                  <Plus className="w-3 h-3 md:w-4 md:h-4" /> Nueva sesión por lotes
+                </Btn>
               </div>
 
               <div className="overflow-x-auto -mx-3 md:mx-0">
