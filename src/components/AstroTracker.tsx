@@ -13927,6 +13927,21 @@ export default function AstroTracker() {
                     className={INPUT_CLS + " w-48"}
                   />
                 </div>
+                {guideTelescopes.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {guideTelescopes.map((gt, i) => (
+                      <span key={`${gt.name}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {gt.name}{gt.focalLength ? ` (${gt.focalLength}mm)` : ""}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setGuideTelescopes(guideTelescopes.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Cámara guía */}
@@ -13939,6 +13954,21 @@ export default function AstroTracker() {
                   placeholder={t('guideCameraPlaceholderExample')}
                   className={INPUT_CLS}
                 />
+                {guideCameras.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {guideCameras.map((c, i) => (
+                      <span key={`${c}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {c}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setGuideCameras(guideCameras.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Montura */}
@@ -13951,6 +13981,21 @@ export default function AstroTracker() {
                   placeholder={t('mountPlaceholderExample')}
                   className={INPUT_CLS}
                 />
+                {mounts.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {mounts.map((m, i) => (
+                      <span key={`${m}-${i}`} className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        {m}
+                        <button
+                          type="button"
+                          className="text-slate-500 hover:text-red-500"
+                          onClick={() => setMounts(mounts.filter((_, idx) => idx !== i))}
+                          title="Quitar"
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Límite mínimo de altitud */}
