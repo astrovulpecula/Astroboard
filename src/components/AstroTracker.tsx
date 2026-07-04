@@ -5901,6 +5901,7 @@ export default function AstroTracker() {
   const [mProj, setMProj] = useState(false);
   const [mSes, setMSes] = useState(false);
   const [mSesAuto, setMSesAuto] = useState(false);
+  const [mSesBatch, setMSesBatch] = useState(false);
   const [editSes, setEditSes] = useState<any>(null);
   const [sortObjects, setSortObjects] = useState("recent");
   const [searchText, setSearchText] = useState("");
