@@ -13902,6 +13902,55 @@ export default function AstroTracker() {
               </p>
             </div>
 
+            {/* Objetivo de horas por filtro */}
+            {(() => {
+              const projFilters: string[] = Array.isArray((proj as any)?.filters)
+                ? [...new Set<string>((proj as any).filters.filter((f: any) => typeof f === "string" && f.trim()))]
+                : [];
+              if (projFilters.length === 0) return null;
+              const currentGoals: Record<string, number | string> =
+                projectSettingsData.filterGoalHours !== undefined
+                  ? projectSettingsData.filterGoalHours
+                  : (proj as any)?.filterGoalHours || {};
+              return (
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Objetivo de horas por filtro</label>
+                  <div className="grid gap-2">
+                    {projFilters.map((f) => (
+                      <div key={f} className="flex items-center gap-2">
+                        <span className="text-sm min-w-[6rem] truncate text-slate-700 dark:text-slate-300">{f}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={
+                            currentGoals[f] !== undefined && currentGoals[f] !== null
+                              ? currentGoals[f] === "" ? "" : String(currentGoals[f])
+                              : ""
+                          }
+                          onChange={(e) =>
+                            setProjectSettingsData({
+                              ...projectSettingsData,
+                              filterGoalHours: {
+                                ...currentGoals,
+                                [f]: e.target.value === "" ? "" : parseFloat(e.target.value),
+                              },
+                            })
+                          }
+                          className={`${INPUT_CLS} flex-1`}
+                          placeholder={`Horas objetivo ${f}`}
+                        />
+                        <span className="text-xs text-slate-500">h</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Cada filtro tiene su propio objetivo. El progreso aparecerá en los highlights de sesiones.
+                  </p>
+                </div>
+              );
+            })()}
+
             <div className="grid gap-2">
               <label className="text-sm font-medium">Fecha de inicio del proyecto</label>
               <input
