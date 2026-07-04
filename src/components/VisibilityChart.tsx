@@ -390,7 +390,7 @@ export default function VisibilityChart({
           </div>
 
           {/* Moon Legend */}
-          <div className="flex justify-center">
+          {!isSun && <div className="flex justify-center">
             <button
               type="button"
               onClick={toggleMoon}
@@ -410,7 +410,7 @@ export default function VisibilityChart({
                 {language === 'en' ? 'Moon' : 'Luna'}
               </span>
             </button>
-          </div>
+          </div>}
 
           <p className="text-xs text-muted-foreground text-center">
             {language === 'en'
