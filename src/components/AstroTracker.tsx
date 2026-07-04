@@ -1067,10 +1067,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     if (value.trim().length > 0) {
       try {
         const results = await searchCelestialObjects(value.trim());
-        console.log("Resultados de búsqueda:", results);
-        if (results.length > 0) {
-          console.log("Primer resultado:", results[0]);
-        }
         setSuggestions(results);
         setShowSuggestions(results.length > 0);
         setSelectedIndex(-1);
@@ -1086,11 +1082,6 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
   };
 
   const handleSelectSuggestion = (obj: any) => {
-    console.log("Objeto seleccionado:", obj);
-    console.log("nameEsp:", obj.nameEsp);
-    console.log("constellation:", obj.constellation);
-    console.log("objectType:", obj.objectType);
-    
     setId(obj.code || "");
     setCommonName(obj.nameEsp || "");
     setConstellation(obj.constellation || "");
@@ -7262,8 +7253,6 @@ export default function AstroTracker() {
 
   const addSes = useCallback(
     (base: any) => {
-      console.log("addSes called with:", { base, obj, proj, selectedPanel });
-
       if (!obj || !proj) {
         console.error("Cannot add session: obj or proj is null", { obj, proj });
         return;
@@ -7271,8 +7260,6 @@ export default function AstroTracker() {
 
       const s = { ...base, id: uid("ses") };
       const sessionFilter = s.filter || "RGB";
-
-      console.log("Adding session:", s);
 
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
@@ -7300,7 +7287,6 @@ export default function AstroTracker() {
       );
       setMSes(false);
       setMSesAuto(false);
-      console.log("Session added successfully");
     },
     [objects, obj, proj, selectedPanel],
   );
