@@ -94,6 +94,7 @@ import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
+import FSessionBatch from "@/components/FSessionBatch";
 import FireCaptureAnalyzer, { FireCaptureAnalysisResult } from "@/components/FireCaptureAnalyzer";
 import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
