@@ -13387,6 +13387,49 @@ export default function AstroTracker() {
             guideTelescope={guideTelescope}
             guideCamera={guideCamera}
             mount={mount}
+            guideTelescopes={guideTelescopes}
+            guideCameras={guideCameras}
+            mounts={mounts}
+            onAddCamera={(name) => {
+              pendingChangesRef.current++;
+              setCameras((prev) => {
+                const clean = prev.filter((c) => c.trim() !== "");
+                if (clean.some((c) => c.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...clean, name];
+              });
+            }}
+            onAddTelescope={(name) => {
+              pendingChangesRef.current++;
+              setTelescopes((prev) => {
+                const clean = prev.filter((t) => t.name.trim() !== "");
+                if (clean.some((t) => t.name.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...clean, { name, focalLength: "" }];
+              });
+            }}
+            onAddGuideTelescope={(name) => {
+              pendingChangesRef.current++;
+              setGuideTelescopes((prev) => {
+                if (prev.some((t) => t.name.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, { name, focalLength: "" }];
+              });
+              if (!guideTelescope?.name) setGuideTelescope({ name, focalLength: "" });
+            }}
+            onAddGuideCamera={(name) => {
+              pendingChangesRef.current++;
+              setGuideCameras((prev) => {
+                if (prev.some((c) => c.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, name];
+              });
+              if (!guideCamera) setGuideCamera(name);
+            }}
+            onAddMount={(name) => {
+              pendingChangesRef.current++;
+              setMounts((prev) => {
+                if (prev.some((m) => m.trim().toLowerCase() === name.toLowerCase())) return prev;
+                return [...prev, name];
+              });
+              if (!mount) setMount(name);
+            }}
             initialData={plannedFromPlan ? {
               name: plannedFromPlan.name,
               encuadreImage: plannedFromPlan.encuadreImage,
