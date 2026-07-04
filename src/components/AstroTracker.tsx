@@ -6483,6 +6483,18 @@ export default function AstroTracker() {
         if (settings.guideTelescope) setGuideTelescope(settings.guideTelescope);
         if (settings.guideCamera) setGuideCamera(settings.guideCamera);
         if (settings.mount) setMount(settings.mount);
+        if (Array.isArray(settings.guideTelescopes)) setGuideTelescopes(settings.guideTelescopes);
+        else if (settings.guideTelescope?.name) setGuideTelescopes([settings.guideTelescope]);
+        if (Array.isArray(settings.guideCameras)) setGuideCameras(settings.guideCameras);
+        else if (settings.guideCamera) setGuideCameras([settings.guideCamera]);
+        if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
+        else if (settings.mount) setMounts([settings.mount]);
+        if (Array.isArray(settings.guideTelescopes)) setGuideTelescopes(settings.guideTelescopes);
+        else if (settings.guideTelescope?.name) setGuideTelescopes([settings.guideTelescope]);
+        if (Array.isArray(settings.guideCameras)) setGuideCameras(settings.guideCameras);
+        else if (settings.guideCamera) setGuideCameras([settings.guideCamera]);
+        if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
+        else if (settings.mount) setMounts([settings.mount]);
         if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
         if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
       };
@@ -8340,6 +8352,12 @@ export default function AstroTracker() {
                       if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                       if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                       if (settingsData.mount) setMount(settingsData.mount);
+                      if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                      else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                      if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                      else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                      if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                      else if (settingsData.mount) setMounts([settingsData.mount]);
                       if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                       if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                       if (settingsData.defaultTheme) {
@@ -13636,6 +13654,12 @@ export default function AstroTracker() {
                         if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                         if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                         if (settingsData.mount) setMount(settingsData.mount);
+                        if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                        else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                        if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                        else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                        if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                        else if (settingsData.mount) setMounts([settingsData.mount]);
                         if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                         
                         const settings = {
@@ -14685,6 +14709,12 @@ export default function AstroTracker() {
                     if (settingsData.guideTelescope) setGuideTelescope(settingsData.guideTelescope);
                     if (settingsData.guideCamera) setGuideCamera(settingsData.guideCamera);
                     if (settingsData.mount) setMount(settingsData.mount);
+                    if (Array.isArray(settingsData.guideTelescopes)) setGuideTelescopes(settingsData.guideTelescopes);
+                    else if (settingsData.guideTelescope?.name) setGuideTelescopes([settingsData.guideTelescope]);
+                    if (Array.isArray(settingsData.guideCameras)) setGuideCameras(settingsData.guideCameras);
+                    else if (settingsData.guideCamera) setGuideCameras([settingsData.guideCamera]);
+                    if (Array.isArray(settingsData.mounts)) setMounts(settingsData.mounts);
+                    else if (settingsData.mount) setMounts([settingsData.mount]);
                     if (settingsData.dateFormat) setDateFormat(settingsData.dateFormat);
                     if (settingsData.minAltitudeLimit !== undefined) setMinAltitudeLimit(settingsData.minAltitudeLimit);
                     if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
