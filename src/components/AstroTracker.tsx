@@ -100,7 +100,7 @@ import FitsCharts from "@/components/FitsCharts";
 import PHD2Analyzer, { PHD2AnalysisResult } from "@/components/PHD2Analyzer";
 import PHD2Charts from "@/components/PHD2Charts";
 import VisibilityChart from "@/components/VisibilityChart";
-import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
+import MultiObjectVisibilityChart, { OBJECT_COLORS } from "@/components/MultiObjectVisibilityChart";
 import AstronomicalContext from "@/components/dashboard/AstronomicalContext";
 import { Eye } from "lucide-react";
 import { Pause } from "lucide-react";
@@ -8951,17 +8951,10 @@ export default function AstroTracker() {
                         
                         {/* Object visibility bars */}
                         {plannedProjects.map((planned, idx) => {
-                          // Signal-based colors - each signal type has a unique color
-                          const signalColors: Record<string, string> = {
-                            "RGB": "bg-emerald-500",
-                            "LRGB": "bg-blue-500",
-                            "HA": "bg-rose-500",
-                            "OIII": "bg-cyan-500",
-                            "HA + OIII": "bg-purple-500",
-                            "RGB+HA/OIII": "bg-amber-500",
-                          };
-                          const barColor = planned.signal ? signalColors[planned.signal] || "bg-slate-400" : "bg-slate-400";
-                          
+                          // Per-object color, shared with the nocturnal visibility chart
+                          // (same index into OBJECT_COLORS as MultiObjectVisibilityChart)
+                          const barColor = OBJECT_COLORS[idx % OBJECT_COLORS.length];
+
                           // Calculate which months are visible
                           const getVisibleMonths = () => {
                             if (planned.isCircumpolar) {
@@ -9008,10 +9001,9 @@ export default function AstroTracker() {
                                     <div
                                       key={monthIdx}
                                       className={`h-4 rounded-sm transition-colors relative overflow-hidden ${
-                                        isVisible
-                                          ? barColor
-                                          : "bg-muted-foreground/20"
+                                        isVisible ? "" : "bg-muted-foreground/20"
                                       }`}
+                                      style={isVisible ? { backgroundColor: barColor } : undefined}
                                       title={isVisible ? `${planned.objectId}${isZenith ? " (Cenit)" : ""}` : ""}
                                     >
                                       {isZenith && (
