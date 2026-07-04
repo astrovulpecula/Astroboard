@@ -1672,6 +1672,10 @@ function FProject({
       <div className="grid gap-3">
         <Label>Equipo</Label>
 
+        {savedNotice && (
+          <div className="text-xs text-emerald-600 dark:text-emerald-400">{savedNotice}</div>
+        )}
+
         <div className="grid gap-3">
           <label className="grid gap-1">
             <Label>Cámara</Label>
@@ -1694,12 +1698,31 @@ function FProject({
               <option value="Otro">+ Añadir nueva cámara</option>
             </select>
             {showCustomCamera && (
-              <input
-                value={customCamera}
-                onChange={(e) => setCustomCamera(e.target.value)}
-                className={`${INPUT_CLS} mt-2`}
-                placeholder="Nombre de la nueva cámara..."
-              />
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customCamera}
+                  onChange={(e) => setCustomCamera(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva cámara..."
+                />
+                {onAddCamera && customCamera.trim() && !cameras.some((c) => c.trim().toLowerCase() === customCamera.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customCamera.trim();
+                      onAddCamera(name);
+                      setSelectedCamera(name);
+                      setShowCustomCamera(false);
+                      setCustomCamera("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
             )}
           </label>
 
@@ -1724,43 +1747,169 @@ function FProject({
               <option value="Otro">+ Añadir nuevo telescopio</option>
             </select>
             {showCustomTelescope && (
-              <input
-                value={customTelescope}
-                onChange={(e) => setCustomTelescope(e.target.value)}
-                className={`${INPUT_CLS} mt-2`}
-                placeholder="Nombre del nuevo telescopio..."
-              />
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customTelescope}
+                  onChange={(e) => setCustomTelescope(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre del nuevo telescopio..."
+                />
+                {onAddTelescope && customTelescope.trim() && !telescopes.some((t) => t.name.trim().toLowerCase() === customTelescope.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customTelescope.trim();
+                      onAddTelescope(name);
+                      setSelectedTelescope(name);
+                      setShowCustomTelescope(false);
+                      setCustomTelescope("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
             )}
           </label>
 
           <label className="grid gap-1">
             <Label>Telescopio guía</Label>
-            <input
+            <select
               value={selectedGuideTelescope}
-              onChange={(e) => setSelectedGuideTelescope(e.target.value)}
+              onChange={(e) => {
+                setSelectedGuideTelescope(e.target.value);
+                setShowCustomGuideTelescope(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin telescopio guía</option>
+              {guideTelescopes.filter((t) => t.name.trim()).map((t) => (
+                <option key={t.name} value={t.name}>
+                  {t.name} {t.focalLength ? `(${t.focalLength}mm)` : ""}
+                </option>
+              ))}
+              <option value="Otro">+ Añadir nuevo telescopio guía</option>
+            </select>
+            {showCustomGuideTelescope && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customGuideTelescope}
+                  onChange={(e) => setCustomGuideTelescope(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre del nuevo telescopio guía..."
+                />
+                {onAddGuideTelescope && customGuideTelescope.trim() && !guideTelescopes.some((t) => t.name.trim().toLowerCase() === customGuideTelescope.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customGuideTelescope.trim();
+                      onAddGuideTelescope(name);
+                      setSelectedGuideTelescope(name);
+                      setShowCustomGuideTelescope(false);
+                      setCustomGuideTelescope("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <label className="grid gap-1">
             <Label>Cámara guía</Label>
-            <input
+            <select
               value={selectedGuideCamera}
-              onChange={(e) => setSelectedGuideCamera(e.target.value)}
+              onChange={(e) => {
+                setSelectedGuideCamera(e.target.value);
+                setShowCustomGuideCamera(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin cámara guía</option>
+              {guideCameras.filter((c) => c.trim()).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="Otro">+ Añadir nueva cámara guía</option>
+            </select>
+            {showCustomGuideCamera && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customGuideCamera}
+                  onChange={(e) => setCustomGuideCamera(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva cámara guía..."
+                />
+                {onAddGuideCamera && customGuideCamera.trim() && !guideCameras.some((c) => c.trim().toLowerCase() === customGuideCamera.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customGuideCamera.trim();
+                      onAddGuideCamera(name);
+                      setSelectedGuideCamera(name);
+                      setShowCustomGuideCamera(false);
+                      setCustomGuideCamera("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
 
           <label className="grid gap-1">
             <Label>Montura</Label>
-            <input
+            <select
               value={selectedMount}
-              onChange={(e) => setSelectedMount(e.target.value)}
+              onChange={(e) => {
+                setSelectedMount(e.target.value);
+                setShowCustomMount(e.target.value === "Otro");
+              }}
               className={INPUT_CLS}
-              placeholder="Opcional"
-            />
+            >
+              <option value="">Sin montura</option>
+              {mounts.filter((m) => m.trim()).map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+              <option value="Otro">+ Añadir nueva montura</option>
+            </select>
+            {showCustomMount && (
+              <div className="grid gap-2 mt-2">
+                <input
+                  value={customMount}
+                  onChange={(e) => setCustomMount(e.target.value)}
+                  className={INPUT_CLS}
+                  placeholder="Nombre de la nueva montura..."
+                />
+                {onAddMount && customMount.trim() && !mounts.some((m) => m.trim().toLowerCase() === customMount.trim().toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = customMount.trim();
+                      onAddMount(name);
+                      setSelectedMount(name);
+                      setShowCustomMount(false);
+                      setCustomMount("");
+                      setSavedNotice(`"${name}" añadido a tu equipo`);
+                      setTimeout(() => setSavedNotice(null), 2500);
+                    }}
+                    className="self-start text-xs px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition"
+                  >
+                    + Añadirlo a tu equipo
+                  </button>
+                )}
+              </div>
+            )}
           </label>
         </div>
       </div>
