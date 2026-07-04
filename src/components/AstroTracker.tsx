@@ -1400,6 +1400,13 @@ function FProject({
   const [selectedGuideCamera, setSelectedGuideCamera] = useState(guideCamera || "");
   const [selectedGuideTelescope, setSelectedGuideTelescope] = useState(guideTelescope?.name || "");
   const [selectedMount, setSelectedMount] = useState(mount || "");
+  const [customGuideTelescope, setCustomGuideTelescope] = useState("");
+  const [customGuideCamera, setCustomGuideCamera] = useState("");
+  const [customMount, setCustomMount] = useState("");
+  const [showCustomGuideTelescope, setShowCustomGuideTelescope] = useState(false);
+  const [showCustomGuideCamera, setShowCustomGuideCamera] = useState(false);
+  const [showCustomMount, setShowCustomMount] = useState(false);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
   const [encuadreImage] = useState(initialData?.encuadreImage || null);
 
   const handleAddFilter = () => {
