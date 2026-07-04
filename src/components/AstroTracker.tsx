@@ -9294,12 +9294,12 @@ export default function AstroTracker() {
                           return (
                             <Card
                               key={planned.id}
-                              className="p-4 cursor-pointer hover:shadow-md transition-shadow h-full flex flex-col"
+                              className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                               onClick={() => setSelectedPlannedId(planned.id)}
                             >
-                              <div className="flex flex-col h-full gap-3">
+                              <div className="space-y-3">
                                 {/* Thumbnail - image on top */}
-                                <div className="relative flex-shrink-0">
+                                <div className="relative">
                                   {thumbnailImage ? (
                                     <img
                                       src={thumbnailImage}
@@ -9327,7 +9327,7 @@ export default function AstroTracker() {
                                   </button>
                                 </div>
                                 {/* Content - text below */}
-                                <div className="flex flex-col flex-1 space-y-2">
+                                <div className="space-y-2">
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0">
                                       <p className="text-lg font-bold truncate">{planned.objectId}</p>
@@ -9350,7 +9350,7 @@ export default function AstroTracker() {
                                   
                                   {/* Compact Visibility Chart */}
                                   {mainLocation?.coords && (
-                                    <div className="mt-auto pt-3 border-t border-border">
+                                    <div className="mt-3 pt-3 border-t border-border">
                                       <VisibilityChart
                                         objectCode={planned.objectId}
                                         coordinates={mainLocation.coords}
