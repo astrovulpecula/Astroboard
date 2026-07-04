@@ -4879,6 +4879,20 @@ const FinalImageVersions = ({
       const next = [...versions, url];
       setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
+      // Preserve the previous latest version's rating under its version key,
+      // then reset the new latest version's rating to 0. This keeps every
+      // version's rating independent while the gallery (which reads the
+      // legacy `finalProject` rating) tracks the newest version.
+      if (onVersionRatingChange && previous.length > 0) {
+        const prevLastIdx = previous.length - 1;
+        const preservedRating = versionRatings && Object.prototype.hasOwnProperty.call(versionRatings, prevLastIdx)
+          ? versionRatings[prevLastIdx]
+          : rating || 0;
+        if (preservedRating > 0) {
+          onVersionRatingChange(prevLastIdx, preservedRating);
+        }
+        onVersionRatingChange(next.length - 1, 0);
+      }
       setActiveIdx(next.length - 1);
       if (next.length >= 2) setCompareIdx(Math.max(0, next.length - 2));
     } catch (error) {
