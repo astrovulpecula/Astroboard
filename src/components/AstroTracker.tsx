@@ -103,6 +103,7 @@ import VisibilityChart from "@/components/VisibilityChart";
 import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
 import AstronomicalContext from "@/components/dashboard/AstronomicalContext";
 import { Eye } from "lucide-react";
+import { Pause } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
