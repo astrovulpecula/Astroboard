@@ -4807,6 +4807,8 @@ const FinalImageVersions = ({
   upImgs,
   rating,
   onRatingChange,
+  versionRatings,
+  onVersionRatingChange,
   theme,
   onImageClick,
 }: {
@@ -4814,6 +4816,8 @@ const FinalImageVersions = ({
   upImgs: (patch: any) => Promise<void> | void;
   rating?: number;
   onRatingChange?: (rating: number) => void;
+  versionRatings?: Record<number, number>;
+  onVersionRatingChange?: (versionIdx: number, rating: number) => void;
   theme: string;
   onImageClick?: (src: string) => void;
 }) => {
@@ -4835,7 +4839,19 @@ const FinalImageVersions = ({
   const [sliderPct, setSliderPct] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [currentRating, setCurrentRating] = useState(rating || 0);
+  // Rating shown reflects the active version. When per-version ratings are
+  // provided we use them; otherwise fall back to the legacy single rating
+  // (which represents the latest version).
+  const getActiveVersionRating = (idx: number, total: number) => {
+    if (versionRatings && Object.prototype.hasOwnProperty.call(versionRatings, idx)) {
+      return versionRatings[idx] || 0;
+    }
+    if (idx === total - 1) return rating || 0;
+    return 0;
+  };
+  const [currentRating, setCurrentRating] = useState(
+    getActiveVersionRating(Math.max(0, propVersions.length - 1), propVersions.length),
+  );
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const draggingRef = React.useRef(false);
 
@@ -4844,8 +4860,9 @@ const FinalImageVersions = ({
   }, [propVersions]);
 
   React.useEffect(() => {
-    setCurrentRating(rating || 0);
-  }, [rating]);
+    setCurrentRating(getActiveVersionRating(activeIdx, versions.length));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rating, versionRatings, activeIdx, versions.length]);
 
   React.useEffect(() => {
     if (activeIdx > versions.length - 1) setActiveIdx(Math.max(0, versions.length - 1));
@@ -4917,7 +4934,11 @@ const FinalImageVersions = ({
   const handleRatingClick = (newRating: number) => {
     const finalRating = newRating === currentRating ? 0 : newRating;
     setCurrentRating(finalRating);
-    onRatingChange?.(finalRating);
+    if (onVersionRatingChange) {
+      onVersionRatingChange(activeIdx, finalRating);
+    } else {
+      onRatingChange?.(finalRating);
+    }
   };
 
   const updateSliderFromEvent = (clientX: number) => {
