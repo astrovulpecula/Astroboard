@@ -12983,6 +12983,15 @@ export default function AstroTracker() {
             objectCategory={(obj as any)?.category}
           />
         </Modal>
+        <Modal open={mSesBatch} onClose={() => setMSesBatch(false)} title="Nueva sesión por lotes" wide>
+          <FSessionBatch
+            onSubmit={addSessionsBatch}
+            availableFilters={availableFilters}
+            cameras={cameras}
+            telescopes={telescopes}
+            projectEquipment={(proj as any)?.equipment}
+          />
+        </Modal>
         <Modal open={!!editSes} onClose={() => setEditSes(null)} title={t('editSessionTitle')} wide>
           {editSes && (
             <FSession
