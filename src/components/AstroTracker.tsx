@@ -103,6 +103,7 @@ import VisibilityChart from "@/components/VisibilityChart";
 import MultiObjectVisibilityChart from "@/components/MultiObjectVisibilityChart";
 import AstronomicalContext from "@/components/dashboard/AstronomicalContext";
 import { Eye } from "lucide-react";
+import { Pause } from "lucide-react";
 
 const uid = (p = "id") => `${p}_${Math.random().toString(36).slice(2, 10)}`;
 const INPUT_CLS = "border rounded-xl px-3 py-2 bg-white/80 dark:bg-slate-900/60 text-sm md:text-base";
@@ -9687,13 +9688,20 @@ export default function AstroTracker() {
                       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
                     });
                     
-                    // Objetos con al menos un proyecto activo o pausado
-                    const activeObjects = sortedObjects.filter((o) => 
-                      o.projects.some((p: any) => p.status === "active" || p.status === "paused")
+                    // Objetos con al menos un proyecto activo
+                    const activeObjects = sortedObjects.filter((o) =>
+                      o.projects.some((p: any) => p.status === "active")
                     );
-                    
+
+                    // Objetos sin proyecto activo pero con al menos uno pausado
+                    const pausedObjects = sortedObjects.filter((o) =>
+                      !o.projects.some((p: any) => p.status === "active") &&
+                      o.projects.some((p: any) => p.status === "paused")
+                    );
+
                     // Objetos donde todos los proyectos están cerrados/terminados
-                    const archivedObjects = sortedObjects.filter((o) => 
+                    const archivedObjects = sortedObjects.filter((o) =>
+                      o.projects.length > 0 &&
                       o.projects.every((p: any) => p.status === "closed" || p.status === "completed")
                     );
 
@@ -9806,6 +9814,25 @@ export default function AstroTracker() {
                           </Collapsible>
                         )}
 
+                        {/* Sección de Proyectos Pausados - Colapsable */}
+                        {pausedObjects.length > 0 && (
+                          <Collapsible defaultOpen={true}>
+                            <CollapsibleTrigger className="flex items-center gap-2 w-full text-left group">
+                              <ChevronRight className="w-5 h-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                              <h4 className="text-lg font-semibold flex items-center gap-2">
+                                <Pause className="w-5 h-5 text-yellow-500" />
+                                {language === 'en' ? 'Paused Projects' : 'Proyectos Pausados'}
+                                <span className="text-sm font-normal text-muted-foreground">({pausedObjects.length})</span>
+                              </h4>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-3">
+                              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+                                {pausedObjects.map(renderObjectCard)}
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
+
                         {/* Sección de Archivo - Colapsable */}
                         {archivedObjects.length > 0 && (
                           <Collapsible defaultOpen={true}>
@@ -9826,7 +9853,7 @@ export default function AstroTracker() {
                         )}
 
                         {/* Si no hay objetos activos ni archivados (solo por si acaso) */}
-                        {activeObjects.length === 0 && archivedObjects.length === 0 && (
+                        {activeObjects.length === 0 && pausedObjects.length === 0 && archivedObjects.length === 0 && (
                           <Card className="p-8 text-center">
                             <Telescope className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
                             <p className="text-muted-foreground">
