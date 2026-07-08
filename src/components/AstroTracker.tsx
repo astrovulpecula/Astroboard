@@ -4322,35 +4322,54 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   const data = useMemo(
     () =>
       s.map((x, index) => {
-        const moonData = calculateMoonPhase(x.date);
+        // Session duration derived from lights × exposureSec (fallback to 4h)
+        const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
+        // Anchor the session around local astronomical midnight of the session date
+        const midnight = new Date(`${x.date}T00:00:00`);
+        const start = new Date(midnight.getTime() - (durationSec * 1000) / 2);
+        const end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
+        const startIll = calculateMoonPhase(start).illumination;
+        const endIll = calculateMoonPhase(end).illumination;
+        const midIll = calculateMoonPhase(midnight).illumination;
+        const avg = (startIll + endIll + midIll) / 3;
         return {
           session: index + 1,
-          illumination: moonData.illumination,
+          date: x.date,
+          illumination: Number(avg.toFixed(1)),
+          startIll: Number(startIll.toFixed(1)),
+          endIll: Number(endIll.toFixed(1)),
+          minIll: Number(Math.min(startIll, endIll, midIll).toFixed(1)),
+          maxIll: Number(Math.max(startIll, endIll, midIll).toFixed(1)),
+          durationH: Number((durationSec / 3600).toFixed(2)),
         };
       }),
     [s],
   );
 
-  const avgIllumination = useMemo(() => {
-    const validValues = data.map((d) => d.illumination);
-    return validValues.length > 0 ? validValues.reduce((a, b) => a + b, 0) / validValues.length : 0;
+  const stats = useMemo(() => {
+    if (!data.length) return { avg: 0, min: 0, max: 0 };
+    const vals = data.map((d) => d.illumination);
+    return {
+      avg: vals.reduce((a, b) => a + b, 0) / vals.length,
+      min: Math.min(...data.map((d) => d.minIll)),
+      max: Math.max(...data.map((d) => d.maxIll)),
+    };
   }, [data]);
 
   const yDomain = useMemo(() => {
     if (!data.length) return [0, 100];
-    const illuminations = data.map((d) => d.illumination);
-    const min = Math.floor(Math.min(...illuminations));
-    const max = Math.ceil(Math.max(...illuminations));
-    return [min, max];
+    const all = data.flatMap((d) => [d.minIll, d.maxIll]);
+    return [Math.max(0, Math.floor(Math.min(...all)) - 1), Math.min(100, Math.ceil(Math.max(...all)) + 1)];
   }, [data]);
 
   if (!data.length) return null;
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
-      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-        % medio de iluminación:{" "}
-        <span className="font-semibold text-slate-900 dark:text-slate-100">{avgIllumination.toFixed(1)}%</span>
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2 flex flex-wrap gap-x-4 gap-y-1">
+        <span>Media: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.avg.toFixed(1)}%</span></span>
+        <span>Mínima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.min.toFixed(1)}%</span></span>
+        <span>Máxima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.max.toFixed(1)}%</span></span>
       </div>
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
@@ -4359,7 +4378,17 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
           <YAxis tickMargin={8} domain={yDomain} stroke="#ffffff" tickFormatter={(value) => `${value}%`} />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
-            formatter={(v) => `${v}%`}
+            labelFormatter={(label, payload) => {
+              const p = payload?.[0]?.payload;
+              return p ? `Sesión ${label} · ${p.date} (${p.durationH}h)` : `Sesión ${label}`;
+            }}
+            formatter={(_v, _name, props) => {
+              const p = props.payload;
+              return [
+                `Media ${p.illumination}% · Inicio ${p.startIll}% · Fin ${p.endIll}% · Min ${p.minIll}% · Max ${p.maxIll}%`,
+                "Iluminación lunar",
+              ];
+            }}
           />
           <Line
             type="monotone"
@@ -4367,7 +4396,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             stroke="#fbbf24"
             strokeWidth={3}
             dot={{ fill: "#fbbf24", r: 4 }}
-            name="Iluminación lunar"
+            name="Iluminación media sesión"
           />
         </LineChart>
       </SessionChartArea>
