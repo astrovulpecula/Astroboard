@@ -6143,6 +6143,10 @@ const generatePDFReport = async (
     // Moon illumination
     makeLineChart('moonChart', ${JSON.stringify(moonIlluminationData.map((d: any) => d.date))}, ${JSON.stringify(moonIlluminationData.map((d: any) => d.illumination))}, 'Iluminación %', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
 
+    ${moonFiltersUsed.length > 1 ? moonFiltersUsed.map((f, idx) => `
+    makeLineChart('moonChart_f${idx}', ${JSON.stringify(moonByFilter[f].map((d: any) => d.date))}, ${JSON.stringify(moonByFilter[f].map((d: any) => d.illumination))}, 'Iluminación % — ${f}', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
+    `).join('\n') : ''}
+
     ${mpsasData.length > 0 ? `
     makeLineChart('mpsasChart', ${JSON.stringify(mpsasData.map((d: any) => d.date))}, ${JSON.stringify(mpsasData.map((d: any) => d.mpsas))}, 'MPSAS', '#34d399', 'rgba(52, 211, 153, 0.1)');
     ` : ''}
