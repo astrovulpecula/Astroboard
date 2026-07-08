@@ -5783,7 +5783,14 @@ const generatePDFReport = async (
 
   const moonIlluminationData = proj.sessions.map((s: any, i: number) => {
     const moonData = calculateMoonPhase(s.date);
-    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination };
+    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination, filter: s.filter || '-' };
+  });
+  const moonFiltersUsed: string[] = Array.from(
+    new Set(proj.sessions.map((s: any) => s.filter).filter(Boolean))
+  ) as string[];
+  const moonByFilter: Record<string, any[]> = {};
+  moonFiltersUsed.forEach((f) => {
+    moonByFilter[f] = moonIlluminationData.filter((d: any) => d.filter === f);
   });
 
   const mpsasData = proj.sessions.map((s: any, i: number) => ({
