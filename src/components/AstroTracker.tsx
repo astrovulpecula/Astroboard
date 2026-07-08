@@ -4407,8 +4407,8 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
           sesion: i + 1,
           date: s.date,
           dateFormatted: formatDateDisplay(s.date, dateFormat),
-          aceptados: s.acceptedLights || 0,
-          rechazados: s.rejectedLights || 0,
+          aceptados: Number(s.lights) || 0,
+          rechazados: Number(s.rejectedLights) || 0,
         })),
     [sessions, dateFormat],
   );
