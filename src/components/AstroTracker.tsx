@@ -4317,44 +4317,56 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
-const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
-  const s = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(
-    () =>
-      s.map((x, index) => {
-        // Session duration derived from lights × exposureSec (fallback to 4h)
-        const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
-        // Anchor the session around local astronomical midnight of the session date
-        const midnight = new Date(`${x.date}T00:00:00`);
-        const start = new Date(midnight.getTime() - (durationSec * 1000) / 2);
-        const end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
-        const startIll = calculateMoonPhase(start).illumination;
-        const endIll = calculateMoonPhase(end).illumination;
-        const midIll = calculateMoonPhase(midnight).illumination;
-        const avg = (startIll + endIll + midIll) / 3;
-        return {
-          session: index + 1,
-          date: x.date,
-          illumination: Number(avg.toFixed(1)),
-          startIll: Number(startIll.toFixed(1)),
-          endIll: Number(endIll.toFixed(1)),
-          minIll: Number(Math.min(startIll, endIll, midIll).toFixed(1)),
-          maxIll: Number(Math.max(startIll, endIll, midIll).toFixed(1)),
-          durationH: Number((durationSec / 3600).toFixed(2)),
-        };
-      }),
-    [s],
-  );
+const buildMoonIlluminationDatum = (x: any, index: number) => {
+  const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
+  const midnight = new Date(`${x.date}T00:00:00`);
+  const start = new Date(midnight.getTime() - (durationSec * 1000) / 2);
+  const end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
+  const startIll = calculateMoonPhase(start).illumination;
+  const endIll = calculateMoonPhase(end).illumination;
+  const midIll = calculateMoonPhase(midnight).illumination;
+  const avg = (startIll + endIll + midIll) / 3;
+  return {
+    session: index + 1,
+    date: x.date,
+    filter: x.filter || "-",
+    illumination: Number(avg.toFixed(1)),
+    startIll: Number(startIll.toFixed(1)),
+    endIll: Number(endIll.toFixed(1)),
+    minIll: Number(Math.min(startIll, endIll, midIll).toFixed(1)),
+    maxIll: Number(Math.max(startIll, endIll, midIll).toFixed(1)),
+    durationH: Number((durationSec / 3600).toFixed(2)),
+  };
+};
 
-  const stats = useMemo(() => {
-    if (!data.length) return { avg: 0, min: 0, max: 0 };
-    const vals = data.map((d) => d.illumination);
-    return {
-      avg: vals.reduce((a, b) => a + b, 0) / vals.length,
-      min: Math.min(...data.map((d) => d.minIll)),
-      max: Math.max(...data.map((d) => d.maxIll)),
-    };
-  }, [data]);
+const computeMoonStats = (data: ReturnType<typeof buildMoonIlluminationDatum>[]) => {
+  if (!data.length) return { avg: 0, min: 0, max: 0 };
+  const vals = data.map((d) => d.illumination);
+  return {
+    avg: vals.reduce((a, b) => a + b, 0) / vals.length,
+    min: Math.min(...data.map((d) => d.minIll)),
+    max: Math.max(...data.map((d) => d.maxIll)),
+  };
+};
+
+const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
+  const sorted = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
+  const allData = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
+  const filters = useMemo(() => {
+    const set = new Set<string>();
+    for (const d of allData) if (d.filter && d.filter !== "-") set.add(d.filter);
+    return Array.from(set);
+  }, [allData]);
+
+  const [activeFilter, setActiveFilter] = useState<string>("__all__");
+
+  const data = useMemo(() => {
+    if (activeFilter === "__all__") return allData;
+    return allData.filter((d) => d.filter === activeFilter).map((d, i) => ({ ...d, session: i + 1 }));
+  }, [allData, activeFilter]);
+
+  const stats = useMemo(() => computeMoonStats(data), [data]);
+  const globalStats = useMemo(() => computeMoonStats(allData), [allData]);
 
   const yDomain = useMemo(() => {
     if (!data.length) return [0, 100];
@@ -4362,7 +4374,11 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
     return [Math.max(0, Math.floor(Math.min(...all)) - 1), Math.min(100, Math.ceil(Math.max(...all)) + 1)];
   }, [data]);
 
-  if (!data.length) return null;
+  if (!allData.length) return null;
+  const filterChips: { key: string; label: string }[] = [
+    { key: "__all__", label: "Todas" },
+    ...filters.map((f) => ({ key: f, label: f })),
+  ];
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
@@ -4370,8 +4386,29 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         <span>Media: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.avg.toFixed(1)}%</span></span>
         <span>Mínima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.min.toFixed(1)}%</span></span>
         <span>Máxima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.max.toFixed(1)}%</span></span>
+        <span>Global proyecto: <span className="font-semibold text-slate-900 dark:text-slate-100">{globalStats.avg.toFixed(1)}%</span></span>
       </div>
-      <SessionChartArea>
+      <div className="flex gap-3">
+        {filters.length > 0 && (
+          <div className="flex flex-col gap-1.5 shrink-0 pt-1">
+            {filterChips.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setActiveFilter(f.key)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors text-left ${
+                  activeFilter === f.key
+                    ? "bg-primary/20 border-primary text-primary-foreground"
+                    : "bg-slate-800/40 border-slate-700 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -4380,7 +4417,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(label, payload) => {
               const p = payload?.[0]?.payload;
-              return p ? `Sesión ${label} · ${p.date} (${p.durationH}h)` : `Sesión ${label}`;
+              return p ? `Sesión ${label} · ${p.date} (${p.durationH}h) · ${p.filter}` : `Sesión ${label}`;
             }}
             formatter={(_v, _name, props) => {
               const p = props.payload;
@@ -4399,7 +4436,9 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             name="Iluminación media sesión"
           />
         </LineChart>
-      </SessionChartArea>
+          </SessionChartArea>
+        </div>
+      </div>
     </Card>
   );
 };
@@ -5744,7 +5783,14 @@ const generatePDFReport = async (
 
   const moonIlluminationData = proj.sessions.map((s: any, i: number) => {
     const moonData = calculateMoonPhase(s.date);
-    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination };
+    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination, filter: s.filter || '-' };
+  });
+  const moonFiltersUsed: string[] = Array.from(
+    new Set(proj.sessions.map((s: any) => s.filter).filter(Boolean))
+  ) as string[];
+  const moonByFilter: Record<string, any[]> = {};
+  moonFiltersUsed.forEach((f) => {
+    moonByFilter[f] = moonIlluminationData.filter((d: any) => d.filter === f);
   });
 
   const mpsasData = proj.sessions.map((s: any, i: number) => ({
@@ -5854,6 +5900,19 @@ const generatePDFReport = async (
       <canvas id="moonChart"></canvas>
     </div>
   </div>`;
+
+  // Per-filter moon illumination charts (if more than one filter is used)
+  if (moonFiltersUsed.length > 1) {
+    moonFiltersUsed.forEach((f, idx) => {
+      html += `
+  <div class="section">
+    <h2 class="section-title">Iluminación Lunar — Filtro ${f}</h2>
+    <div class="chart-container">
+      <canvas id="moonChart_f${idx}"></canvas>
+    </div>
+  </div>`;
+    });
+  }
 
   // Sky quality (MPSAS)
   if (mpsasData.length > 0) {
@@ -6083,6 +6142,10 @@ const generatePDFReport = async (
 
     // Moon illumination
     makeLineChart('moonChart', ${JSON.stringify(moonIlluminationData.map((d: any) => d.date))}, ${JSON.stringify(moonIlluminationData.map((d: any) => d.illumination))}, 'Iluminación %', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
+
+    ${moonFiltersUsed.length > 1 ? moonFiltersUsed.map((f, idx) => `
+    makeLineChart('moonChart_f${idx}', ${JSON.stringify(moonByFilter[f].map((d: any) => d.date))}, ${JSON.stringify(moonByFilter[f].map((d: any) => d.illumination))}, 'Iluminación % — ${f}', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
+    `).join('\n') : ''}
 
     ${mpsasData.length > 0 ? `
     makeLineChart('mpsasChart', ${JSON.stringify(mpsasData.map((d: any) => d.date))}, ${JSON.stringify(mpsasData.map((d: any) => d.mpsas))}, 'MPSAS', '#34d399', 'rgba(52, 211, 153, 0.1)');
