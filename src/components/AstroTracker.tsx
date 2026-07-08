@@ -5901,6 +5901,19 @@ const generatePDFReport = async (
     </div>
   </div>`;
 
+  // Per-filter moon illumination charts (if more than one filter is used)
+  if (moonFiltersUsed.length > 1) {
+    moonFiltersUsed.forEach((f, idx) => {
+      html += `
+  <div class="section">
+    <h2 class="section-title">Iluminación Lunar — Filtro ${f}</h2>
+    <div class="chart-container">
+      <canvas id="moonChart_f${idx}"></canvas>
+    </div>
+  </div>`;
+    });
+  }
+
   // Sky quality (MPSAS)
   if (mpsasData.length > 0) {
     html += `
