@@ -4403,11 +4403,6 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
       sessions
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date))
-        .filter(
-          (s) =>
-            (s.acceptedLights !== undefined && s.acceptedLights !== null) ||
-            (s.rejectedLights !== undefined && s.rejectedLights !== null),
-        )
         .map((s, i) => ({
           sesion: i + 1,
           date: s.date,
