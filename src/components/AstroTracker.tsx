@@ -4267,7 +4267,7 @@ const SNRChart = ({ sessions }: { sessions: any[] }) => {
             formatter={(v) => (typeof v === "number" ? v.toFixed(2) : v)}
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
           />
-          <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot />
+          <Line type="monotone" dataKey="snr" stroke="#3b82f6" strokeWidth={3} dot connectNulls />
         </LineChart>
       </SessionChartArea>
     </Card>
@@ -4329,9 +4329,9 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
             formatter={(v) => (typeof v === "number" ? v.toFixed(2) : v)}
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
           />
-          <Line type="monotone" dataKey="r" stroke="#ef4444" strokeWidth={2.5} dot name="R" />
-          <Line type="monotone" dataKey="g" stroke="#22c55e" strokeWidth={2.5} dot name="G" />
-          <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2.5} dot name="B" />
+          <Line type="monotone" dataKey="r" stroke="#ef4444" strokeWidth={2.5} dot name="R" connectNulls />
+          <Line type="monotone" dataKey="g" stroke="#22c55e" strokeWidth={2.5} dot name="G" connectNulls />
+          <Line type="monotone" dataKey="b" stroke="#3b82f6" strokeWidth={2.5} dot name="B" connectNulls />
           <Legend />
         </LineChart>
       </SessionChartArea>
