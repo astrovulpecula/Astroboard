@@ -3362,18 +3362,7 @@ function FSession({
       )}
 
       {!isPlanetary && (
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <Label>{t('sessionFormLightsAccepted')}</Label>
-          <input
-            type="number"
-            value={acceptedLights}
-            min={0}
-            onChange={(e) => setAcceptedLights(e.target.value)}
-            className={INPUT_CLS}
-            placeholder={t('sessionFormOptional')}
-          />
-        </label>
+      <div className="grid gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsRejected')}</Label>
           <input
@@ -3919,18 +3908,7 @@ function FSessionAutomated({
 
       {/* Accepted/Rejected lights - left blank */}
       {!isPlanetary && (
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <Label>{t('sessionFormLightsAccepted')}</Label>
-          <input
-            type="number"
-            value={acceptedLights}
-            min={0}
-            onChange={(e) => setAcceptedLights(e.target.value)}
-            className={INPUT_CLS}
-            placeholder={t('sessionFormOptional')}
-          />
-        </label>
+      <div className="grid gap-3">
         <label className="grid gap-1">
           <Label>{t('sessionFormLightsRejected')}</Label>
           <input
@@ -4407,8 +4385,8 @@ const AcceptedRejectedChart = ({ sessions, dateFormat = "DD/MM/YYYY" }: { sessio
           sesion: i + 1,
           date: s.date,
           dateFormatted: formatDateDisplay(s.date, dateFormat),
-          aceptados: s.acceptedLights || 0,
-          rechazados: s.rejectedLights || 0,
+          aceptados: Number(s.lights) || 0,
+          rechazados: Number(s.rejectedLights) || 0,
         })),
     [sessions, dateFormat],
   );
