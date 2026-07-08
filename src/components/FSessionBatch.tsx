@@ -431,11 +431,7 @@ export default function FSessionBatch({
         </label>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
-        <label className="grid gap-1">
-          <span className="text-sm text-slate-600 dark:text-slate-400">Lights aceptados</span>
-          <input value={g.acceptedLights} onChange={(e) => updateGroup(current, { acceptedLights: e.target.value })} className={INPUT_CLS} placeholder="opcional" />
-        </label>
+      <div className="grid gap-3">
         <label className="grid gap-1">
           <span className="text-sm text-slate-600 dark:text-slate-400">Lights rechazados</span>
           <input value={g.rejectedLights} onChange={(e) => updateGroup(current, { rejectedLights: e.target.value })} className={INPUT_CLS} placeholder="opcional" />
