@@ -12896,6 +12896,16 @@ export default function AstroTracker() {
                         dateStr: new Date(projCreated).toLocaleDateString(),
                       });
                     }
+                    const logEntries = Array.isArray((proj as any)?.activityLog) ? (proj as any).activityLog : [];
+                    logEntries.forEach((entry: any) => {
+                      const ts = parseTimestampSafe(entry?.ts) || Number(entry?.ts) || 0;
+                      if (!entry?.label || !ts) return;
+                      items.push({
+                        ts,
+                        label: String(entry.label),
+                        dateStr: new Date(ts).toLocaleString(),
+                      });
+                    });
                     items.sort((a, b) => b.ts - a.ts);
                     if (items.length === 0) {
                       return (
