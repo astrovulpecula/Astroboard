@@ -6099,11 +6099,11 @@ const generatePDFReport = async (
     makeBarChart('exposureNightChart', ${JSON.stringify(exposurePerNight.map((d: any) => d.date))}, ${JSON.stringify(exposurePerNight.map((d: any) => parseFloat(d.hours.toFixed(2))))}, 'Horas por noche', '#fb923c');
 
     // Moon illumination
+    ${moonFiltersUsed.length <= 1 ? `
     makeLineChart('moonChart', ${JSON.stringify(moonIlluminationData.map((d: any) => d.date))}, ${JSON.stringify(moonIlluminationData.map((d: any) => d.illumination))}, 'Iluminación %', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
-
-    ${moonFiltersUsed.length > 1 ? moonFiltersUsed.map((f, idx) => `
+    ` : moonFiltersUsed.map((f, idx) => `
     makeLineChart('moonChart_f${idx}', ${JSON.stringify(moonByFilter[f].map((d: any) => d.date))}, ${JSON.stringify(moonByFilter[f].map((d: any) => d.illumination))}, 'Iluminación % — ${f}', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
-    `).join('\n') : ''}
+    `).join('\n')}
 
     ${mpsasData.length > 0 ? `
     makeLineChart('mpsasChart', ${JSON.stringify(mpsasData.map((d: any) => d.date))}, ${JSON.stringify(mpsasData.map((d: any) => d.mpsas))}, 'MPSAS', '#34d399', 'rgba(52, 211, 153, 0.1)');
