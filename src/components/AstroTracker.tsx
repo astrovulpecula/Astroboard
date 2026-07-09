@@ -12472,8 +12472,13 @@ export default function AstroTracker() {
                     <tbody>
                       {filtered.map((s: any, i: number, a: any[]) => {
                         const m = mean(s);
-                        const pm = a[i - 1] ? mean(a[i - 1]) : null;
-                        const inc = Number.isFinite(m) && Number.isFinite(pm) ? +(m - pm).toFixed(3) : 0;
+                        // Walk back to the most recent previous session that has SNR data
+                        let pm: number | null = null;
+                        for (let j = i - 1; j >= 0; j--) {
+                          const prev = mean(a[j]);
+                          if (Number.isFinite(prev)) { pm = prev as number; break; }
+                        }
+                        const inc = Number.isFinite(m) && Number.isFinite(pm) ? +((m as number) - (pm as number)).toFixed(3) : 0;
                         const cumulativeLightsVal = a
                           .slice(0, i + 1)
                           .reduce((acc, sess) => acc + (sess.lights || 0), 0);
