@@ -4351,22 +4351,8 @@ const computeMoonStats = (data: ReturnType<typeof buildMoonIlluminationDatum>[])
 
 const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   const sorted = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const allData = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
-  const filters = useMemo(() => {
-    const set = new Set<string>();
-    for (const d of allData) if (d.filter && d.filter !== "-") set.add(d.filter);
-    return Array.from(set);
-  }, [allData]);
-
-  const [activeFilter, setActiveFilter] = useState<string>("__all__");
-
-  const data = useMemo(() => {
-    if (activeFilter === "__all__") return allData;
-    return allData.filter((d) => d.filter === activeFilter).map((d, i) => ({ ...d, session: i + 1 }));
-  }, [allData, activeFilter]);
-
+  const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
   const stats = useMemo(() => computeMoonStats(data), [data]);
-  const globalStats = useMemo(() => computeMoonStats(allData), [allData]);
 
   const yDomain = useMemo(() => {
     if (!data.length) return [0, 100];
@@ -4374,11 +4360,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
     return [Math.max(0, Math.floor(Math.min(...all)) - 1), Math.min(100, Math.ceil(Math.max(...all)) + 1)];
   }, [data]);
 
-  if (!allData.length) return null;
-  const filterChips: { key: string; label: string }[] = [
-    { key: "__all__", label: "Todas" },
-    ...filters.map((f) => ({ key: f, label: f })),
-  ];
+  if (!data.length) return null;
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
       <SectionTitle icon={Moon} title="Iluminación lunar por sesión" />
@@ -4386,29 +4368,8 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         <span>Media: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.avg.toFixed(1)}%</span></span>
         <span>Mínima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.min.toFixed(1)}%</span></span>
         <span>Máxima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.max.toFixed(1)}%</span></span>
-        <span>Global proyecto: <span className="font-semibold text-slate-900 dark:text-slate-100">{globalStats.avg.toFixed(1)}%</span></span>
       </div>
-      <div className="flex gap-3">
-        {filters.length > 0 && (
-          <div className="flex flex-col gap-1.5 shrink-0 pt-1">
-            {filterChips.map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setActiveFilter(f.key)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors text-left ${
-                  activeFilter === f.key
-                    ? "bg-primary/20 border-primary text-primary-foreground"
-                    : "bg-slate-800/40 border-slate-700 text-slate-300 hover:bg-slate-800"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <SessionChartArea>
+      <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
           <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
@@ -4436,9 +4397,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             name="Iluminación media sesión"
           />
         </LineChart>
-          </SessionChartArea>
-        </div>
-      </div>
+      </SessionChartArea>
     </Card>
   );
 };
