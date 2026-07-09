@@ -6612,6 +6612,8 @@ export default function AstroTracker() {
     streaks: true,
     cameraUsage: true,
     telescopeUsage: true,
+    highestMoonIllum: true,
+    lowestMoonIllum: true,
   });
   const [showStatsConfig, setShowStatsConfig] = useState(false);
   
