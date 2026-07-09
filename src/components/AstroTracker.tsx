@@ -10286,6 +10286,8 @@ export default function AstroTracker() {
                             streaks: true,
                             cameraUsage: true,
                             telescopeUsage: true,
+                            highestMoonIllum: true,
+                            lowestMoonIllum: true,
                           })}
                           className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                         >
