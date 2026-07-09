@@ -4318,14 +4318,37 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
 };
 
 const buildMoonIlluminationDatum = (x: any, index: number) => {
-  const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
-  const midnight = new Date(`${x.date}T00:00:00`);
-  const start = new Date(midnight.getTime() - (durationSec * 1000) / 2);
-  const end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
+  // Prefer real timestamps from FITS DATE-OBS headers (first/last frame).
+  const stamps: number[] = Array.isArray(x?.fitsAnalysis?.files)
+    ? x.fitsAnalysis.files
+        .map((f: any) => (f?.timestamp ? new Date(f.timestamp).getTime() : NaN))
+        .filter((t: number) => Number.isFinite(t))
+    : [];
+  let start: Date;
+  let end: Date;
+  let source: "fits" | "estimated" = "estimated";
+  if (stamps.length >= 2) {
+    start = new Date(Math.min(...stamps));
+    end = new Date(Math.max(...stamps));
+    // If last frame is only its start-of-exposure, extend by one exposure.
+    const expSec = Number(x.exposureSec) || 0;
+    if (expSec > 0) end = new Date(end.getTime() + expSec * 1000);
+    source = "fits";
+  } else {
+    const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
+    // Anchor at local astronomical midnight of the session date.
+    const midnight = new Date(`${x.date}T00:00:00`);
+    start = new Date(midnight.getTime() - (durationSec * 1000) / 2);
+    end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
+  }
+  const durationSec = Math.max(60, (end.getTime() - start.getTime()) / 1000);
+  const mid = new Date((start.getTime() + end.getTime()) / 2);
   const startIll = calculateMoonPhase(start).illumination;
   const endIll = calculateMoonPhase(end).illumination;
-  const midIll = calculateMoonPhase(midnight).illumination;
+  const midIll = calculateMoonPhase(mid).illumination;
   const avg = (startIll + endIll + midIll) / 3;
+  const fmtHM = (d: Date) =>
+    `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return {
     session: index + 1,
     date: x.date,
@@ -4336,6 +4359,9 @@ const buildMoonIlluminationDatum = (x: any, index: number) => {
     minIll: Number(Math.min(startIll, endIll, midIll).toFixed(1)),
     maxIll: Number(Math.max(startIll, endIll, midIll).toFixed(1)),
     durationH: Number((durationSec / 3600).toFixed(2)),
+    startTime: fmtHM(start),
+    endTime: fmtHM(end),
+    source,
   };
 };
 
