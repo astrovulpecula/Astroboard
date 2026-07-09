@@ -6125,14 +6125,6 @@ const generatePDFReport = async (
     </div>`;
   }
 
-  html += `
-    <div class="footer">
-      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-      <p style="margin-top: 0.5rem;">AstroBoard - Astronomy Tracker</p>
-    </div>
-  </div>
-  `;
-
   // Build activity feed (mirror of on-screen "Actividad" section)
   {
     type ActivityItem = { ts: number; label: string; dateStr: string };
@@ -6193,6 +6185,11 @@ const generatePDFReport = async (
   }
 
   html += `
+    <div class="footer">
+      <p>Reporte generado el ${new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+      <p style="margin-top: 0.5rem;">AstroBoard - Astronomy Tracker</p>
+    </div>
+  </div>
 
   <script>
     const chartColor = '${theme.textPrimary}';
