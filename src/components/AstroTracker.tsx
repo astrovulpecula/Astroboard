@@ -8388,6 +8388,8 @@ export default function AstroTracker() {
       totalNights,
       totalSessions,
       maxExposureObj,
+      highestMoonIllumProject,
+      lowestMoonIllumProject,
       currentStreak,
       maxStreak,
       cameraCounts,
