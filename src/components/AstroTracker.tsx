@@ -278,13 +278,12 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
   if (JSON.stringify(prev.chartVisibility || {}) !== JSON.stringify(next.chartVisibility || {})) {
     out.push("Se cambió la visibilidad de las gráficas");
   }
-  if ((prev.numPanels || 1) !== (next.numPanels || 1)) {
-    out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
-  }
   const prevPanelsCount = prev?.panels ? Object.keys(prev.panels).length : 0;
   const nextPanelsCount = next?.panels ? Object.keys(next.panels).length : 0;
   if (prevPanelsCount !== nextPanelsCount) {
     out.push(`Se cambió el número de paneles: ${prevPanelsCount || 1} → ${nextPanelsCount || 1}`);
+  } else if ((prev.numPanels || 0) !== (next.numPanels || 0) && (prev.numPanels || next.numPanels)) {
+    out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
   }
   if ((prev.notes || "") !== (next.notes || "")) out.push("Se actualizaron las notas del proyecto");
   if (JSON.stringify(prev.googleCoords || null) !== JSON.stringify(next.googleCoords || null)) {
