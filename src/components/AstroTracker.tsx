@@ -4420,9 +4420,9 @@ const computeMoonStats = (data: ReturnType<typeof buildMoonIlluminationDatum>[])
   };
 };
 
-const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
+const MoonIlluminationChart = ({ sessions, projectCoords }: { sessions: any[]; projectCoords?: string | null }) => {
   const sorted = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
+  const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i, projectCoords)), [sorted, projectCoords]);
   const stats = useMemo(() => computeMoonStats(data), [data]);
   const globalStats = stats;
 
