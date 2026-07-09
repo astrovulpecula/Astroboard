@@ -10297,6 +10297,24 @@ export default function AstroTracker() {
                           />
                           <span className="text-sm">{t('highlightTelescopeUsage')}</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.highestMoonIllum}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, highestMoonIllum: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{t('metricHighestMoonIllum')}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.lowestMoonIllum}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, lowestMoonIllum: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{t('metricLowestMoonIllum')}</span>
+                        </label>
                       </div>
                       <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button
