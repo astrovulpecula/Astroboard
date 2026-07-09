@@ -233,8 +233,8 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
     focuser: "Enfocador",
   };
   Object.entries(equipmentFields).forEach(([k, label]) => {
-    const a = prev[k] || "";
-    const b = next[k] || "";
+    const a = prev?.[k] ?? prev?.equipment?.[k] ?? "";
+    const b = next?.[k] ?? next?.equipment?.[k] ?? "";
     if (a !== b) out.push(`Se actualizó el equipo (${label}): ${a || "—"} → ${b || "—"}`);
   });
   if ((prev.status || "") !== (next.status || "")) {
@@ -242,6 +242,30 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
   }
   if ((prev.name || "") !== (next.name || "")) {
     out.push(`Se renombró el proyecto: "${prev.name || "—"}" → "${next.name || "—"}"`);
+  }
+  if ((prev.description || "") !== (next.description || "")) {
+    out.push("Se actualizó la descripción del proyecto");
+  }
+  if ((prev.location || "") !== (next.location || "")) {
+    out.push(`Se actualizó el lugar del proyecto: ${prev.location || "—"} → ${next.location || "—"}`);
+  }
+  if ((prev.projectType || "") !== (next.projectType || "")) {
+    out.push(`Se cambió el tipo de proyecto: ${prev.projectType || "—"} → ${next.projectType || "—"}`);
+  }
+  if ((prev.startDate || "") !== (next.startDate || "")) {
+    out.push(`Se actualizó la fecha de inicio: ${prev.startDate || "—"} → ${next.startDate || "—"}`);
+  }
+  if ((prev.endDate || "") !== (next.endDate || "")) {
+    out.push(`Se actualizó la fecha de fin: ${prev.endDate || "—"} → ${next.endDate || "—"}`);
+  }
+  if ((prev.completedDate || "") !== (next.completedDate || "")) {
+    out.push("Se actualizó la fecha de finalización");
+  }
+  if ((prev.goalHours ?? "") !== (next.goalHours ?? "")) {
+    out.push(`Se actualizó el objetivo total de horas: ${prev.goalHours ?? "—"} → ${next.goalHours ?? "—"}`);
+  }
+  if (JSON.stringify(prev.filterGoalHours || {}) !== JSON.stringify(next.filterGoalHours || {})) {
+    out.push("Se actualizaron los objetivos de horas por filtro");
   }
   const prevFilters = Array.isArray(prev.filters) ? [...prev.filters].sort() : [];
   const nextFilters = Array.isArray(next.filters) ? [...next.filters].sort() : [];
@@ -256,6 +280,11 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
   }
   if ((prev.numPanels || 1) !== (next.numPanels || 1)) {
     out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
+  }
+  const prevPanelsCount = prev?.panels ? Object.keys(prev.panels).length : 0;
+  const nextPanelsCount = next?.panels ? Object.keys(next.panels).length : 0;
+  if (prevPanelsCount !== nextPanelsCount) {
+    out.push(`Se cambió el número de paneles: ${prevPanelsCount || 1} → ${nextPanelsCount || 1}`);
   }
   if ((prev.notes || "") !== (next.notes || "")) out.push("Se actualizaron las notas del proyecto");
   if (JSON.stringify(prev.googleCoords || null) !== JSON.stringify(next.googleCoords || null)) {
