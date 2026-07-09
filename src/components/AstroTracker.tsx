@@ -6719,7 +6719,7 @@ export default function AstroTracker() {
         if (Array.isArray(settings.mounts)) setMounts(settings.mounts);
         else if (settings.mount) setMounts([settings.mount]);
         if (settings.minAltitudeLimit !== undefined) setMinAltitudeLimit(settings.minAltitudeLimit);
-        if (settings.visibleHighlights) setVisibleHighlights(settings.visibleHighlights);
+        if (settings.visibleHighlights) setVisibleHighlights((prev) => ({ ...prev, ...settings.visibleHighlights }));
       };
 
       // Try to load from cloud first if enabled
