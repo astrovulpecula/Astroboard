@@ -5851,17 +5851,16 @@ const generatePDFReport = async (
     </div>
   </div>`;
 
-  // Moon illumination
-  html += `
+  // Moon illumination — aggregate only when there are no per-filter charts to show
+  if (moonFiltersUsed.length <= 1) {
+    html += `
   <div class="section">
     <h2 class="section-title">Iluminación Lunar por Sesión</h2>
     <div class="chart-container">
       <canvas id="moonChart"></canvas>
     </div>
   </div>`;
-
-  // Per-filter moon illumination charts (if more than one filter is used)
-  if (moonFiltersUsed.length > 1) {
+  } else {
     moonFiltersUsed.forEach((f, idx) => {
       html += `
   <div class="section">
