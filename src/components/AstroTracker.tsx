@@ -6131,6 +6131,68 @@ const generatePDFReport = async (
       <p style="margin-top: 0.5rem;">AstroBoard - Astronomy Tracker</p>
     </div>
   </div>
+  `;
+
+  // Build activity feed (mirror of on-screen "Actividad" section)
+  {
+    type ActivityItem = { ts: number; label: string; dateStr: string };
+    const items: ActivityItem[] = [];
+    const sessionsArr: any[] = Array.isArray((proj as any)?.sessions) ? (proj as any).sessions : [];
+    const sortedSes = sessionsArr.slice().sort((a: any, b: any) =>
+      String(a.date || "").localeCompare(String(b.date || ""))
+    );
+    sortedSes.forEach((s: any, idx: number) => {
+      const ts = parseDateSafe(s.date)?.getTime?.() || parseTimestampSafe(s.createdAt) || 0;
+      if (ts > 0) {
+        items.push({ ts, label: `Se añadió la sesión #${idx + 1}`, dateStr: formatDateDisplay(s.date, dateFormat) });
+      }
+    });
+    const images: any = (proj as any)?.images || {};
+    const versions: any[] = Array.isArray(images.finalProjectVersions) ? images.finalProjectVersions : [];
+    const versionTs: any[] = Array.isArray(images.finalProjectVersionTimestamps) ? images.finalProjectVersionTimestamps : [];
+    versions.forEach((src: any, i: number) => {
+      if (typeof src !== "string" || !src) return;
+      const ts =
+        parseTimestampSafe(versionTs[i]) ||
+        extractUploadTimestampFromImageSrc(src) ||
+        (i === versions.length - 1 ? parseTimestampSafe(images.finalProjectUpdatedAt) : 0);
+      if (ts > 0) items.push({ ts, label: `Se subió la imagen final (versión ${i + 1})`, dateStr: new Date(ts).toLocaleDateString() });
+    });
+    if ((!versions || versions.length === 0) && typeof images.finalProject === "string" && images.finalProject) {
+      const ts = parseTimestampSafe(images.finalProjectUpdatedAt) || extractUploadTimestampFromImageSrc(images.finalProject);
+      if (ts > 0) items.push({ ts, label: "Se subió la imagen final", dateStr: new Date(ts).toLocaleDateString() });
+    }
+    const projCreated = parseTimestampSafe((proj as any)?.createdAt);
+    if (projCreated > 0) items.push({ ts: projCreated, label: "Se creó el proyecto", dateStr: new Date(projCreated).toLocaleDateString() });
+    const logEntries: any[] = Array.isArray((proj as any)?.activityLog) ? (proj as any).activityLog : [];
+    logEntries.forEach((entry: any) => {
+      const ts = parseTimestampSafe(entry?.ts) || Number(entry?.ts) || 0;
+      if (!entry?.label || !ts) return;
+      items.push({ ts, label: String(entry.label), dateStr: new Date(ts).toLocaleString() });
+    });
+    items.sort((a, b) => b.ts - a.ts);
+    if (items.length > 0) {
+      html += `
+    <div class="section">
+      <h2 class="section-title">Actividad</h2>
+      <table>
+        <thead>
+          <tr><th style="width: 30%;">Fecha</th><th>Evento</th></tr>
+        </thead>
+        <tbody>
+          ${items.map(it => `
+            <tr>
+              <td>${escapeHtml(it.dateStr)}</td>
+              <td>${escapeHtml(it.label)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+  }
+
+  html += `
 
   <script>
     const chartColor = '${theme.textPrimary}';
