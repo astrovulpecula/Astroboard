@@ -233,8 +233,8 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
     focuser: "Enfocador",
   };
   Object.entries(equipmentFields).forEach(([k, label]) => {
-    const a = prev[k] || "";
-    const b = next[k] || "";
+    const a = prev?.[k] ?? prev?.equipment?.[k] ?? "";
+    const b = next?.[k] ?? next?.equipment?.[k] ?? "";
     if (a !== b) out.push(`Se actualizó el equipo (${label}): ${a || "—"} → ${b || "—"}`);
   });
   if ((prev.status || "") !== (next.status || "")) {
@@ -242,6 +242,30 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
   }
   if ((prev.name || "") !== (next.name || "")) {
     out.push(`Se renombró el proyecto: "${prev.name || "—"}" → "${next.name || "—"}"`);
+  }
+  if ((prev.description || "") !== (next.description || "")) {
+    out.push("Se actualizó la descripción del proyecto");
+  }
+  if ((prev.location || "") !== (next.location || "")) {
+    out.push(`Se actualizó el lugar del proyecto: ${prev.location || "—"} → ${next.location || "—"}`);
+  }
+  if ((prev.projectType || "") !== (next.projectType || "")) {
+    out.push(`Se cambió el tipo de proyecto: ${prev.projectType || "—"} → ${next.projectType || "—"}`);
+  }
+  if ((prev.startDate || "") !== (next.startDate || "")) {
+    out.push(`Se actualizó la fecha de inicio: ${prev.startDate || "—"} → ${next.startDate || "—"}`);
+  }
+  if ((prev.endDate || "") !== (next.endDate || "")) {
+    out.push(`Se actualizó la fecha de fin: ${prev.endDate || "—"} → ${next.endDate || "—"}`);
+  }
+  if ((prev.completedDate || "") !== (next.completedDate || "")) {
+    out.push("Se actualizó la fecha de finalización");
+  }
+  if ((prev.goalHours ?? "") !== (next.goalHours ?? "")) {
+    out.push(`Se actualizó el objetivo total de horas: ${prev.goalHours ?? "—"} → ${next.goalHours ?? "—"}`);
+  }
+  if (JSON.stringify(prev.filterGoalHours || {}) !== JSON.stringify(next.filterGoalHours || {})) {
+    out.push("Se actualizaron los objetivos de horas por filtro");
   }
   const prevFilters = Array.isArray(prev.filters) ? [...prev.filters].sort() : [];
   const nextFilters = Array.isArray(next.filters) ? [...next.filters].sort() : [];
@@ -254,7 +278,11 @@ const diffProjectForActivity = (prev: any, next: any): string[] => {
   if (JSON.stringify(prev.chartVisibility || {}) !== JSON.stringify(next.chartVisibility || {})) {
     out.push("Se cambió la visibilidad de las gráficas");
   }
-  if ((prev.numPanels || 1) !== (next.numPanels || 1)) {
+  const prevPanelsCount = prev?.panels ? Object.keys(prev.panels).length : 0;
+  const nextPanelsCount = next?.panels ? Object.keys(next.panels).length : 0;
+  if (prevPanelsCount !== nextPanelsCount) {
+    out.push(`Se cambió el número de paneles: ${prevPanelsCount || 1} → ${nextPanelsCount || 1}`);
+  } else if ((prev.numPanels || 0) !== (next.numPanels || 0) && (prev.numPanels || next.numPanels)) {
     out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
   }
   if ((prev.notes || "") !== (next.notes || "")) out.push("Se actualizaron las notas del proyecto");
@@ -6095,6 +6123,65 @@ const generatePDFReport = async (
         </tbody>
       </table>
     </div>`;
+  }
+
+  // Build activity feed (mirror of on-screen "Actividad" section)
+  {
+    type ActivityItem = { ts: number; label: string; dateStr: string };
+    const items: ActivityItem[] = [];
+    const sessionsArr: any[] = Array.isArray((proj as any)?.sessions) ? (proj as any).sessions : [];
+    const sortedSes = sessionsArr.slice().sort((a: any, b: any) =>
+      String(a.date || "").localeCompare(String(b.date || ""))
+    );
+    sortedSes.forEach((s: any, idx: number) => {
+      const ts = parseDateSafe(s.date)?.getTime?.() || parseTimestampSafe(s.createdAt) || 0;
+      if (ts > 0) {
+        items.push({ ts, label: `Se añadió la sesión #${idx + 1}`, dateStr: formatDateDisplay(s.date, dateFormat) });
+      }
+    });
+    const images: any = (proj as any)?.images || {};
+    const versions: any[] = Array.isArray(images.finalProjectVersions) ? images.finalProjectVersions : [];
+    const versionTs: any[] = Array.isArray(images.finalProjectVersionTimestamps) ? images.finalProjectVersionTimestamps : [];
+    versions.forEach((src: any, i: number) => {
+      if (typeof src !== "string" || !src) return;
+      const ts =
+        parseTimestampSafe(versionTs[i]) ||
+        extractUploadTimestampFromImageSrc(src) ||
+        (i === versions.length - 1 ? parseTimestampSafe(images.finalProjectUpdatedAt) : 0);
+      if (ts > 0) items.push({ ts, label: `Se subió la imagen final (versión ${i + 1})`, dateStr: new Date(ts).toLocaleDateString() });
+    });
+    if ((!versions || versions.length === 0) && typeof images.finalProject === "string" && images.finalProject) {
+      const ts = parseTimestampSafe(images.finalProjectUpdatedAt) || extractUploadTimestampFromImageSrc(images.finalProject);
+      if (ts > 0) items.push({ ts, label: "Se subió la imagen final", dateStr: new Date(ts).toLocaleDateString() });
+    }
+    const projCreated = parseTimestampSafe((proj as any)?.createdAt);
+    if (projCreated > 0) items.push({ ts: projCreated, label: "Se creó el proyecto", dateStr: new Date(projCreated).toLocaleDateString() });
+    const logEntries: any[] = Array.isArray((proj as any)?.activityLog) ? (proj as any).activityLog : [];
+    logEntries.forEach((entry: any) => {
+      const ts = parseTimestampSafe(entry?.ts) || Number(entry?.ts) || 0;
+      if (!entry?.label || !ts) return;
+      items.push({ ts, label: String(entry.label), dateStr: new Date(ts).toLocaleString() });
+    });
+    items.sort((a, b) => b.ts - a.ts);
+    if (items.length > 0) {
+      html += `
+    <div class="section">
+      <h2 class="section-title">Actividad</h2>
+      <table>
+        <thead>
+          <tr><th style="width: 30%;">Fecha</th><th>Evento</th></tr>
+        </thead>
+        <tbody>
+          ${items.map(it => `
+            <tr>
+              <td>${escapeHtml(it.dateStr)}</td>
+              <td>${escapeHtml(it.label)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
   }
 
   html += `
