@@ -5927,26 +5927,20 @@ const generatePDFReport = async (
     </div>
   </div>`;
 
-  // Moon illumination — aggregate only when there are no per-filter charts to show
-  if (moonFiltersUsed.length <= 1) {
+  // Moon illumination — always render one chart per filter
+  const moonFiltersForReport: string[] = moonFiltersUsed.length > 0 ? moonFiltersUsed : ['-'];
+  if (moonFiltersUsed.length === 0) {
+    moonByFilter['-'] = moonIlluminationData;
+  }
+  moonFiltersForReport.forEach((f, idx) => {
     html += `
   <div class="section">
-    <h2 class="section-title">Iluminación Lunar por Sesión</h2>
-    <div class="chart-container">
-      <canvas id="moonChart"></canvas>
-    </div>
-  </div>`;
-  } else {
-    moonFiltersUsed.forEach((f, idx) => {
-      html += `
-  <div class="section">
-    <h2 class="section-title">Iluminación Lunar — Filtro ${f}</h2>
+    <h2 class="section-title">Iluminación Lunar por sesión (${f})</h2>
     <div class="chart-container">
       <canvas id="moonChart_f${idx}"></canvas>
     </div>
   </div>`;
-    });
-  }
+  });
 
   // Sky quality (MPSAS)
   if (mpsasData.length > 0) {
@@ -6174,10 +6168,8 @@ const generatePDFReport = async (
     // Exposure per night
     makeBarChart('exposureNightChart', ${JSON.stringify(exposurePerNight.map((d: any) => d.date))}, ${JSON.stringify(exposurePerNight.map((d: any) => parseFloat(d.hours.toFixed(2))))}, 'Horas por noche', '#fb923c');
 
-    // Moon illumination
-    ${moonFiltersUsed.length <= 1 ? `
-    makeLineChart('moonChart', ${JSON.stringify(moonIlluminationData.map((d: any) => d.date))}, ${JSON.stringify(moonIlluminationData.map((d: any) => d.illumination))}, 'Iluminación %', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
-    ` : moonFiltersUsed.map((f, idx) => `
+    // Moon illumination — one chart per filter
+    ${moonFiltersForReport.map((f, idx) => `
     makeLineChart('moonChart_f${idx}', ${JSON.stringify(moonByFilter[f].map((d: any) => d.date))}, ${JSON.stringify(moonByFilter[f].map((d: any) => d.illumination))}, 'Iluminación % — ${f}', '#fbbf24', 'rgba(251, 191, 36, 0.1)');
     `).join('\n')}
 
