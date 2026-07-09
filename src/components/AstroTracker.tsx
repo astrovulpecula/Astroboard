@@ -8156,6 +8156,35 @@ export default function AstroTracker() {
     const totalNights = uniqueDates.size;
     const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
 
+    // Moon illumination per project (global average)
+    const projectMoonIllums: Array<{ objectId: string; projectId: string; objectName: string; projectName: string; avg: number }> = [];
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        const sessions = proj.sessions || [];
+        if (!sessions.length) return;
+        const coords = proj.googleCoords || (obj as any).googleCoords || null;
+        const sorted = sessions.slice().sort((a: any, b: any) => (a.date || "").localeCompare(b.date || ""));
+        const vals: number[] = [];
+        sorted.forEach((s: any, i: number) => {
+          try {
+            const d = buildMoonIlluminationDatum(s, i, coords);
+            if (Number.isFinite(d.illumination)) vals.push(d.illumination);
+          } catch { /* ignore */ }
+        });
+        if (!vals.length) return;
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        projectMoonIllums.push({
+          objectId: obj.id,
+          projectId: proj.id,
+          objectName: (obj as any).commonName || obj.id,
+          projectName: proj.name || proj.id,
+          avg,
+        });
+      });
+    });
+    const highestMoonIllumProject = projectMoonIllums.slice().sort((a, b) => b.avg - a.avg)[0] || null;
+    const lowestMoonIllumProject = projectMoonIllums.slice().sort((a, b) => a.avg - b.avg)[0] || null;
+
     // Streak calculations
     const allDates = Array.from(uniqueDates).sort();
     let currentStreak = 0;
