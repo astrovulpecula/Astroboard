@@ -12725,7 +12725,7 @@ export default function AstroTracker() {
               {(obj as any).category !== "planetary" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {((proj as any)?.chartVisibility?.exposureChart !== false) && <ExposureChart sessions={filtered} dateFormat={dateFormat} />}
-                {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} projectCoords={(proj as any)?.googleCoords} />}
                 {((proj as any)?.chartVisibility?.mpsasChart !== false) && <FitsMpsasChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.temperatureChart !== false) && <FitsTemperatureChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
