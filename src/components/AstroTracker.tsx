@@ -6612,6 +6612,8 @@ export default function AstroTracker() {
     streaks: true,
     cameraUsage: true,
     telescopeUsage: true,
+    highestMoonIllum: true,
+    lowestMoonIllum: true,
   });
   const [showStatsConfig, setShowStatsConfig] = useState(false);
   
@@ -8154,6 +8156,35 @@ export default function AstroTracker() {
     const totalNights = uniqueDates.size;
     const maxExposureObj = Object.entries(objectExposures).sort(([, a], [, b]) => b - a)[0];
 
+    // Moon illumination per project (global average)
+    const projectMoonIllums: Array<{ objectId: string; projectId: string; objectName: string; projectName: string; avg: number }> = [];
+    objects.forEach((obj) => {
+      obj.projects.forEach((proj: any) => {
+        const sessions = proj.sessions || [];
+        if (!sessions.length) return;
+        const coords = proj.googleCoords || (obj as any).googleCoords || null;
+        const sorted = sessions.slice().sort((a: any, b: any) => (a.date || "").localeCompare(b.date || ""));
+        const vals: number[] = [];
+        sorted.forEach((s: any, i: number) => {
+          try {
+            const d = buildMoonIlluminationDatum(s, i, coords);
+            if (Number.isFinite(d.illumination)) vals.push(d.illumination);
+          } catch { /* ignore */ }
+        });
+        if (!vals.length) return;
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        projectMoonIllums.push({
+          objectId: obj.id,
+          projectId: proj.id,
+          objectName: (obj as any).commonName || obj.id,
+          projectName: proj.name || proj.id,
+          avg,
+        });
+      });
+    });
+    const highestMoonIllumProject = projectMoonIllums.slice().sort((a, b) => b.avg - a.avg)[0] || null;
+    const lowestMoonIllumProject = projectMoonIllums.slice().sort((a, b) => a.avg - b.avg)[0] || null;
+
     // Streak calculations
     const allDates = Array.from(uniqueDates).sort();
     let currentStreak = 0;
@@ -8357,6 +8388,8 @@ export default function AstroTracker() {
       totalNights,
       totalSessions,
       maxExposureObj,
+      highestMoonIllumProject,
+      lowestMoonIllumProject,
       currentStreak,
       maxStreak,
       cameraCounts,
@@ -10264,6 +10297,24 @@ export default function AstroTracker() {
                           />
                           <span className="text-sm">{t('highlightTelescopeUsage')}</span>
                         </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.highestMoonIllum}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, highestMoonIllum: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{t('metricHighestMoonIllum')}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visibleHighlights.lowestMoonIllum}
+                            onChange={(e) => setVisibleHighlights({ ...visibleHighlights, lowestMoonIllum: e.target.checked })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{t('metricLowestMoonIllum')}</span>
+                        </label>
                       </div>
                       <div className="flex justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
                         <button
@@ -10284,6 +10335,8 @@ export default function AstroTracker() {
                             streaks: true,
                             cameraUsage: true,
                             telescopeUsage: true,
+                            highestMoonIllum: true,
+                            lowestMoonIllum: true,
                           })}
                           className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                         >
@@ -10642,6 +10695,60 @@ export default function AstroTracker() {
                             </div>
                             <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                               {objects.find((o) => o.id === globalMetrics.maxExposureObj?.[0])?.commonName || globalMetrics.maxExposureObj[0]}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Object with Highest Moon Illumination */}
+                    {visibleHighlights.highestMoonIllum && globalMetrics.highestMoonIllumProject && (
+                      <Card
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
+                        onClick={() => {
+                          setSelectedObjectId(globalMetrics.highestMoonIllumProject!.objectId);
+                          setSelectedProjectId(globalMetrics.highestMoonIllumProject!.projectId);
+                          setView("project");
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-slate-500/10">
+                            <Moon className="w-6 h-6 text-slate-300" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                              {t('metricHighestMoonIllum')}
+                            </div>
+                            <div className="text-2xl font-bold">{globalMetrics.highestMoonIllumProject.avg.toFixed(1)}%</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.highestMoonIllumProject.objectName}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Object with Lowest Moon Illumination */}
+                    {visibleHighlights.lowestMoonIllum && globalMetrics.lowestMoonIllumProject && (
+                      <Card
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
+                        onClick={() => {
+                          setSelectedObjectId(globalMetrics.lowestMoonIllumProject!.objectId);
+                          setSelectedProjectId(globalMetrics.lowestMoonIllumProject!.projectId);
+                          setView("project");
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-blue-500/10">
+                            <Moon className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                              {t('metricLowestMoonIllum')}
+                            </div>
+                            <div className="text-2xl font-bold">{globalMetrics.lowestMoonIllumProject.avg.toFixed(1)}%</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.lowestMoonIllumProject.objectName}
                             </div>
                           </div>
                         </div>
