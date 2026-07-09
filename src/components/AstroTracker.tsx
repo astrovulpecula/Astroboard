@@ -10701,6 +10701,60 @@ export default function AstroTracker() {
                       </Card>
                     )}
 
+                    {/* Object with Highest Moon Illumination */}
+                    {visibleHighlights.highestMoonIllum && globalMetrics.highestMoonIllumProject && (
+                      <Card
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
+                        onClick={() => {
+                          setSelectedObjectId(globalMetrics.highestMoonIllumProject!.objectId);
+                          setSelectedProjectId(globalMetrics.highestMoonIllumProject!.projectId);
+                          setView("project");
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-slate-500/10">
+                            <Moon className="w-6 h-6 text-slate-300" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                              {t('metricHighestMoonIllum')}
+                            </div>
+                            <div className="text-2xl font-bold">{globalMetrics.highestMoonIllumProject.avg.toFixed(1)}%</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.highestMoonIllumProject.objectName}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Object with Lowest Moon Illumination */}
+                    {visibleHighlights.lowestMoonIllum && globalMetrics.lowestMoonIllumProject && (
+                      <Card
+                        className="p-5 cursor-pointer hover:shadow-lg hover:scale-105 transition-all ring-2 ring-emerald-500/70 dark:ring-emerald-400/70"
+                        onClick={() => {
+                          setSelectedObjectId(globalMetrics.lowestMoonIllumProject!.objectId);
+                          setSelectedProjectId(globalMetrics.lowestMoonIllumProject!.projectId);
+                          setView("project");
+                        }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-3 rounded-xl bg-blue-500/10">
+                            <Moon className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">
+                              {t('metricLowestMoonIllum')}
+                            </div>
+                            <div className="text-2xl font-bold">{globalMetrics.lowestMoonIllumProject.avg.toFixed(1)}%</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              {globalMetrics.lowestMoonIllumProject.objectName}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+
                     {/* Most Photographed Constellation */}
                     {visibleHighlights.mostPhotographedConstellation && globalMetrics.mostPhotographedConstellation && (
                       <Card 
