@@ -4353,6 +4353,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
   const sorted = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
   const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
   const stats = useMemo(() => computeMoonStats(data), [data]);
+  const globalStats = stats;
 
   const yDomain = useMemo(() => {
     if (!data.length) return [0, 100];
@@ -4368,6 +4369,7 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
         <span>Media: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.avg.toFixed(1)}%</span></span>
         <span>Mínima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.min.toFixed(1)}%</span></span>
         <span>Máxima: <span className="font-semibold text-slate-900 dark:text-slate-100">{stats.max.toFixed(1)}%</span></span>
+        <span>Global proyecto: <span className="font-semibold text-slate-900 dark:text-slate-100">{globalStats.avg.toFixed(1)}%</span></span>
       </div>
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
