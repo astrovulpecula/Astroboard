@@ -207,6 +207,63 @@ const extractUploadTimestampFromImageSrc = (src: any): number => {
   }, 0);
 };
 
+type ProjectActivityEntry = { ts: number; label: string };
+
+const appendProjectActivity = (project: any, labels: Array<string | ProjectActivityEntry | null | undefined>): any => {
+  const clean = labels.filter(Boolean) as Array<string | ProjectActivityEntry>;
+  if (!clean.length) return project;
+  const now = Date.now();
+  const entries: ProjectActivityEntry[] = clean.map((e) =>
+    typeof e === "string" ? { ts: now, label: e } : { ts: e.ts || now, label: e.label },
+  );
+  const prev = Array.isArray(project?.activityLog) ? project.activityLog : [];
+  return { ...project, activityLog: [...prev, ...entries] };
+};
+
+const diffProjectForActivity = (prev: any, next: any): string[] => {
+  const out: string[] = [];
+  if (!prev) return out;
+  const equipmentFields: Record<string, string> = {
+    camera: "Cámara",
+    telescope: "Telescopio",
+    mount: "Montura",
+    guideCamera: "Cámara guía",
+    guideTelescope: "Telescopio guía",
+    filterWheel: "Rueda de filtros",
+    focuser: "Enfocador",
+  };
+  Object.entries(equipmentFields).forEach(([k, label]) => {
+    const a = prev[k] || "";
+    const b = next[k] || "";
+    if (a !== b) out.push(`Se actualizó el equipo (${label}): ${a || "—"} → ${b || "—"}`);
+  });
+  if ((prev.status || "") !== (next.status || "")) {
+    out.push(`Se cambió el estado del proyecto: ${prev.status || "—"} → ${next.status || "—"}`);
+  }
+  if ((prev.name || "") !== (next.name || "")) {
+    out.push(`Se renombró el proyecto: "${prev.name || "—"}" → "${next.name || "—"}"`);
+  }
+  const prevFilters = Array.isArray(prev.filters) ? [...prev.filters].sort() : [];
+  const nextFilters = Array.isArray(next.filters) ? [...next.filters].sort() : [];
+  if (prevFilters.join("|") !== nextFilters.join("|")) {
+    out.push(`Se actualizaron los filtros del proyecto: ${(next.filters || []).join(", ") || "—"}`);
+  }
+  if (JSON.stringify(prev.targetHours || {}) !== JSON.stringify(next.targetHours || {})) {
+    out.push("Se actualizaron los objetivos de horas por filtro");
+  }
+  if (JSON.stringify(prev.chartVisibility || {}) !== JSON.stringify(next.chartVisibility || {})) {
+    out.push("Se cambió la visibilidad de las gráficas");
+  }
+  if ((prev.numPanels || 1) !== (next.numPanels || 1)) {
+    out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
+  }
+  if ((prev.notes || "") !== (next.notes || "")) out.push("Se actualizaron las notas del proyecto");
+  if (JSON.stringify(prev.googleCoords || null) !== JSON.stringify(next.googleCoords || null)) {
+    out.push("Se actualizó la ubicación del proyecto");
+  }
+  return out;
+};
+
 const getLatestSessionTimestamp = (project: any): number => {
   const sessions = Array.isArray(project?.sessions) ? project.sessions : [];
   return sessions.reduce((latest: number, session: any) => {
@@ -7240,7 +7297,9 @@ export default function AstroTracker() {
                   if (updates.status === "completed" && !p.completedDate && p.status !== "completed") {
                     newUpdates.completedDate = new Date().toISOString();
                   }
-                  return { ...p, ...newUpdates };
+                  const merged = { ...p, ...newUpdates };
+                  const labels = diffProjectForActivity(p, merged);
+                  return appendProjectActivity(merged, labels);
                 }),
               },
         ),
@@ -7361,16 +7420,18 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p: any) =>
                   p.id === proj.id
-                    ? {
-                        ...p,
-                        sessions: [...p.sessions, s],
-                        panels: {
-                          ...(p.panels || {}),
-                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), s],
+                    ? appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: [...p.sessions, s],
+                          panels: {
+                            ...(p.panels || {}),
+                            [selectedPanel]: [...(p.panels?.[selectedPanel] || []), s],
+                          },
+                          filters: [...new Set([...(p.filters || []), sessionFilter])],
                         },
-                        // Asegurar que el filtro existe en la lista de filtros del proyecto
-                        filters: [...new Set([...(p.filters || []), sessionFilter])],
-                      }
+                        [`Se añadió una nueva sesión (${s.date || "sin fecha"}, filtro ${sessionFilter}, ${s.lights || 0} lights)`],
+                      )
                     : p,
                 ),
               },
@@ -7396,15 +7457,18 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p: any) =>
                   p.id === proj.id
-                    ? {
-                        ...p,
-                        sessions: [...p.sessions, ...stamped],
-                        panels: {
-                          ...(p.panels || {}),
-                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                    ? appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: [...p.sessions, ...stamped],
+                          panels: {
+                            ...(p.panels || {}),
+                            [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                          },
+                          filters: [...new Set([...(p.filters || []), ...newFilters])],
                         },
-                        filters: [...new Set([...(p.filters || []), ...newFilters])],
-                      }
+                        [`Se añadieron ${stamped.length} sesiones por lotes (filtros: ${newFilters.join(", ") || "—"})`],
+                      )
                     : p,
                 ),
               },
@@ -7428,16 +7492,19 @@ export default function AstroTracker() {
                 projects: o.projects.map((p: any) =>
                   p.id !== proj.id
                     ? p
-                    : {
-                        ...p,
-                        sessions: p.sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
-                        panels: Object.fromEntries(
-                          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
-                            panelNum,
-                            sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
-                          ]),
-                        ),
-                      },
+                    : appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: p.sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
+                          panels: Object.fromEntries(
+                            Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+                              panelNum,
+                              sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
+                            ]),
+                          ),
+                        },
+                        [`Se editaron datos de la sesión (${data.date || (p.sessions.find((s: any) => s.id === sid)?.date) || "sin fecha"})`],
+                      ),
                 ),
               },
         ),
@@ -7460,16 +7527,22 @@ export default function AstroTracker() {
                 projects: o.projects.map((p: any) =>
                   p.id !== proj.id
                     ? p
-                    : {
-                        ...p,
-                        sessions: p.sessions.filter((s: any) => s.id !== sid),
-                        panels: Object.fromEntries(
-                          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
-                            panelNum,
-                            sessions.filter((s: any) => s.id !== sid),
-                          ]),
-                        ),
-                      },
+                    : (() => {
+                        const removed = p.sessions.find((s: any) => s.id === sid);
+                        return appendProjectActivity(
+                          {
+                            ...p,
+                            sessions: p.sessions.filter((s: any) => s.id !== sid),
+                            panels: Object.fromEntries(
+                              Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+                                panelNum,
+                                sessions.filter((s: any) => s.id !== sid),
+                              ]),
+                            ),
+                          },
+                          [`Se eliminó una sesión${removed?.date ? ` (${removed.date})` : ""}`],
+                        );
+                      })(),
                 ),
               },
         ),
@@ -7582,7 +7655,31 @@ export default function AstroTracker() {
                 projects: o.projects.map((p) =>
                   p.id !== proj.id
                     ? p
-                    : { ...p, updatedAt: new Date().toISOString(), images: { ...(p.images || {}), ...processedPatch } },
+                    : (() => {
+                        const prevImgs = p.images || {};
+                        const nextImgs = { ...prevImgs, ...processedPatch };
+                        const labels: string[] = [];
+                        const prevVersions = Array.isArray(prevImgs.finalProjectVersions) ? prevImgs.finalProjectVersions.length : 0;
+                        const nextVersions = Array.isArray(nextImgs.finalProjectVersions) ? nextImgs.finalProjectVersions.length : 0;
+                        if (nextVersions > prevVersions) {
+                          labels.push(`Se subió una nueva imagen final (versión ${nextVersions})`);
+                        } else if (nextVersions < prevVersions) {
+                          labels.push(`Se eliminó una versión de la imagen final (quedan ${nextVersions})`);
+                        }
+                        Object.keys(processedPatch).forEach((k) => {
+                          if (k === "finalProject" || k === "finalProjectVersions" || k === "finalProjectVersionTimestamps" || k === "finalProjectUpdatedAt") return;
+                          const before = prevImgs[k];
+                          const after = (nextImgs as any)[k];
+                          if (before === after) return;
+                          if (!before && after) labels.push(`Se subió una imagen (${k})`);
+                          else if (before && !after) labels.push(`Se eliminó una imagen (${k})`);
+                          else labels.push(`Se actualizó una imagen (${k})`);
+                        });
+                        return appendProjectActivity(
+                          { ...p, updatedAt: new Date().toISOString(), images: nextImgs },
+                          labels,
+                        );
+                      })(),
                 ),
               },
         ),
@@ -7652,7 +7749,12 @@ export default function AstroTracker() {
             : {
                 ...o,
                 projects: o.projects.map((p) =>
-                  p.id !== proj.id ? p : { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
+                  p.id !== proj.id
+                    ? p
+                    : appendProjectActivity(
+                        { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
+                        [`Se actualizó la valoración (${keyName}): ${rating}★`],
+                      ),
                 ),
               },
         ),
@@ -12794,6 +12896,16 @@ export default function AstroTracker() {
                         dateStr: new Date(projCreated).toLocaleDateString(),
                       });
                     }
+                    const logEntries = Array.isArray((proj as any)?.activityLog) ? (proj as any).activityLog : [];
+                    logEntries.forEach((entry: any) => {
+                      const ts = parseTimestampSafe(entry?.ts) || Number(entry?.ts) || 0;
+                      if (!entry?.label || !ts) return;
+                      items.push({
+                        ts,
+                        label: String(entry.label),
+                        dateStr: new Date(ts).toLocaleString(),
+                      });
+                    });
                     items.sort((a, b) => b.ts - a.ts);
                     if (items.length === 0) {
                       return (
