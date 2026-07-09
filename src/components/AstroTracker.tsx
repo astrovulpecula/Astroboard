@@ -7749,21 +7749,12 @@ export default function AstroTracker() {
             : {
                 ...o,
                 projects: o.projects.map((p) =>
-                  p.id !== proj.id ? p : { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
-                ),
-              },
-        ),
-      );
-      setObjects((prevObjects) =>
-        prevObjects.map((o) =>
-          o.id !== obj.id
-            ? o
-            : {
-                ...o,
-                projects: o.projects.map((p: any) =>
                   p.id !== proj.id
                     ? p
-                    : appendProjectActivity(p, [`Se actualizó la valoración (${keyName}): ${rating}★`]),
+                    : appendProjectActivity(
+                        { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
+                        [`Se actualizó la valoración (${keyName}): ${rating}★`],
+                      ),
                 ),
               },
         ),
