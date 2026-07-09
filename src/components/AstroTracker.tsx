@@ -207,6 +207,63 @@ const extractUploadTimestampFromImageSrc = (src: any): number => {
   }, 0);
 };
 
+type ProjectActivityEntry = { ts: number; label: string };
+
+const appendProjectActivity = (project: any, labels: Array<string | ProjectActivityEntry | null | undefined>): any => {
+  const clean = labels.filter(Boolean) as Array<string | ProjectActivityEntry>;
+  if (!clean.length) return project;
+  const now = Date.now();
+  const entries: ProjectActivityEntry[] = clean.map((e) =>
+    typeof e === "string" ? { ts: now, label: e } : { ts: e.ts || now, label: e.label },
+  );
+  const prev = Array.isArray(project?.activityLog) ? project.activityLog : [];
+  return { ...project, activityLog: [...prev, ...entries] };
+};
+
+const diffProjectForActivity = (prev: any, next: any): string[] => {
+  const out: string[] = [];
+  if (!prev) return out;
+  const equipmentFields: Record<string, string> = {
+    camera: "Cámara",
+    telescope: "Telescopio",
+    mount: "Montura",
+    guideCamera: "Cámara guía",
+    guideTelescope: "Telescopio guía",
+    filterWheel: "Rueda de filtros",
+    focuser: "Enfocador",
+  };
+  Object.entries(equipmentFields).forEach(([k, label]) => {
+    const a = prev[k] || "";
+    const b = next[k] || "";
+    if (a !== b) out.push(`Se actualizó el equipo (${label}): ${a || "—"} → ${b || "—"}`);
+  });
+  if ((prev.status || "") !== (next.status || "")) {
+    out.push(`Se cambió el estado del proyecto: ${prev.status || "—"} → ${next.status || "—"}`);
+  }
+  if ((prev.name || "") !== (next.name || "")) {
+    out.push(`Se renombró el proyecto: "${prev.name || "—"}" → "${next.name || "—"}"`);
+  }
+  const prevFilters = Array.isArray(prev.filters) ? [...prev.filters].sort() : [];
+  const nextFilters = Array.isArray(next.filters) ? [...next.filters].sort() : [];
+  if (prevFilters.join("|") !== nextFilters.join("|")) {
+    out.push(`Se actualizaron los filtros del proyecto: ${(next.filters || []).join(", ") || "—"}`);
+  }
+  if (JSON.stringify(prev.targetHours || {}) !== JSON.stringify(next.targetHours || {})) {
+    out.push("Se actualizaron los objetivos de horas por filtro");
+  }
+  if (JSON.stringify(prev.chartVisibility || {}) !== JSON.stringify(next.chartVisibility || {})) {
+    out.push("Se cambió la visibilidad de las gráficas");
+  }
+  if ((prev.numPanels || 1) !== (next.numPanels || 1)) {
+    out.push(`Se cambió el número de paneles: ${prev.numPanels || 1} → ${next.numPanels || 1}`);
+  }
+  if ((prev.notes || "") !== (next.notes || "")) out.push("Se actualizaron las notas del proyecto");
+  if (JSON.stringify(prev.googleCoords || null) !== JSON.stringify(next.googleCoords || null)) {
+    out.push("Se actualizó la ubicación del proyecto");
+  }
+  return out;
+};
+
 const getLatestSessionTimestamp = (project: any): number => {
   const sessions = Array.isArray(project?.sessions) ? project.sessions : [];
   return sessions.reduce((latest: number, session: any) => {
