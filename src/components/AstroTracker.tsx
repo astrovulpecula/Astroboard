@@ -89,6 +89,8 @@ import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
 import { getObjectCoordinatesAsync } from "@/lib/celestial-coordinates";
 import { calculateAnnualVisibility, parseCoordinates } from "@/lib/astronomy-calculations";
+import { calculateAltAz } from "@/lib/astronomy-calculations";
+import { getMoonCoordinates } from "@/lib/moon-position";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
