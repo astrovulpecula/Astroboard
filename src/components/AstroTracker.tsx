@@ -89,6 +89,8 @@ import { calculateMoonPhase, formatMoonPhase, calculateMoonTimes, type MoonPhase
 import { searchCelestialObjects, loadCelestialObjects } from "@/lib/celestial-data";
 import { getObjectCoordinatesAsync } from "@/lib/celestial-coordinates";
 import { calculateAnnualVisibility, parseCoordinates } from "@/lib/astronomy-calculations";
+import { calculateAltAz } from "@/lib/astronomy-calculations";
+import { getMoonCoordinates } from "@/lib/moon-position";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
@@ -4317,22 +4319,37 @@ const SNRRGBChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
-const buildMoonIlluminationDatum = (x: any, index: number) => {
+// Parse a FITS DATE-OBS timestamp. FITS convention: DATE-OBS is UTC.
+// If no timezone marker present, treat as UTC (append Z).
+const parseFitsTimestamp = (raw: string): number => {
+  if (!raw) return NaN;
+  const s = raw.trim();
+  const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(s);
+  const iso = hasTz ? s : `${s}${s.includes("T") ? "" : "T00:00:00"}Z`;
+  return new Date(iso).getTime();
+};
+
+const buildMoonIlluminationDatum = (
+  x: any,
+  index: number,
+  projectCoords?: string | null,
+) => {
   // Prefer real timestamps from FITS DATE-OBS headers (first/last frame).
   const stamps: number[] = Array.isArray(x?.fitsAnalysis?.files)
     ? x.fitsAnalysis.files
-        .map((f: any) => (f?.timestamp ? new Date(f.timestamp).getTime() : NaN))
+        .map((f: any) => parseFitsTimestamp(f?.timestamp))
         .filter((t: number) => Number.isFinite(t))
     : [];
   let start: Date;
   let end: Date;
   let source: "fits" | "estimated" = "estimated";
-  if (stamps.length >= 2) {
+  if (stamps.length >= 1) {
     start = new Date(Math.min(...stamps));
     end = new Date(Math.max(...stamps));
-    // If last frame is only its start-of-exposure, extend by one exposure.
+    // Extend last frame by its exposure (DATE-OBS is start-of-exposure).
     const expSec = Number(x.exposureSec) || 0;
     if (expSec > 0) end = new Date(end.getTime() + expSec * 1000);
+    if (end.getTime() <= start.getTime()) end = new Date(start.getTime() + 60_000);
     source = "fits";
   } else {
     const durationSec = Math.max(60, (Number(x.lights) || 0) * (Number(x.exposureSec) || 0)) || 4 * 3600;
@@ -4342,11 +4359,38 @@ const buildMoonIlluminationDatum = (x: any, index: number) => {
     end = new Date(midnight.getTime() + (durationSec * 1000) / 2);
   }
   const durationSec = Math.max(60, (end.getTime() - start.getTime()) / 1000);
-  const mid = new Date((start.getTime() + end.getTime()) / 2);
-  const startIll = calculateMoonPhase(start).illumination;
-  const endIll = calculateMoonPhase(end).illumination;
-  const midIll = calculateMoonPhase(mid).illumination;
-  const avg = (startIll + endIll + midIll) / 3;
+
+  // Observer location: session's googleCoords overrides project's.
+  const observer =
+    parseCoordinates(x?.googleCoords || "") ||
+    parseCoordinates(projectCoords || "") ||
+    null;
+
+  // Sample the session at fixed intervals; if moon is below horizon, effective
+  // illumination is 0% (moon isn't contributing to sky brightness at that moment).
+  const sampleStepMs = 5 * 60 * 1000; // 5 minutes
+  const nSamples = Math.max(3, Math.min(500, Math.ceil((end.getTime() - start.getTime()) / sampleStepMs) + 1));
+  const stepMs = (end.getTime() - start.getTime()) / (nSamples - 1);
+  const samples: number[] = [];
+  let startIll = 0;
+  let endIll = 0;
+  for (let i = 0; i < nSamples; i++) {
+    const t = new Date(start.getTime() + i * stepMs);
+    const phaseIll = calculateMoonPhase(t).illumination;
+    let eff = phaseIll;
+    if (observer) {
+      const mc = getMoonCoordinates(t);
+      const { altitude } = calculateAltAz(mc.ra, mc.dec, observer, t);
+      if (altitude <= 0) eff = 0;
+    }
+    samples.push(eff);
+    if (i === 0) startIll = eff;
+    if (i === nSamples - 1) endIll = eff;
+  }
+  const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+  const minIll = Math.min(...samples);
+  const maxIll = Math.max(...samples);
+
   const fmtHM = (d: Date) =>
     `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
   return {
@@ -4356,12 +4400,13 @@ const buildMoonIlluminationDatum = (x: any, index: number) => {
     illumination: Number(avg.toFixed(1)),
     startIll: Number(startIll.toFixed(1)),
     endIll: Number(endIll.toFixed(1)),
-    minIll: Number(Math.min(startIll, endIll, midIll).toFixed(1)),
-    maxIll: Number(Math.max(startIll, endIll, midIll).toFixed(1)),
+    minIll: Number(minIll.toFixed(1)),
+    maxIll: Number(maxIll.toFixed(1)),
     durationH: Number((durationSec / 3600).toFixed(2)),
     startTime: fmtHM(start),
     endTime: fmtHM(end),
     source,
+    hasObserver: !!observer,
   };
 };
 
@@ -4375,9 +4420,9 @@ const computeMoonStats = (data: ReturnType<typeof buildMoonIlluminationDatum>[])
   };
 };
 
-const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
+const MoonIlluminationChart = ({ sessions, projectCoords }: { sessions: any[]; projectCoords?: string | null }) => {
   const sorted = useMemo(() => sessions.slice().sort((a, b) => a.date.localeCompare(b.date)), [sessions]);
-  const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i)), [sorted]);
+  const data = useMemo(() => sorted.map((x, i) => buildMoonIlluminationDatum(x, i, projectCoords)), [sorted, projectCoords]);
   const stats = useMemo(() => computeMoonStats(data), [data]);
   const globalStats = stats;
 
@@ -5772,8 +5817,8 @@ const generatePDFReport = async (
   }));
 
   const moonIlluminationData = proj.sessions.map((s: any, i: number) => {
-    const moonData = calculateMoonPhase(s.date);
-    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: moonData.illumination, filter: s.filter || '-' };
+    const d = buildMoonIlluminationDatum(s, i, (proj as any)?.googleCoords);
+    return { session: i + 1, date: formatDateDisplay(s.date, dateFormat), illumination: d.illumination, filter: s.filter || '-' };
   });
   const moonFiltersUsed: string[] = Array.from(
     new Set(proj.sessions.map((s: any) => s.filter).filter(Boolean))
@@ -12680,7 +12725,7 @@ export default function AstroTracker() {
               {(obj as any).category !== "planetary" && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {((proj as any)?.chartVisibility?.exposureChart !== false) && <ExposureChart sessions={filtered} dateFormat={dateFormat} />}
-                {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.moonChart !== false) && <MoonIlluminationChart sessions={filtered} projectCoords={(proj as any)?.googleCoords} />}
                 {((proj as any)?.chartVisibility?.mpsasChart !== false) && <FitsMpsasChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.temperatureChart !== false) && <FitsTemperatureChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
