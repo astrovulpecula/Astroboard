@@ -7297,7 +7297,9 @@ export default function AstroTracker() {
                   if (updates.status === "completed" && !p.completedDate && p.status !== "completed") {
                     newUpdates.completedDate = new Date().toISOString();
                   }
-                  return { ...p, ...newUpdates };
+                  const merged = { ...p, ...newUpdates };
+                  const labels = diffProjectForActivity(p, merged);
+                  return appendProjectActivity(merged, labels);
                 }),
               },
         ),
