@@ -4406,7 +4406,10 @@ const MoonIlluminationChart = ({ sessions }: { sessions: any[] }) => {
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(label, payload) => {
               const p = payload?.[0]?.payload;
-              return p ? `Sesión ${label} · ${p.date} (${p.durationH}h) · ${p.filter}` : `Sesión ${label}`;
+              if (!p) return `Sesión ${label}`;
+              const range = p.startTime && p.endTime ? ` · ${p.startTime}–${p.endTime}` : "";
+              const src = p.source === "fits" ? "" : " · estimada";
+              return `Sesión ${label} · ${p.date}${range} (${p.durationH}h) · ${p.filter}${src}`;
             }}
             formatter={(_v, _name, props) => {
               const p = props.payload;
