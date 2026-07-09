@@ -8647,7 +8647,7 @@ export default function AstroTracker() {
                       }
                       if (settingsData.jsonPath) setJsonPath(settingsData.jsonPath);
                       else setJsonPath(importedFileName);
-                      if (settingsData.visibleHighlights) setVisibleHighlights(settingsData.visibleHighlights);
+                      if (settingsData.visibleHighlights) setVisibleHighlights((prev) => ({ ...prev, ...settingsData.visibleHighlights }));
                       if (settingsData.language && (settingsData.language === 'es' || settingsData.language === 'en')) {
                         setLanguage(settingsData.language);
                       }
