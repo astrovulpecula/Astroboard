@@ -7655,7 +7655,31 @@ export default function AstroTracker() {
                 projects: o.projects.map((p) =>
                   p.id !== proj.id
                     ? p
-                    : { ...p, updatedAt: new Date().toISOString(), images: { ...(p.images || {}), ...processedPatch } },
+                    : (() => {
+                        const prevImgs = p.images || {};
+                        const nextImgs = { ...prevImgs, ...processedPatch };
+                        const labels: string[] = [];
+                        const prevVersions = Array.isArray(prevImgs.finalProjectVersions) ? prevImgs.finalProjectVersions.length : 0;
+                        const nextVersions = Array.isArray(nextImgs.finalProjectVersions) ? nextImgs.finalProjectVersions.length : 0;
+                        if (nextVersions > prevVersions) {
+                          labels.push(`Se subió una nueva imagen final (versión ${nextVersions})`);
+                        } else if (nextVersions < prevVersions) {
+                          labels.push(`Se eliminó una versión de la imagen final (quedan ${nextVersions})`);
+                        }
+                        Object.keys(processedPatch).forEach((k) => {
+                          if (k === "finalProject" || k === "finalProjectVersions" || k === "finalProjectVersionTimestamps" || k === "finalProjectUpdatedAt") return;
+                          const before = prevImgs[k];
+                          const after = (nextImgs as any)[k];
+                          if (before === after) return;
+                          if (!before && after) labels.push(`Se subió una imagen (${k})`);
+                          else if (before && !after) labels.push(`Se eliminó una imagen (${k})`);
+                          else labels.push(`Se actualizó una imagen (${k})`);
+                        });
+                        return appendProjectActivity(
+                          { ...p, updatedAt: new Date().toISOString(), images: nextImgs },
+                          labels,
+                        );
+                      })(),
                 ),
               },
         ),
@@ -7726,6 +7750,20 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p) =>
                   p.id !== proj.id ? p : { ...p, ratings: { ...(p.ratings || {}), [keyName]: rating } },
+                ),
+              },
+        ),
+      );
+      setObjects((prevObjects) =>
+        prevObjects.map((o) =>
+          o.id !== obj.id
+            ? o
+            : {
+                ...o,
+                projects: o.projects.map((p: any) =>
+                  p.id !== proj.id
+                    ? p
+                    : appendProjectActivity(p, [`Se actualizó la valoración (${keyName}): ${rating}★`]),
                 ),
               },
         ),
