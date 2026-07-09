@@ -7420,16 +7420,18 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p: any) =>
                   p.id === proj.id
-                    ? {
-                        ...p,
-                        sessions: [...p.sessions, s],
-                        panels: {
-                          ...(p.panels || {}),
-                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), s],
+                    ? appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: [...p.sessions, s],
+                          panels: {
+                            ...(p.panels || {}),
+                            [selectedPanel]: [...(p.panels?.[selectedPanel] || []), s],
+                          },
+                          filters: [...new Set([...(p.filters || []), sessionFilter])],
                         },
-                        // Asegurar que el filtro existe en la lista de filtros del proyecto
-                        filters: [...new Set([...(p.filters || []), sessionFilter])],
-                      }
+                        [`Se añadió una nueva sesión (${s.date || "sin fecha"}, filtro ${sessionFilter}, ${s.lights || 0} lights)`],
+                      )
                     : p,
                 ),
               },
@@ -7455,15 +7457,18 @@ export default function AstroTracker() {
                 ...o,
                 projects: o.projects.map((p: any) =>
                   p.id === proj.id
-                    ? {
-                        ...p,
-                        sessions: [...p.sessions, ...stamped],
-                        panels: {
-                          ...(p.panels || {}),
-                          [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                    ? appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: [...p.sessions, ...stamped],
+                          panels: {
+                            ...(p.panels || {}),
+                            [selectedPanel]: [...(p.panels?.[selectedPanel] || []), ...stamped],
+                          },
+                          filters: [...new Set([...(p.filters || []), ...newFilters])],
                         },
-                        filters: [...new Set([...(p.filters || []), ...newFilters])],
-                      }
+                        [`Se añadieron ${stamped.length} sesiones por lotes (filtros: ${newFilters.join(", ") || "—"})`],
+                      )
                     : p,
                 ),
               },
@@ -7487,16 +7492,19 @@ export default function AstroTracker() {
                 projects: o.projects.map((p: any) =>
                   p.id !== proj.id
                     ? p
-                    : {
-                        ...p,
-                        sessions: p.sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
-                        panels: Object.fromEntries(
-                          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
-                            panelNum,
-                            sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
-                          ]),
-                        ),
-                      },
+                    : appendProjectActivity(
+                        {
+                          ...p,
+                          sessions: p.sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
+                          panels: Object.fromEntries(
+                            Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+                              panelNum,
+                              sessions.map((s: any) => (s.id === sid ? { ...s, ...data } : s)),
+                            ]),
+                          ),
+                        },
+                        [`Se editaron datos de la sesión (${data.date || (p.sessions.find((s: any) => s.id === sid)?.date) || "sin fecha"})`],
+                      ),
                 ),
               },
         ),
@@ -7519,16 +7527,22 @@ export default function AstroTracker() {
                 projects: o.projects.map((p: any) =>
                   p.id !== proj.id
                     ? p
-                    : {
-                        ...p,
-                        sessions: p.sessions.filter((s: any) => s.id !== sid),
-                        panels: Object.fromEntries(
-                          Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
-                            panelNum,
-                            sessions.filter((s: any) => s.id !== sid),
-                          ]),
-                        ),
-                      },
+                    : (() => {
+                        const removed = p.sessions.find((s: any) => s.id === sid);
+                        return appendProjectActivity(
+                          {
+                            ...p,
+                            sessions: p.sessions.filter((s: any) => s.id !== sid),
+                            panels: Object.fromEntries(
+                              Object.entries(p.panels || {}).map(([panelNum, sessions]: [string, any]) => [
+                                panelNum,
+                                sessions.filter((s: any) => s.id !== sid),
+                              ]),
+                            ),
+                          },
+                          [`Se eliminó una sesión${removed?.date ? ` (${removed.date})` : ""}`],
+                        );
+                      })(),
                 ),
               },
         ),
