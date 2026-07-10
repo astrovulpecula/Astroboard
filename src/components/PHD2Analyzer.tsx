@@ -499,6 +499,9 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
                     Objetivo {i + 1}{t.objectName ? ` — ${t.objectName}` : ""}
                   </div>
                   <div className="text-slate-600 dark:text-slate-400">{fmtCoords(t.raDeg, t.decDeg)}</div>
+                  {(() => { const c = constellationFromRaDec(t.raDeg, t.decDeg); return c ? (
+                    <div className="text-slate-500 dark:text-slate-400">Constelación: {c.name} ({c.abbr})</div>
+                  ) : null; })()}
                   <div className="text-slate-500 dark:text-slate-400">
                     {t.blocks.length} tramo{t.blocks.length !== 1 ? "s" : ""} · {fmtDuration(t.durationSeconds)}
                   </div>
