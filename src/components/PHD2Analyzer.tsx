@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from "react";
 import { Upload, X, FileText, Target } from "lucide-react";
+import { constellationFromRaDec } from "@/lib/constellation";
 
 // ---------- Types ----------
 export interface PHD2Frame {
