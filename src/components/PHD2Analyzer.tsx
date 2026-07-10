@@ -601,10 +601,10 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
           </div>
 
           {(value.groups || []).map((g, i) => (
-            <div key={g.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-              <div className="text-sm font-semibold">
+            <div key={g.id} className="p-3 rounded-xl bg-card border border-border space-y-2">
+              <div className="text-sm font-semibold text-foreground">
                 {g.objectName || `Objetivo ${i + 1}`}
-                <span className="ml-2 text-xs font-normal text-slate-500">{fmtCoords(g.raDeg, g.decDeg)}</span>
+                <span className="ml-2 text-xs font-normal text-muted-foreground">{fmtCoords(g.raDeg, g.decDeg)}</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <Metric label="RMS RA" value={`${g.raRms.toFixed(2)}"`} />
@@ -616,7 +616,7 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
                 <Metric label="Frames" value={`${g.frameCount}`} />
                 <Metric label="Tramos" value={`${g.blockCount}`} />
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-muted-foreground">
                 {fmtTime(g.startTime)} → {fmtTime(g.endTime)} · {fmtDuration(g.durationSeconds)} guiando
                 {g.pixelScale ? ` · ${g.pixelScale.toFixed(2)}"/px` : ""}
                 {g.focalLength ? ` · ${g.focalLength}mm` : ""}
@@ -631,9 +631,9 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
-      <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</div>
-      <div className="text-sm font-semibold">{value}</div>
+    <div className="p-2 rounded-lg bg-muted/50 border border-border">
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }
