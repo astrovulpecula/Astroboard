@@ -13007,8 +13007,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.windChart !== false) && <FitsWindChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
-                {((proj as any)?.chartVisibility?.phd2P50Chart !== false) && <PHD2P50Chart sessions={filtered} />}
-                {((proj as any)?.chartVisibility?.phd2P68Chart !== false) && <PHD2P68Chart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2GuidingEvolutionChart !== false) && <PHD2GuidingEvolutionChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
@@ -14818,8 +14817,7 @@ export default function AstroTracker() {
                     { key: "humidityChart", label: "Humedad" },
                     { key: "windChart", label: "Viento" },
                     { key: "focusChart", label: "Posición de enfoque" },
-                    { key: "phd2P50Chart", label: "PHD2 RMS P50" },
-                    { key: "phd2P68Chart", label: "PHD2 RMS P68" },
+                    { key: "phd2GuidingEvolutionChart", label: "Evolución de guiado (RA/DEC/Total)" },
                     { key: "snrChart", label: "SNR (media)" },
                     { key: "snrRGBChart", label: "SNR por canal (R/G/B)" },
                     { key: "acceptedRejectedChart", label: "Lights aceptados/rechazados" },
