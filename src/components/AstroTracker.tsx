@@ -4915,103 +4915,86 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
-// PHD2 RMS Chart - Average RMS per Session
-// PHD2 P50 Chart (Median RMS per session)
-const PHD2P50Chart = ({ sessions }: { sessions: any[] }) => {
+// PHD2 Guiding Evolution Chart — RA, DEC and Total RMS per session
+const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
   const data = useMemo(() => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .filter((s) => s.phd2Analysis?.medianRms !== undefined)
-      .map((s, i) => ({
-        session: i + 1,
-        p50: s.phd2Analysis.medianRms,
-        date: s.date,
-      }));
+      .map((s) => {
+        const a = s.phd2Analysis;
+        if (!a) return null;
+        const groups = Array.isArray(a.groups) ? a.groups : [];
+        // Combine all frames of all groups belonging to the session
+        const frames = groups.flatMap((g: any) => g.frames || []);
+        let raRms = 0, decRms = 0, totalRms = 0, duration = 0, frameCount = 0;
+        if (frames.length) {
+          const n = frames.length;
+          raRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.ra * f.ra, 0) / n);
+          decRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.dec * f.dec, 0) / n);
+          totalRms = Math.sqrt(raRms * raRms + decRms * decRms);
+          duration = groups.reduce((acc: number, g: any) => acc + (g.durationSeconds || 0), 0);
+          frameCount = n;
+        } else if (a.medianRms !== undefined) {
+          // Legacy fallback
+          totalRms = a.medianRms;
+          duration = a.totalDuration || 0;
+          frameCount = (a.dataPoints || []).length;
+        } else {
+          return null;
+        }
+        return {
+          date: s.date,
+          name: s.name || s.date,
+          raRms: Number(raRms.toFixed(3)),
+          decRms: Number(decRms.toFixed(3)),
+          totalRms: Number(totalRms.toFixed(3)),
+          duration,
+          frameCount,
+        };
+      })
+      .filter(Boolean) as any[];
   }, [sessions]);
-
-  const avgP50 = useMemo(() => {
-    if (!data.length) return 0;
-    return data.reduce((a, b) => a + b.p50, 0) / data.length;
-  }, [data]);
 
   if (!data.length) return null;
 
-  return (
-    <Card className={SESSION_CHART_CARD_CLASS}>
-      <SectionTitle icon={Target} title="RMS típico (P50) por sesión" />
-      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-        Promedio P50: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP50.toFixed(2)} arcsec</span>
-      </div>
-      <SessionChartArea>
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
-          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}"`} />
-          <Tooltip
-            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
-            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "P50 (Mediana)"]}
-            labelFormatter={(value) => `Sesión ${value}`}
-          />
-          <Line
-            type="monotone"
-            dataKey="p50"
-            stroke="#22c55e"
-            strokeWidth={3}
-            dot={{ fill: "#22c55e", r: 4 }}
-            name="P50"
-          />
-        </LineChart>
-      </SessionChartArea>
-    </Card>
-  );
-};
-
-// PHD2 P68 Chart (≈1σ stability per session)
-const PHD2P68Chart = ({ sessions }: { sessions: any[] }) => {
-  const data = useMemo(() => {
-    return sessions
-      .slice()
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .filter((s) => s.phd2Analysis?.p68Rms !== undefined)
-      .map((s, i) => ({
-        session: i + 1,
-        p68: s.phd2Analysis.p68Rms,
-        date: s.date,
-      }));
-  }, [sessions]);
-
-  const avgP68 = useMemo(() => {
-    if (!data.length) return 0;
-    return data.reduce((a, b) => a + b.p68, 0) / data.length;
-  }, [data]);
-
-  if (!data.length) return null;
+  const fmtDur = (sec: number) => {
+    if (!sec) return "–";
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
 
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
-      <SectionTitle icon={Target} title="P68 (≈1σ) por sesión" />
-      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-        Promedio P68: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgP68.toFixed(2)} arcsec</span>
-      </div>
+      <SectionTitle icon={Target} title="Evolución de guiado (RMS por sesión)" />
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
-          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(value) => `${value}"`} />
+          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `${v}"`} />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
-            formatter={(v: number) => [`${v.toFixed(2)} arcsec`, "P68 (≈1σ)"]}
-            labelFormatter={(value) => `Sesión ${value}`}
+            labelFormatter={(_v, payload: any) => {
+              const p = payload?.[0]?.payload;
+              if (!p) return "";
+              return `${p.name} — ${p.date}`;
+            }}
+            formatter={(v: number, name: string, item: any) => {
+              const p = item?.payload;
+              if (name === "RMS TOTAL" && p) {
+                return [
+                  `${v.toFixed(2)}" · ${p.frameCount} frames · ${fmtDur(p.duration)}`,
+                  name,
+                ];
+              }
+              return [`${v.toFixed(2)}"`, name];
+            }}
           />
-          <Line
-            type="monotone"
-            dataKey="p68"
-            stroke="#3b82f6"
-            strokeWidth={3}
-            dot={{ fill: "#3b82f6", r: 4 }}
-            name="P68"
-          />
+          <Legend wrapperStyle={{ color: "#e2e8f0" }} />
+          <Line type="monotone" dataKey="raRms" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 3 }} name="RA RMS" connectNulls />
+          <Line type="monotone" dataKey="decRms" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} name="DEC RMS" connectNulls />
+          <Line type="monotone" dataKey="totalRms" stroke="#fbbf24" strokeWidth={3} dot={{ fill: "#fbbf24", r: 4 }} name="RMS TOTAL" connectNulls />
         </LineChart>
       </SessionChartArea>
     </Card>
@@ -13024,8 +13007,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.windChart !== false) && <FitsWindChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
-                {((proj as any)?.chartVisibility?.phd2P50Chart !== false) && <PHD2P50Chart sessions={filtered} />}
-                {((proj as any)?.chartVisibility?.phd2P68Chart !== false) && <PHD2P68Chart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2GuidingEvolutionChart !== false) && <PHD2GuidingEvolutionChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
@@ -14835,8 +14817,7 @@ export default function AstroTracker() {
                     { key: "humidityChart", label: "Humedad" },
                     { key: "windChart", label: "Viento" },
                     { key: "focusChart", label: "Posición de enfoque" },
-                    { key: "phd2P50Chart", label: "PHD2 RMS P50" },
-                    { key: "phd2P68Chart", label: "PHD2 RMS P68" },
+                    { key: "phd2GuidingEvolutionChart", label: "Evolución de guiado (RA/DEC/Total)" },
                     { key: "snrChart", label: "SNR (media)" },
                     { key: "snrRGBChart", label: "SNR por canal (R/G/B)" },
                     { key: "acceptedRejectedChart", label: "Lights aceptados/rechazados" },
