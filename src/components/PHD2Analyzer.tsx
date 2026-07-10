@@ -609,6 +609,9 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
               <div className="text-sm font-semibold text-foreground">
                 {g.objectName || `Objetivo ${i + 1}`}
                 <span className="ml-2 text-xs font-normal text-muted-foreground">{fmtCoords(g.raDeg, g.decDeg)}</span>
+                {(() => { const c = constellationFromRaDec(g.raDeg, g.decDeg); return c ? (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">· {c.name} ({c.abbr})</span>
+                ) : null; })()}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <Metric label="RMS RA" value={`${g.raRms.toFixed(2)}"`} />
