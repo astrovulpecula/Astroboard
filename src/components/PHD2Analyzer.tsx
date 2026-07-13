@@ -437,6 +437,13 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
     setTargets(null);
   }, [targets, onChange]);
 
+  const handleAnalyzeMerged = useCallback(() => {
+    if (!targets) return;
+    const allBlocks = targets.flatMap(t => t.blocks);
+    onChange(buildResult([computeGroup(allBlocks, "merged")]));
+    setTargets(null);
+  }, [targets, onChange]);
+
   const handleCancel = useCallback(() => {
     setTargets(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -531,6 +538,13 @@ export default function PHD2Analyzer({ value, onChange }: PHD2AnalyzerProps) {
               className="flex-1 min-w-[10rem] px-4 py-2 text-sm rounded-lg border border-slate-900 dark:border-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
               Analizar todos por separado
+            </button>
+            <button
+              type="button"
+              onClick={handleAnalyzeMerged}
+              className="flex-1 min-w-[10rem] px-4 py-2 text-sm rounded-lg border border-slate-900 dark:border-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            >
+              Unir todos los tramos
             </button>
             <button
               type="button"
