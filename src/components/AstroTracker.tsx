@@ -12316,7 +12316,8 @@ export default function AstroTracker() {
                     const goal = filterGoals[filterName];
                     const currentHours = seconds / 3600;
                     if (goal && goal > 0) {
-                      const percentage = Math.min(100, (currentHours / goal) * 100);
+                      const percentage = (currentHours / goal) * 100;
+                      const barWidth = Math.min(100, percentage);
                       return (
                         <Card key={filterName} className="p-4">
                           <div className="text-sm text-slate-500 mb-2">{filterName} objetivo</div>
@@ -12330,7 +12331,7 @@ export default function AstroTracker() {
                             <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-green-500 transition-all duration-300"
-                                style={{ width: `${percentage}%` }}
+                                style={{ width: `${barWidth}%` }}
                               />
                             </div>
                           </div>
