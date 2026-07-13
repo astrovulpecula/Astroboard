@@ -5197,6 +5197,18 @@ const FinalImageVersions = ({
   const [sliderPct, setSliderPct] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Plate-solve state (per-version): parallel array persisted under
+  // proj.images.plateSolveVersions. Each entry: { objects, annotatedUrl,
+  // calibration, analyzedAt } or { error } or { status: 'pending' }.
+  const storedPlate: any[] = Array.isArray(proj?.images?.plateSolveVersions)
+    ? proj.images.plateSolveVersions
+    : [];
+  const [plateResults, setPlateResults] = useState<any[]>(storedPlate);
+  const [plateBusy, setPlateBusy] = useState<Record<number, boolean>>({});
+  const [showAnnotated, setShowAnnotated] = useState(false);
+  React.useEffect(() => {
+    setPlateResults(Array.isArray(proj?.images?.plateSolveVersions) ? proj.images.plateSolveVersions : []);
+  }, [proj?.images?.plateSolveVersions]);
   // Rating shown reflects the active version. When per-version ratings are
   // provided we use them; otherwise fall back to the legacy single rating
   // (which represents the latest version).
@@ -5253,6 +5265,8 @@ const FinalImageVersions = ({
       }
       setActiveIdx(next.length - 1);
       if (next.length >= 2) setCompareIdx(Math.max(0, next.length - 2));
+      // Fire-and-forget plate solve on the newly added version.
+      void runPlateSolve(next.length - 1, url);
     } catch (error) {
       setLocalVersions(previous);
       setUploadError(error instanceof Error ? error.message : "No se pudo añadir la versión");
@@ -5270,6 +5284,12 @@ const FinalImageVersions = ({
       const next = versions.map((v, i) => (i === activeIdx ? url : v));
       setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
+      // Invalidate & re-run plate solve for the replaced version.
+      const patched = plateResults.slice();
+      patched[activeIdx] = undefined;
+      setPlateResults(patched);
+      await upImgs({ plateSolveVersions: patched });
+      void runPlateSolve(activeIdx, url);
     } catch (error) {
       setLocalVersions(previous);
       setUploadError(error instanceof Error ? error.message : "No se pudo reemplazar la versión");
