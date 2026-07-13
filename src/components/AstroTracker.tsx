@@ -5582,6 +5582,72 @@ const FinalImageVersions = ({
           {uploadError && (
             <div className="text-xs text-destructive">{uploadError}</div>
           )}
+          {/* Plate-solve panel for the active version */}
+          {(() => {
+            const res = plateResults[activeIdx];
+            const busy = plateBusy[activeIdx];
+            return (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="text-sm font-medium">
+                    Campo analizado (v{activeIdx + 1})
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {res?.annotatedUrl && !res?.error && (
+                      <Btn outline onClick={() => setShowAnnotated((v) => !v)}>
+                        {showAnnotated ? "Ocultar anotada" : "Ver anotada"}
+                      </Btn>
+                    )}
+                    {!busy && (
+                      <Btn outline onClick={() => runPlateSolve(activeIdx, versions[activeIdx])}>
+                        {res ? "Re-analizar" : "Analizar"}
+                      </Btn>
+                    )}
+                  </div>
+                </div>
+                {busy && (
+                  <div className="text-xs text-slate-500 flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
+                    Analizando campo con Astrometry.net… puede tardar hasta 2 min.
+                  </div>
+                )}
+                {!busy && res?.error && (
+                  <div className="text-xs text-destructive">Error: {res.error}</div>
+                )}
+                {!busy && res && !res.error && (
+                  <>
+                    {showAnnotated && res.annotatedUrl && (
+                      <img
+                        src={res.annotatedUrl}
+                        alt="Campo anotado"
+                        className="w-full rounded-lg border"
+                        loading="lazy"
+                      />
+                    )}
+                    {Array.isArray(res.objects) && res.objects.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {res.objects.map((o: string, i: number) => (
+                          <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                            {o}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-500">No se detectaron objetos catalogados en el campo.</div>
+                    )}
+                    {res.calibration && (
+                      <div className="text-[11px] text-slate-500">
+                        RA {Number(res.calibration.ra).toFixed(3)}° · Dec {Number(res.calibration.dec).toFixed(3)}° · Escala {Number(res.calibration.pixscale).toFixed(2)}″/px · Radio {Number(res.calibration.radius).toFixed(2)}°
+                      </div>
+                    )}
+                  </>
+                )}
+                {!busy && !res && (
+                  <div className="text-xs text-slate-500">Aún sin analizar.</div>
+                )}
+              </div>
+            );
+          })()}
           <div className="text-[11px] text-slate-500">
             La última versión (v{versions.length}) se usa como imagen principal del objeto.
           </div>
