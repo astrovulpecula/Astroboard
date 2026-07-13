@@ -5333,6 +5333,53 @@ const FinalImageVersions = ({
     }
   };
 
+  // Plate-solve a single version via the Astrometry.net edge function.
+  const runPlateSolve = React.useCallback(async (idx: number, src: string) => {
+    if (!src) return;
+    if (plateBusy[idx]) return;
+    setPlateBusy((b) => ({ ...b, [idx]: true }));
+    try {
+      const payload: any = src.startsWith("data:")
+        ? { imageBase64: src, filename: `final_v${idx + 1}.jpg` }
+        : { imageUrl: src };
+      const { data, error } = await supabase.functions.invoke("plate-solve", { body: payload });
+      const next = plateResults.slice();
+      if (error || !data || (data as any).error) {
+        next[idx] = { error: (error as any)?.message || (data as any)?.error || "Fallo desconocido", analyzedAt: new Date().toISOString() };
+      } else {
+        const d = data as any;
+        next[idx] = {
+          objects: Array.isArray(d.objects) ? d.objects : [],
+          annotatedUrl: d.annotatedUrl,
+          calibration: d.calibration,
+          analyzedAt: d.analyzedAt || new Date().toISOString(),
+        };
+      }
+      setPlateResults(next);
+      try { await upImgs({ plateSolveVersions: next }); } catch {}
+    } catch (e) {
+      const next = plateResults.slice();
+      next[idx] = { error: e instanceof Error ? e.message : String(e), analyzedAt: new Date().toISOString() };
+      setPlateResults(next);
+      try { await upImgs({ plateSolveVersions: next }); } catch {}
+    } finally {
+      setPlateBusy((b) => ({ ...b, [idx]: false }));
+    }
+  }, [plateBusy, plateResults, upImgs]);
+
+  // Auto-analyze the latest version if it has no stored result yet.
+  React.useEffect(() => {
+    if (versions.length === 0) return;
+    const idx = versions.length - 1;
+    const src = versions[idx];
+    if (!src) return;
+    const existing = plateResults[idx];
+    if (existing && !existing.error) return;
+    if (plateBusy[idx]) return;
+    void runPlateSolve(idx, src);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versions]);
+
   const updateSliderFromEvent = (clientX: number) => {
     const el = containerRef.current;
     if (!el) return;
