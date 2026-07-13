@@ -5197,18 +5197,6 @@ const FinalImageVersions = ({
   const [sliderPct, setSliderPct] = useState(50);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  // Plate-solve state (per-version): parallel array persisted under
-  // proj.images.plateSolveVersions. Each entry: { objects, annotatedUrl,
-  // calibration, analyzedAt } or { error } or { status: 'pending' }.
-  const storedPlate: any[] = Array.isArray(proj?.images?.plateSolveVersions)
-    ? proj.images.plateSolveVersions
-    : [];
-  const [plateResults, setPlateResults] = useState<any[]>(storedPlate);
-  const [plateBusy, setPlateBusy] = useState<Record<number, boolean>>({});
-  const [showAnnotated, setShowAnnotated] = useState(false);
-  React.useEffect(() => {
-    setPlateResults(Array.isArray(proj?.images?.plateSolveVersions) ? proj.images.plateSolveVersions : []);
-  }, [proj?.images?.plateSolveVersions]);
   // Rating shown reflects the active version. When per-version ratings are
   // provided we use them; otherwise fall back to the legacy single rating
   // (which represents the latest version).
@@ -5265,8 +5253,6 @@ const FinalImageVersions = ({
       }
       setActiveIdx(next.length - 1);
       if (next.length >= 2) setCompareIdx(Math.max(0, next.length - 2));
-      // Fire-and-forget plate solve on the newly added version.
-      void runPlateSolve(next.length - 1, url);
     } catch (error) {
       setLocalVersions(previous);
       setUploadError(error instanceof Error ? error.message : "No se pudo añadir la versión");
@@ -5284,12 +5270,6 @@ const FinalImageVersions = ({
       const next = versions.map((v, i) => (i === activeIdx ? url : v));
       setLocalVersions(next);
       await upImgs({ finalProjectVersions: next });
-      // Invalidate & re-run plate solve for the replaced version.
-      const patched = plateResults.slice();
-      patched[activeIdx] = undefined;
-      setPlateResults(patched);
-      await upImgs({ plateSolveVersions: patched });
-      void runPlateSolve(activeIdx, url);
     } catch (error) {
       setLocalVersions(previous);
       setUploadError(error instanceof Error ? error.message : "No se pudo reemplazar la versión");
@@ -5332,53 +5312,6 @@ const FinalImageVersions = ({
       onRatingChange?.(finalRating);
     }
   };
-
-  // Plate-solve a single version via the Astrometry.net edge function.
-  const runPlateSolve = React.useCallback(async (idx: number, src: string) => {
-    if (!src) return;
-    if (plateBusy[idx]) return;
-    setPlateBusy((b) => ({ ...b, [idx]: true }));
-    try {
-      const payload: any = src.startsWith("data:")
-        ? { imageBase64: src, filename: `final_v${idx + 1}.jpg` }
-        : { imageUrl: src };
-      const { data, error } = await supabase.functions.invoke("plate-solve", { body: payload });
-      const next = plateResults.slice();
-      if (error || !data || (data as any).error) {
-        next[idx] = { error: (error as any)?.message || (data as any)?.error || "Fallo desconocido", analyzedAt: new Date().toISOString() };
-      } else {
-        const d = data as any;
-        next[idx] = {
-          objects: Array.isArray(d.objects) ? d.objects : [],
-          annotatedUrl: d.annotatedUrl,
-          calibration: d.calibration,
-          analyzedAt: d.analyzedAt || new Date().toISOString(),
-        };
-      }
-      setPlateResults(next);
-      try { await upImgs({ plateSolveVersions: next }); } catch {}
-    } catch (e) {
-      const next = plateResults.slice();
-      next[idx] = { error: e instanceof Error ? e.message : String(e), analyzedAt: new Date().toISOString() };
-      setPlateResults(next);
-      try { await upImgs({ plateSolveVersions: next }); } catch {}
-    } finally {
-      setPlateBusy((b) => ({ ...b, [idx]: false }));
-    }
-  }, [plateBusy, plateResults, upImgs]);
-
-  // Auto-analyze the latest version if it has no stored result yet.
-  React.useEffect(() => {
-    if (versions.length === 0) return;
-    const idx = versions.length - 1;
-    const src = versions[idx];
-    if (!src) return;
-    const existing = plateResults[idx];
-    if (existing && !existing.error) return;
-    if (plateBusy[idx]) return;
-    void runPlateSolve(idx, src);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versions]);
 
   const updateSliderFromEvent = (clientX: number) => {
     const el = containerRef.current;
@@ -5582,72 +5515,6 @@ const FinalImageVersions = ({
           {uploadError && (
             <div className="text-xs text-destructive">{uploadError}</div>
           )}
-          {/* Plate-solve panel for the active version */}
-          {(() => {
-            const res = plateResults[activeIdx];
-            const busy = plateBusy[activeIdx];
-            return (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="text-sm font-medium">
-                    Campo analizado (v{activeIdx + 1})
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {res?.annotatedUrl && !res?.error && (
-                      <Btn outline onClick={() => setShowAnnotated((v) => !v)}>
-                        {showAnnotated ? "Ocultar anotada" : "Ver anotada"}
-                      </Btn>
-                    )}
-                    {!busy && (
-                      <Btn outline onClick={() => runPlateSolve(activeIdx, versions[activeIdx])}>
-                        {res ? "Re-analizar" : "Analizar"}
-                      </Btn>
-                    )}
-                  </div>
-                </div>
-                {busy && (
-                  <div className="text-xs text-slate-500 flex items-center gap-2">
-                    <span className="inline-block w-3 h-3 rounded-full border-2 border-slate-400 border-t-transparent animate-spin" />
-                    Analizando campo con Astrometry.net… puede tardar hasta 2 min.
-                  </div>
-                )}
-                {!busy && res?.error && (
-                  <div className="text-xs text-destructive">Error: {res.error}</div>
-                )}
-                {!busy && res && !res.error && (
-                  <>
-                    {showAnnotated && res.annotatedUrl && (
-                      <img
-                        src={res.annotatedUrl}
-                        alt="Campo anotado"
-                        className="w-full rounded-lg border"
-                        loading="lazy"
-                      />
-                    )}
-                    {Array.isArray(res.objects) && res.objects.length > 0 ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {res.objects.map((o: string, i: number) => (
-                          <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                            {o}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-xs text-slate-500">No se detectaron objetos catalogados en el campo.</div>
-                    )}
-                    {res.calibration && (
-                      <div className="text-[11px] text-slate-500">
-                        RA {Number(res.calibration.ra).toFixed(3)}° · Dec {Number(res.calibration.dec).toFixed(3)}° · Escala {Number(res.calibration.pixscale).toFixed(2)}″/px · Radio {Number(res.calibration.radius).toFixed(2)}°
-                      </div>
-                    )}
-                  </>
-                )}
-                {!busy && !res && (
-                  <div className="text-xs text-slate-500">Aún sin analizar.</div>
-                )}
-              </div>
-            );
-          })()}
           <div className="text-[11px] text-slate-500">
             La última versión (v{versions.length}) se usa como imagen principal del objeto.
           </div>
