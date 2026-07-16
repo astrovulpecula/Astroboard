@@ -4917,6 +4917,7 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
 
 // PHD2 Guiding Evolution Chart — RA, DEC and Total RMS per session
 const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
+  // (HFR chart declared just above via injected component)
   const data = useMemo(() => {
     return sessions
       .slice()
