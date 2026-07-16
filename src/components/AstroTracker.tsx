@@ -12772,6 +12772,53 @@ export default function AstroTracker() {
                     )}
                   </div>
                 ))}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="px-2 md:px-3 py-1.5 md:py-2 -mb-px border-b-2 border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 whitespace-nowrap"
+                      title="Añadir pestaña de filtro"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-64 p-2">
+                    <div className="grid gap-1">
+                      {userDefinedFilters.length > 0 && (
+                        <>
+                          <div className="px-2 py-1 text-[11px] uppercase tracking-wide text-slate-500">
+                            Filtros existentes
+                          </div>
+                          <div className="max-h-56 overflow-y-auto grid gap-0.5">
+                            {userDefinedFilters.map((f) => (
+                              <button
+                                key={f}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  addFilterToProject(f);
+                                  (document.activeElement as HTMLElement)?.blur();
+                                }}
+                                className="text-left px-2 py-1.5 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                              >
+                                {f}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="my-1 border-t border-slate-200 dark:border-slate-800" />
+                        </>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setShow(true);
+                          (document.activeElement as HTMLElement)?.blur();
+                        }}
+                        className="text-left px-2 py-1.5 rounded text-sm hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Crear pestaña personalizada
+                      </button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
