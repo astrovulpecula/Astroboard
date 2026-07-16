@@ -4915,9 +4915,60 @@ const FitsFocusChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
+// FITS HFR Chart — Average HFR per session
+const FitsHFRChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .filter((s) => s.fitsAnalysis?.averages?.hfr !== undefined)
+      .map((s, i) => ({
+        session: i + 1,
+        hfr: Number((s.fitsAnalysis.averages.hfr as number).toFixed(3)),
+        date: s.date,
+      }));
+  }, [sessions]);
+
+  const avgHfr = useMemo(() => {
+    if (!data.length) return 0;
+    return data.reduce((a, b) => a + b.hfr, 0) / data.length;
+  }, [data]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className={SESSION_CHART_CARD_CLASS}>
+      <SectionTitle icon={Target} title="HFR medio por sesión" />
+      <div className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+        HFR medio: <span className="font-semibold text-slate-900 dark:text-slate-100">{avgHfr.toFixed(2)}</span>
+      </div>
+      <SessionChartArea>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={['auto', 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => v.toFixed(2)} />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            formatter={(v: number) => [v.toFixed(2), "HFR"]}
+            labelFormatter={(value) => `Sesión ${value}`}
+          />
+          <Line
+            type="monotone"
+            dataKey="hfr"
+            stroke="#fbbf24"
+            strokeWidth={3}
+            dot={{ fill: "#fbbf24", r: 4 }}
+            name="HFR"
+            connectNulls
+          />
+        </LineChart>
+      </SessionChartArea>
+    </Card>
+  );
+};
+
 // PHD2 Guiding Evolution Chart — RA, DEC and Total RMS per session
 const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
-  // (HFR chart declared just above via injected component)
   const data = useMemo(() => {
     return sessions
       .slice()
