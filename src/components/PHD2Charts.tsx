@@ -27,8 +27,10 @@ function fmtHour(ms: number): string {
 
 function GroupChart({ group, index }: { group: PHD2Group; index: number }) {
   const chartData = useMemo(() => downsample(group.frames).map(f => ({
-    t: f.t, ra: f.ra, dec: f.dec, total: f.total,
+    t: f.t, ra: f.ra, dec: f.dec, total: f.total, snr: f.snr,
   })), [group.frames]);
+
+  const hasSnr = useMemo(() => chartData.some(d => typeof d.snr === "number" && isFinite(d.snr as number)), [chartData]);
 
   if (!chartData.length) return null;
 
@@ -75,6 +77,43 @@ function GroupChart({ group, index }: { group: PHD2Group; index: number }) {
           </LineChart>
         </ResponsiveContainer>
       </div>
+      {hasSnr && (
+        <div className="mt-4">
+          <h4 className="text-sm font-medium mb-2 flex items-center gap-2 text-foreground">
+            <Target className="w-4 h-4" />
+            {group.objectName || `Objetivo ${index + 1}`} — SNR en Guiado
+          </h4>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                  dataKey="t"
+                  type="number"
+                  domain={["dataMin", "dataMax"]}
+                  scale="time"
+                  tickFormatter={fmtHour}
+                  tick={{ fontSize: 11 }}
+                  className="text-muted-foreground"
+                />
+                <YAxis
+                  tick={{ fontSize: 11 }}
+                  className="text-muted-foreground"
+                  tickFormatter={(v) => v.toFixed(1)}
+                  domain={[0, "auto"]}
+                />
+                <Tooltip
+                  labelFormatter={(v: number) => fmtHour(v)}
+                  formatter={(v: number) => [v.toFixed(2), "SNR"]}
+                  contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155", fontSize: 12 }}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Line type="monotone" dataKey="snr" name="SNR" stroke="#22c55e" dot={false} strokeWidth={1.4} connectNulls={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

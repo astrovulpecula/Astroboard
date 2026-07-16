@@ -8,6 +8,7 @@ export interface PHD2Frame {
   ra: number;         // arcsec
   dec: number;        // arcsec
   total: number;
+  snr?: number;
 }
 
 export interface PHD2Group {
@@ -74,7 +75,7 @@ interface RawBlock {
   focalLength?: number;
   objectName?: string;
   columns: Record<string, number>;
-  rows: { time: number; raRaw: number; decRaw: number }[];
+  rows: { time: number; raRaw: number; decRaw: number; snr?: number }[];
 }
 
 const DEFAULT_PIXEL_SCALE = 1.0;
@@ -207,11 +208,13 @@ function parseGuideLog(content: string): RawBlock[] {
       const timeIdx = cols["Time"] ?? 1;
       const raIdx = cols["RARawDistance"] ?? cols["dx"] ?? 3;
       const decIdx = cols["DECRawDistance"] ?? cols["dy"] ?? 4;
+      const snrIdx = cols["SNR"] ?? cols["snr"];
       const time = parseFloat(parts[timeIdx]);
       const raRaw = parseFloat(parts[raIdx]);
       const decRaw = parseFloat(parts[decIdx]);
+      const snrVal = snrIdx !== undefined ? parseFloat(parts[snrIdx]) : NaN;
       if (isFinite(time) && isFinite(raRaw) && isFinite(decRaw)) {
-        current.rows.push({ time, raRaw, decRaw });
+        current.rows.push({ time, raRaw, decRaw, snr: isFinite(snrVal) ? snrVal : undefined });
       }
     }
   }
@@ -255,7 +258,7 @@ function computeGroup(blocks: RawBlock[], id: string): PHD2Group {
       const t = b.startTime + row.time * 1000;
       const ra = row.raRaw * scale;
       const dec = row.decRaw * scale;
-      frames.push({ t, ra, dec, total: Math.sqrt(ra * ra + dec * dec) });
+      frames.push({ t, ra, dec, total: Math.sqrt(ra * ra + dec * dec), snr: row.snr });
       if (t > bEnd) bEnd = t;
     }
     blockMeta.push({ startTime: b.startTime, endTime: bEnd, frames: b.rows.length });
