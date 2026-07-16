@@ -22,6 +22,7 @@ export interface FitsMetadata {
   camera?: string;          // Camera/instrument model
   focusPos?: number;        // Focus position
   ccdTemp?: number;         // CCD/Sensor temperature °C
+  hfr?: number;             // Half Flux Radius (px)
 }
 
 export interface FitsAnalysisResult {
@@ -38,6 +39,7 @@ export interface FitsAnalysisResult {
     windGust?: number;
     focusPos?: number;
     ccdTemp?: number;
+    hfr?: number;
   };
   // Extracted session info for automated form
   extractedInfo?: {
@@ -113,6 +115,10 @@ export async function parseFitsHeader(file: File): Promise<FitsMetadata> {
           "SET-TEMP": "ccdTemp",
           "TEMPERAT": "ccdTemp",
           "SENSORTE": "ccdTemp",
+          // Half Flux Radius (written by N.I.N.A., ASIAIR, etc.)
+          "HFR": "hfr",
+          "HFRVAL": "hfr",
+          "HFR_AVG": "hfr",
         };
         
         for (const line of lines) {
@@ -151,6 +157,11 @@ export async function parseFitsHeader(file: File): Promise<FitsMetadata> {
                 if (!isNaN(numValue)) {
                   metadata.ccdTemp = numValue;
                 }
+              } else if (metaKey === "hfr") {
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue) && numValue > 0) {
+                  metadata.hfr = numValue;
+                }
               } else {
                 const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
@@ -176,7 +187,7 @@ export function calculateAverages(files: FitsMetadata[]): FitsAnalysisResult["av
   const keys: (keyof FitsMetadata)[] = [
     "mpsas", "cloudCover", "ambientTemp", "skyTemp", 
     "humidity", "dewPoint", "pressure", "wind", "windGust",
-    "focusPos", "ccdTemp"
+    "focusPos", "ccdTemp", "hfr"
   ];
   
   const averages: FitsAnalysisResult["averages"] = {};
