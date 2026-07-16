@@ -12716,11 +12716,11 @@ export default function AstroTracker() {
 
               <SectionTitle icon={Database} title="Sesiones" />
 
-              <div className="flex items-center gap-1 md:gap-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                {tabs.map((t) => (
+              <div className="flex items-center border-b border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                {tabs.map((t, idx) => (
                   <div
                     key={t.id}
-                    className={`px-2 md:px-3 py-1.5 md:py-2 -mb-px border-b-2 text-sm md:text-base whitespace-nowrap ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium" : "border-transparent text-slate-500"}`}
+                    className={`group flex items-center px-3 md:px-4 py-1.5 md:py-2 -mb-px border-b-2 text-sm md:text-base whitespace-nowrap transition-colors rounded-t-lg ${active === t.id ? "border-slate-900 dark:border-slate-100 font-medium bg-slate-100/60 dark:bg-slate-800/40" : "border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/30"}`}
                   >
                     {editingTabId === t.id ? (
                       <input
@@ -12736,18 +12736,19 @@ export default function AstroTracker() {
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           onClick={() => setActive(t.id)}
-                          className="hover:text-slate-900 dark:hover:text-slate-100"
+                          className="hover:text-slate-900 dark:hover:text-slate-100 px-1"
                           title={t.id === "unclassified" ? "Sesiones sin clasificar o que no coinciden con ningún filtro" : ""}
                         >
                           {t.name}
                         </button>
                         {t.id !== "unclassified" && (
                           <>
+                            <span className="mx-1 h-3.5 w-px bg-slate-300 dark:bg-slate-700" aria-hidden="true" />
                             <button
-                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 startEditTab(t);
@@ -12757,7 +12758,7 @@ export default function AstroTracker() {
                               <Pencil className="w-3 h-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
                             </button>
                             <button
-                              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 rm(t.id);
@@ -12772,6 +12773,9 @@ export default function AstroTracker() {
                     )}
                   </div>
                 ))}
+                {tabs.length > 0 && (
+                  <div className="w-px h-5 bg-slate-300 dark:bg-slate-700 self-center mx-1" aria-hidden="true" />
+                )}
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
