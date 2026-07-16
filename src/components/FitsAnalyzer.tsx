@@ -172,6 +172,19 @@ export async function parseFitsHeader(file: File): Promise<FitsMetadata> {
           }
         }
         
+        // If HFR wasn't present in the header, try to compute it from the pixel data
+        if (metadata.hfr === undefined) {
+          try {
+            const computed = computeHfrFromFitsBuffer(buffer);
+            if (computed !== undefined && computed > 0) {
+              metadata.hfr = computed;
+            }
+          } catch (err) {
+            // Silent — HFR calculation is best-effort
+            console.warn("HFR compute failed for", file.name, err);
+          }
+        }
+
         resolve(metadata);
       } catch (error) {
         reject(error);
@@ -180,6 +193,159 @@ export async function parseFitsHeader(file: File): Promise<FitsMetadata> {
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   });
+}
+
+// Compute HFR (Half Flux Radius) directly from FITS pixel data.
+// Used as a fallback when the capture software didn't write HFR into the header.
+// Approach: decode pixels → downsample if large → estimate background (median/MAD)
+// → find local maxima above 5σ → flux-weighted centroid & HFR → return median HFR.
+export function computeHfrFromFitsBuffer(buffer: ArrayBuffer): number | undefined {
+  const bytes = new Uint8Array(buffer);
+  const dec = new TextDecoder("ascii");
+
+  // Locate end of primary header (multiple of 2880 bytes)
+  let headerEnd = -1;
+  const maxHeader = Math.min(bytes.length, 200 * 2880);
+  for (let off = 0; off < maxHeader; off += 2880) {
+    const block = dec.decode(bytes.slice(off, off + 2880));
+    for (let i = 0; i < 2880; i += 80) {
+      if (block.slice(i, i + 3) === "END") {
+        headerEnd = off + 2880;
+        break;
+      }
+    }
+    if (headerEnd > 0) break;
+  }
+  if (headerEnd < 0) return undefined;
+
+  const headerText = dec.decode(bytes.slice(0, headerEnd));
+  const kv = (k: string): string | null => {
+    const re = new RegExp(`^${k}\\s*=\\s*([^/\\n]+)`, "m");
+    const m = headerText.match(re);
+    return m ? m[1].trim().replace(/^['"]|['"]$/g, "").trim() : null;
+  };
+
+  const bitpix = parseInt(kv("BITPIX") || "0", 10);
+  const naxis = parseInt(kv("NAXIS") || "0", 10);
+  const naxis1 = parseInt(kv("NAXIS1") || "0", 10);
+  const naxis2 = parseInt(kv("NAXIS2") || "0", 10);
+  const bzero = parseFloat(kv("BZERO") || "0");
+  const bscale = parseFloat(kv("BSCALE") || "1");
+
+  if (!bitpix || naxis < 2 || !naxis1 || !naxis2) return undefined;
+  const bpp = Math.abs(bitpix) / 8;
+  const need = naxis1 * naxis2 * bpp;
+  if (headerEnd + need > bytes.length) return undefined;
+
+  const dv = new DataView(buffer, headerEnd, need);
+  const readPix = (i: number): number => {
+    const off = i * bpp;
+    let raw = 0;
+    switch (bitpix) {
+      case 8: raw = dv.getUint8(off); break;
+      case 16: raw = dv.getInt16(off, false); break;
+      case 32: raw = dv.getInt32(off, false); break;
+      case -32: raw = dv.getFloat32(off, false); break;
+      case -64: raw = dv.getFloat64(off, false); break;
+      default: return 0;
+    }
+    return bzero + bscale * raw;
+  };
+
+  // Downsample large images to keep compute bounded (~1500 px max side)
+  const targetMax = 1500;
+  const bin = Math.max(1, Math.ceil(Math.max(naxis1, naxis2) / targetMax));
+  const W = Math.floor(naxis1 / bin);
+  const H = Math.floor(naxis2 / bin);
+  if (W < 32 || H < 32) return undefined;
+  const img = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let sum = 0;
+      const ySrc = y * bin;
+      const xSrc = x * bin;
+      for (let dy = 0; dy < bin; dy++) {
+        const row = (ySrc + dy) * naxis1;
+        for (let dx = 0; dx < bin; dx++) {
+          sum += readPix(row + xSrc + dx);
+        }
+      }
+      img[y * W + x] = sum / (bin * bin);
+    }
+  }
+
+  // Background estimation via sampled median + MAD
+  const sampleTarget = 20000;
+  const step = Math.max(1, Math.floor((W * H) / sampleTarget));
+  const sample: number[] = [];
+  for (let i = 0; i < W * H; i += step) sample.push(img[i]);
+  sample.sort((a, b) => a - b);
+  const median = sample[Math.floor(sample.length / 2)] || 0;
+  const devs = sample.map(v => Math.abs(v - median)).sort((a, b) => a - b);
+  const mad = devs[Math.floor(devs.length / 2)] || 1;
+  const sigma = 1.4826 * mad || 1;
+  const threshold = median + 5 * sigma;
+
+  // Detect stars as local maxima above threshold, then measure HFR
+  const r = 8; // half-window in binned pixels
+  const hfrs: number[] = [];
+  const maxStars = 300;
+  outer: for (let y = r + 1; y < H - r - 1; y++) {
+    for (let x = r + 1; x < W - r - 1; x++) {
+      const p = img[y * W + x];
+      if (p < threshold) continue;
+      // 3x3 local maximum test
+      let isMax = true;
+      for (let dy = -1; dy <= 1 && isMax; dy++) {
+        for (let dx = -1; dx <= 1 && isMax; dx++) {
+          if (!dx && !dy) continue;
+          if (img[(y + dy) * W + (x + dx)] > p) isMax = false;
+        }
+      }
+      if (!isMax) continue;
+
+      // Flux-weighted centroid within window
+      let fluxSum = 0, cx = 0, cy = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const row = (y + dy) * W;
+        for (let dx = -r; dx <= r; dx++) {
+          const v = img[row + x + dx] - median;
+          if (v > 0) {
+            fluxSum += v;
+            cx += v * dx;
+            cy += v * dy;
+          }
+        }
+      }
+      if (fluxSum <= 0) continue;
+      cx /= fluxSum;
+      cy /= fluxSum;
+
+      // HFR = flux-weighted mean radius
+      let hfrNum = 0, hfrDen = 0;
+      for (let dy = -r; dy <= r; dy++) {
+        const row = (y + dy) * W;
+        for (let dx = -r; dx <= r; dx++) {
+          const v = img[row + x + dx] - median;
+          if (v > 0) {
+            const dist = Math.sqrt((dx - cx) * (dx - cx) + (dy - cy) * (dy - cy));
+            hfrNum += dist * v;
+            hfrDen += v;
+          }
+        }
+      }
+      if (hfrDen <= 0) continue;
+      const hfr = hfrNum / hfrDen;
+      if (hfr > 0.5 && hfr < r) {
+        hfrs.push(hfr * bin); // back to original pixel units
+        if (hfrs.length >= maxStars) break outer;
+      }
+    }
+  }
+
+  if (hfrs.length < 5) return undefined;
+  hfrs.sort((a, b) => a - b);
+  return hfrs[Math.floor(hfrs.length / 2)];
 }
 
 // Calculate averages from array of metadata
