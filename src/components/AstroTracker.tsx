@@ -8038,6 +8038,56 @@ export default function AstroTracker() {
     }
   }, [tabName, obj, proj, setShow, setTabName, setObjects, setActive]);
 
+  // Añade un filtro existente al proyecto actual (usado por el menú "+")
+  const addFilterToProject = useCallback(
+    (name: string) => {
+      const clean = (name || "").trim();
+      if (!clean || !obj || !proj) return;
+      const existing: string[] = (proj as any).filters || [];
+      if (existing.some((f) => f.toLowerCase() === clean.toLowerCase())) {
+        const id = `filter-${clean.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        setActive(id);
+        return;
+      }
+      setObjects((prevObjects) =>
+        prevObjects.map((o) =>
+          o.id !== obj.id
+            ? o
+            : {
+                ...o,
+                projects: o.projects.map((p) =>
+                  p.id !== proj.id
+                    ? p
+                    : {
+                        ...p,
+                        filters: [...((p as any).filters || []), clean].filter((v, i, a) => a.indexOf(v) === i),
+                      },
+                ),
+              },
+        ),
+      );
+      setTimeout(() => {
+        const newTabId = `filter-${clean.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        setActive(newTabId);
+      }, 0);
+    },
+    [obj, proj, setObjects, setActive],
+  );
+
+  // Filtros ya usados por el usuario en cualquier proyecto (excluye los del proyecto actual)
+  const userDefinedFilters = useMemo(() => {
+    const set = new Set<string>();
+    for (const o of objects) {
+      for (const p of (o as any).projects || []) {
+        for (const f of (p as any).filters || []) {
+          if (typeof f === "string" && f.trim()) set.add(f.trim());
+        }
+      }
+    }
+    const current = new Set<string>(((proj as any)?.filters || []).map((f: string) => f.toLowerCase()));
+    return [...set].filter((f) => !current.has(f.toLowerCase())).sort((a, b) => a.localeCompare(b));
+  }, [objects, proj]);
+
   const rm = useCallback(
     (id: string) => {
       if (!confirm("¿Eliminar esta pestaña de filtro?")) return;
