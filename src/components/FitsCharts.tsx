@@ -1,5 +1,5 @@
 import React from "react";
-import { Thermometer, Gauge, Droplets, Focus, Cpu } from "lucide-react";
+import { Thermometer, Gauge, Droplets, Focus, Cpu, Star } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { FitsAnalysisResult } from "./FitsAnalyzer";
 
@@ -21,10 +21,11 @@ export default function FitsCharts({ data }: FitsChartsProps) {
       wind: f.wind,
       focusPos: f.focusPos,
       ccdTemp: f.ccdTemp,
+      hfr: f.hfr,
     }));
 
   const hasChartData = chartData.length > 0 && chartData.some(d => 
-    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined || d.focusPos !== undefined || d.ccdTemp !== undefined
+    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined || d.focusPos !== undefined || d.ccdTemp !== undefined || d.hfr !== undefined
   );
 
   if (!hasChartData) {
@@ -163,6 +164,33 @@ export default function FitsCharts({ data }: FitsChartsProps) {
                   formatter={(value: number) => [`${value.toFixed(1)}°C`, "Temp. Sensor"]}
                 />
                 <Line type="monotone" dataKey="ccdTemp" stroke="#14b8a6" name="Temp. Sensor" dot={false} strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* HFR chart (per light) */}
+      {chartData.some(d => d.hfr !== undefined) && (
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Star className="w-4 h-4" /> HFR por foto
+          </h4>
+          <div className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                <XAxis dataKey="index" tick={{ fontSize: 12 }} className="text-slate-500" />
+                <YAxis domain={['auto', 'auto']} tick={{ fontSize: 12 }} className="text-slate-500" tickFormatter={(v) => v.toFixed(2)} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '0.5rem'
+                  }}
+                  formatter={(value: number) => [value.toFixed(2), "HFR"]}
+                />
+                <Line type="monotone" dataKey="hfr" stroke="#fbbf24" name="HFR" dot={false} strokeWidth={2} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           </div>
