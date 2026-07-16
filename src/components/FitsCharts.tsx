@@ -1,5 +1,5 @@
 import React from "react";
-import { Thermometer, Gauge, Droplets, Focus, Cpu } from "lucide-react";
+import { Thermometer, Gauge, Droplets, Focus, Cpu, Star } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { FitsAnalysisResult } from "./FitsAnalyzer";
 
@@ -21,10 +21,11 @@ export default function FitsCharts({ data }: FitsChartsProps) {
       wind: f.wind,
       focusPos: f.focusPos,
       ccdTemp: f.ccdTemp,
+      hfr: f.hfr,
     }));
 
   const hasChartData = chartData.length > 0 && chartData.some(d => 
-    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined || d.focusPos !== undefined || d.ccdTemp !== undefined
+    d.mpsas !== undefined || d.ambientTemp !== undefined || d.humidity !== undefined || d.wind !== undefined || d.focusPos !== undefined || d.ccdTemp !== undefined || d.hfr !== undefined
   );
 
   if (!hasChartData) {
