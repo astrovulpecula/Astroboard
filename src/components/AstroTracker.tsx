@@ -13060,6 +13060,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.humidityChart !== false) && <FitsHumidityChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.windChart !== false) && <FitsWindChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.hfrChart !== false) && <FitsHFRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.phd2GuidingEvolutionChart !== false) && <PHD2GuidingEvolutionChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
