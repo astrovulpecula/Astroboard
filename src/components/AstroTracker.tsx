@@ -1223,7 +1223,7 @@ function FObject({ onSubmit }: { onSubmit: (obj: any) => void }) {
     if (category === "planetary") {
       const name = planetaryName === "Otros" ? planetaryCustom.trim() : planetaryName;
       if (!name) {
-        alert("Selecciona o introduce un nombre para el objeto planetario.");
+        globalToast({ title: "Aviso", description: "Selecciona o introduce un nombre para el objeto planetario.", variant: "destructive" });
         return;
       }
       onSubmit({
@@ -2391,7 +2391,7 @@ function FPlanned({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!objectId.trim()) {
-      alert("Debes proporcionar un código de objeto.");
+      globalToast({ title: "Aviso", description: "Debes proporcionar un código de objeto.", variant: "destructive" });
       return;
     }
     
@@ -2861,7 +2861,7 @@ function FPlannedEdit({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!objectId.trim()) {
-      alert("Debes proporcionar un código de objeto.");
+      globalToast({ title: "Aviso", description: "Debes proporcionar un código de objeto.", variant: "destructive" });
       return;
     }
     
@@ -7525,11 +7525,11 @@ export default function AstroTracker() {
   const addObj = useCallback(
     async (base: any) => {
       if (!base.id || !base.id.trim()) {
-        alert("Debes proporcionar un código para el objeto.");
+        globalToast({ title: "Aviso", description: "Debes proporcionar un código para el objeto.", variant: "destructive" });
         return;
       }
       if (objects.some((o) => o.id.toLowerCase() === base.id.toLowerCase())) {
-        alert("Ya existe un objeto con ese código.");
+        globalToast({ title: "Aviso", description: "Ya existe un objeto con ese código.", variant: "destructive" });
         return;
       }
       
@@ -8837,7 +8837,7 @@ export default function AstroTracker() {
                     try {
                       json = JSON.parse(text);
                     } catch {
-                      alert("JSON no válido: el archivo no contiene JSON válido");
+                      globalToast({ title: "Aviso", description: "JSON no válido: el archivo no contiene JSON válido", variant: "destructive" });
                       e.target.value = "";
                       return;
                     }
@@ -8845,7 +8845,7 @@ export default function AstroTracker() {
                     // Validar y sanitizar datos con Zod
                     const validationResult = validateJsonUpload(json);
                     if (!validationResult.success) {
-                      alert(validationResult.error || "Error de validación");
+                      globalToast({ title: "Aviso", description: validationResult.error || "Error de validación", variant: "destructive" });
                       e.target.value = "";
                       return;
                     }
@@ -14371,7 +14371,7 @@ export default function AstroTracker() {
                       try {
                         json = JSON.parse(text);
                       } catch {
-                        alert("JSON no válido: el archivo no contiene JSON válido");
+                        globalToast({ title: "Aviso", description: "JSON no válido: el archivo no contiene JSON válido", variant: "destructive" });
                         e.target.value = "";
                         return;
                       }
@@ -14379,7 +14379,7 @@ export default function AstroTracker() {
                       // Validar y sanitizar datos con Zod
                       const validationResult = validateJsonUpload(json);
                       if (!validationResult.success) {
-                        alert(validationResult.error || "Error de validación");
+                        globalToast({ title: "Aviso", description: validationResult.error || "Error de validación", variant: "destructive" });
                         e.target.value = "";
                         return;
                       }
@@ -15477,7 +15477,7 @@ export default function AstroTracker() {
                   try {
                     json = JSON.parse(text);
                   } catch {
-                    alert("JSON no válido: el archivo no contiene JSON válido");
+                    globalToast({ title: "Aviso", description: "JSON no válido: el archivo no contiene JSON válido", variant: "destructive" });
                     e.target.value = "";
                     return;
                   }
@@ -15485,7 +15485,7 @@ export default function AstroTracker() {
                   // Validar y sanitizar datos con Zod
                   const validationResult = validateJsonUpload(json);
                   if (!validationResult.success) {
-                    alert(validationResult.error || "Error de validación");
+                    globalToast({ title: "Aviso", description: validationResult.error || "Error de validación", variant: "destructive" });
                     e.target.value = "";
                     return;
                   }
