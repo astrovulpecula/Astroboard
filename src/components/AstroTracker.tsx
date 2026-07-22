@@ -15651,7 +15651,8 @@ export default function AstroTracker() {
                     filterChart: 'Exposición por filtro',
                     lightsChart: 'Iluminación por sesión',
                     snrMeanChart: 'SNR medio por sesión',
-                    snrRGBChart: 'SNR RGB por sesión'
+                    snrRGBChart: 'SNR RGB por sesión',
+                    snrGuidingChart: 'SNR en Guiado (media por sesión)'
                   }).map(([key, label]) => (
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox 
