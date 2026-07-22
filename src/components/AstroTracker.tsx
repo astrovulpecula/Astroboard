@@ -11046,7 +11046,14 @@ export default function AstroTracker() {
                                       />
                                     </div>
                                     <div className="mt-1 flex items-center justify-between text-xs">
-                                      <span className="font-medium text-slate-700 dark:text-slate-200">{camera}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setRenameEquip({ type: "camera", oldName: camera, newName: camera })}
+                                        className="font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 hover:underline text-left"
+                                        title={t('renameEquipmentTitle') || 'Renombrar'}
+                                      >
+                                        {camera}
+                                      </button>
                                       <span className="text-blue-700 dark:text-blue-300 tabular-nums">
                                         {count} lights · {pct}%
                                       </span>
@@ -11080,7 +11087,14 @@ export default function AstroTracker() {
                                       />
                                     </div>
                                     <div className="mt-1 flex items-center justify-between text-xs">
-                                      <span className="font-medium text-slate-700 dark:text-slate-200">{telescope}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setRenameEquip({ type: "telescope", oldName: telescope, newName: telescope })}
+                                        className="font-medium text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-fuchsia-300 hover:underline text-left"
+                                        title={t('renameEquipmentTitle') || 'Renombrar'}
+                                      >
+                                        {telescope}
+                                      </button>
                                       <span className="text-purple-700 dark:text-purple-300 tabular-nums">
                                         {data.lights} lights · {pct}%
                                       </span>
