@@ -11016,26 +11016,34 @@ export default function AstroTracker() {
                   {/* Camera and Telescope Usage - Full Width Row with 2 Columns */}
                   {(visibleHighlights.cameraUsage || visibleHighlights.telescopeUsage) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Camera Usage Statistics */}
+                      {/* Camera Usage Statistics - horizontal bar chart */}
                       {visibleHighlights.cameraUsage && Object.keys(globalMetrics.cameraCounts).length > 0 && (
                         <Card className="p-5">
-                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                             {t('metricCameraUsage')}
                           </div>
-                          <div className="flex flex-wrap gap-3">
+                          <div className="space-y-4">
                             {Object.entries(globalMetrics.cameraCounts)
                               .sort(([, a], [, b]) => b - a)
                               .map(([camera, count]) => {
-                                const percentage =
-                                  globalMetrics.totalCameraLights > 0 ? ((count / globalMetrics.totalCameraLights) * 100).toFixed(1) : 0;
+                                const pctNum =
+                                  globalMetrics.totalCameraLights > 0
+                                    ? (count / globalMetrics.totalCameraLights) * 100
+                                    : 0;
+                                const pct = pctNum.toFixed(1);
                                 return (
-                                  <div
-                                    key={camera}
-                                    className="px-4 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800"
-                                  >
-                                    <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">{camera}</div>
-                                    <div className="text-xs text-blue-700 dark:text-blue-300">
-                                      {count} lights ({percentage}%)
+                                  <div key={camera}>
+                                    <div className="h-3 w-full rounded-full bg-blue-100 dark:bg-blue-950/40 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-400 dark:from-blue-500 dark:to-blue-300 transition-all"
+                                        style={{ width: `${Math.max(pctNum, 0)}%` }}
+                                      />
+                                    </div>
+                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                      <span className="font-medium text-slate-700 dark:text-slate-200">{camera}</span>
+                                      <span className="text-blue-700 dark:text-blue-300 tabular-nums">
+                                        {count} lights · {pct}%
+                                      </span>
                                     </div>
                                   </div>
                                 );
@@ -11044,28 +11052,32 @@ export default function AstroTracker() {
                         </Card>
                       )}
 
-                      {/* Telescope Usage Statistics */}
+                      {/* Telescope Usage Statistics - horizontal bar chart */}
                       {visibleHighlights.telescopeUsage && Object.keys(globalMetrics.telescopeCounts).length > 0 && (
                         <Card className="p-5">
-                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-3">{t('metricTelescopeUsage')}</div>
-                          <div className="flex flex-wrap gap-3">
+                          <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">{t('metricTelescopeUsage')}</div>
+                          <div className="space-y-4">
                             {Object.entries(globalMetrics.telescopeCounts)
-                              .sort(([, a], [, b]) => b.seconds - a.seconds)
+                              .sort(([, a], [, b]) => b.lights - a.lights)
                               .map(([telescope, data]) => {
-                                const percentage =
+                                const pctNum =
                                   globalMetrics.totalTelescopeLights > 0
-                                    ? ((data.lights / globalMetrics.totalTelescopeLights) * 100).toFixed(1)
-                                    : "0";
+                                    ? (data.lights / globalMetrics.totalTelescopeLights) * 100
+                                    : 0;
+                                const pct = pctNum.toFixed(1);
                                 return (
-                                  <div
-                                    key={telescope}
-                                    className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800"
-                                  >
-                                    <div className="text-sm font-semibold text-purple-900 dark:text-purple-100">
-                                      {telescope}
+                                  <div key={telescope}>
+                                    <div className="h-3 w-full rounded-full bg-purple-100 dark:bg-purple-950/40 overflow-hidden">
+                                      <div
+                                        className="h-full rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-400 dark:from-purple-500 dark:to-fuchsia-300 transition-all"
+                                        style={{ width: `${Math.max(pctNum, 0)}%` }}
+                                      />
                                     </div>
-                                    <div className="text-xs text-purple-700 dark:text-purple-300">
-                                      {hh(data.seconds)} • {data.lights} lights ({percentage}%)
+                                    <div className="mt-1 flex items-center justify-between text-xs">
+                                      <span className="font-medium text-slate-700 dark:text-slate-200">{telescope}</span>
+                                      <span className="text-purple-700 dark:text-purple-300 tabular-nums">
+                                        {data.lights} lights · {pct}%
+                                      </span>
                                     </div>
                                   </div>
                                 );
