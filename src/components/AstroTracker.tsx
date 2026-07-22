@@ -4973,9 +4973,18 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((s) => {
+      .map((s, idx) => {
         const a = s.phd2Analysis;
-        if (!a) return null;
+        if (!a) return {
+          session: idx + 1,
+          date: s.date,
+          name: s.name || s.date,
+          raRms: null,
+          decRms: null,
+          totalRms: null,
+          duration: 0,
+          frameCount: 0,
+        };
         const groups = Array.isArray(a.groups) ? a.groups : [];
         // Combine all frames of all groups belonging to the session
         const frames = groups.flatMap((g: any) => g.frames || []);
@@ -4993,9 +5002,19 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
           duration = a.totalDuration || 0;
           frameCount = (a.dataPoints || []).length;
         } else {
-          return null;
+          return {
+            session: idx + 1,
+            date: s.date,
+            name: s.name || s.date,
+            raRms: null,
+            decRms: null,
+            totalRms: null,
+            duration: 0,
+            frameCount: 0,
+          };
         }
         return {
+          session: idx + 1,
           date: s.date,
           name: s.name || s.date,
           raRms: Number(raRms.toFixed(3)),
@@ -5004,11 +5023,10 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
           duration,
           frameCount,
         };
-      })
-      .filter(Boolean) as any[];
+      }) as any[];
   }, [sessions]);
 
-  if (!data.length) return null;
+  if (!data.length || !data.some(d => d.totalRms !== null)) return null;
 
   const fmtDur = (sec: number) => {
     if (!sec) return "–";
@@ -5023,14 +5041,14 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `#${v}`} />
           <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `${v}"`} />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(_v, payload: any) => {
               const p = payload?.[0]?.payload;
               if (!p) return "";
-              return `${p.name} — ${p.date}`;
+              return `Sesión #${p.session} — ${p.name} (${p.date})`;
             }}
             formatter={(v: number, name: string, item: any) => {
               const p = item?.payload;
@@ -5044,9 +5062,9 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
             }}
           />
           <Legend wrapperStyle={{ color: "#e2e8f0" }} />
-          <Line type="monotone" dataKey="raRms" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 3 }} name="RA RMS" connectNulls />
-          <Line type="monotone" dataKey="decRms" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} name="DEC RMS" connectNulls />
-          <Line type="monotone" dataKey="totalRms" stroke="#fbbf24" strokeWidth={3} dot={{ fill: "#fbbf24", r: 4 }} name="RMS TOTAL" connectNulls />
+          <Line type="monotone" dataKey="raRms" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 3 }} name="RA RMS" connectNulls={false} />
+          <Line type="monotone" dataKey="decRms" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} name="DEC RMS" connectNulls={false} />
+          <Line type="monotone" dataKey="totalRms" stroke="#fbbf24" strokeWidth={3} dot={{ fill: "#fbbf24", r: 4 }} name="RMS TOTAL" connectNulls={false} />
         </LineChart>
       </SessionChartArea>
     </Card>
@@ -5059,21 +5077,29 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((s) => {
+      .map((s, idx) => {
         const a = s.phd2Analysis;
-        if (!a) return null;
-        const groups = Array.isArray(a.groups) ? a.groups : [];
+        const groups = a && Array.isArray(a.groups) ? a.groups : [];
         const snrs: number[] = [];
         for (const g of groups) {
           for (const f of (g.frames || [])) {
             if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
           }
         }
-        if (!snrs.length) return null;
+        if (!snrs.length) return {
+          session: idx + 1,
+          date: s.date,
+          name: s.name || s.date,
+          snr: null,
+          snrMin: null,
+          snrMax: null,
+          samples: 0,
+        };
         const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
         const min = Math.min(...snrs);
         const max = Math.max(...snrs);
         return {
+          session: idx + 1,
           date: s.date,
           name: s.name || s.date,
           snr: Number(mean.toFixed(2)),
@@ -5081,11 +5107,10 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
           snrMax: Number(max.toFixed(2)),
           samples: snrs.length,
         };
-      })
-      .filter(Boolean) as any[];
+      }) as any[];
   }, [sessions]);
 
-  if (!data.length) return null;
+  if (!data.length || !data.some(d => d.snr !== null)) return null;
 
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
@@ -5093,14 +5118,14 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `#${v}`} />
           <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(_v, payload: any) => {
               const p = payload?.[0]?.payload;
               if (!p) return "";
-              return `${p.name} — ${p.date}`;
+              return `Sesión #${p.session} — ${p.name} (${p.date})`;
             }}
             formatter={(v: number, _name: string, item: any) => {
               const p = item?.payload;
