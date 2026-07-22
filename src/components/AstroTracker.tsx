@@ -8328,18 +8328,25 @@ export default function AstroTracker() {
       }
     }
 
-    // Camera usage
-    const cameraCounts: Record<string, number> = {};
+    // Camera usage (tracks both lights count and integration seconds)
+    const cameraCounts: Record<string, { seconds: number; lights: number }> = {};
     objects.forEach((obj) => {
       obj.projects.forEach((proj) => {
         proj.sessions.forEach((session: any) => {
           if (session.camera) {
-            cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
+            const lights = session.lights || 0;
+            const seconds = lights * (session.exposureSec || 0);
+            if (!cameraCounts[session.camera]) {
+              cameraCounts[session.camera] = { seconds: 0, lights: 0 };
+            }
+            cameraCounts[session.camera].seconds += seconds;
+            cameraCounts[session.camera].lights += lights;
           }
         });
       });
     });
-    const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+    const totalCameraLights = Object.values(cameraCounts).reduce((sum, d) => sum + d.lights, 0);
+    const totalCameraSeconds = Object.values(cameraCounts).reduce((sum, d) => sum + d.seconds, 0);
 
     // Telescope usage
     const telescopeCounts: Record<string, { seconds: number; lights: number }> = {};
@@ -8359,6 +8366,7 @@ export default function AstroTracker() {
       });
     });
     const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
+    const totalTelescopeSeconds = Object.values(telescopeCounts).reduce((sum, data) => sum + data.seconds, 0);
 
     // Most photographed constellation
     const constellationCounts: Record<string, number> = {};
