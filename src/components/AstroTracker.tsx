@@ -5804,25 +5804,47 @@ const generatePDFReport = async (
     snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
   })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
 
-  // Mean guiding SNR per session (from PHD2 logs)
-  const snrGuidingData = (proj.sessions || [])
+  // Mean guiding SNR per session (from PHD2 logs) — one entry per session, null when no data
+  const sortedSessionsForGuiding = (proj.sessions || [])
     .slice()
-    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
-    .map((s: any) => {
-      const a = s.phd2Analysis;
-      if (!a) return null;
-      const groups = Array.isArray(a.groups) ? a.groups : [];
-      const snrs: number[] = [];
-      for (const g of groups) {
-        for (const f of (g.frames || [])) {
-          if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
-        }
+    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''));
+  const snrGuidingData = sortedSessionsForGuiding.map((s: any, idx: number) => {
+    const a = s.phd2Analysis;
+    const groups = a && Array.isArray(a.groups) ? a.groups : [];
+    const snrs: number[] = [];
+    for (const g of groups) {
+      for (const f of (g.frames || [])) {
+        if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
       }
-      if (!snrs.length) return null;
-      const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
-      return { date: s.date, snr: Number(mean.toFixed(2)) };
-    })
-    .filter(Boolean) as { date: string; snr: number }[];
+    }
+    const mean = snrs.length ? snrs.reduce((acc, v) => acc + v, 0) / snrs.length : null;
+    return { session: idx + 1, date: s.date, snr: mean !== null ? Number(mean.toFixed(2)) : null };
+  }) as { session: number; date: string; snr: number | null }[];
+  const hasGuidingSNR = snrGuidingData.some(d => d.snr !== null);
+
+  // Guiding RMS per session (RA / DEC / Total) — one entry per session, null when no data
+  const guidingEvolutionData = sortedSessionsForGuiding.map((s: any, idx: number) => {
+    const a = s.phd2Analysis;
+    const groups = a && Array.isArray(a.groups) ? a.groups : [];
+    const frames = groups.flatMap((g: any) => g.frames || []);
+    let raRms: number | null = null, decRms: number | null = null, totalRms: number | null = null;
+    if (frames.length) {
+      const n = frames.length;
+      raRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.ra * f.ra, 0) / n);
+      decRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.dec * f.dec, 0) / n);
+      totalRms = Math.sqrt(raRms * raRms + decRms * decRms);
+    } else if (a && a.medianRms !== undefined) {
+      totalRms = a.medianRms;
+    }
+    return {
+      session: idx + 1,
+      date: s.date,
+      raRms: raRms !== null ? Number(raRms.toFixed(3)) : null,
+      decRms: decRms !== null ? Number(decRms.toFixed(3)) : null,
+      totalRms: totalRms !== null ? Number(totalRms.toFixed(3)) : null,
+    };
+  });
+  const hasGuidingEvolution = guidingEvolutionData.some(d => d.totalRms !== null);
 
   const avgSNR = snrMeanData.length > 0 
     ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
