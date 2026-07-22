@@ -11050,7 +11050,7 @@ export default function AstroTracker() {
                                         type="button"
                                         onClick={() => setRenameEquip({ type: "camera", oldName: camera, newName: camera })}
                                         className="font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 hover:underline text-left"
-                                        title={t('renameEquipmentTitle') || 'Renombrar'}
+                                        title={'Renombrar'}
                                       >
                                         {camera}
                                       </button>
@@ -11091,7 +11091,7 @@ export default function AstroTracker() {
                                         type="button"
                                         onClick={() => setRenameEquip({ type: "telescope", oldName: telescope, newName: telescope })}
                                         className="font-medium text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-fuchsia-300 hover:underline text-left"
-                                        title={t('renameEquipmentTitle') || 'Renombrar'}
+                                        title={'Renombrar'}
                                       >
                                         {telescope}
                                       </button>
