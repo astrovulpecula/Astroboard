@@ -6557,6 +6557,12 @@ export default function AstroTracker() {
   const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([
     { name: "", focalLength: "" },
   ]);
+  // Rename equipment (camera/telescope) globally across all projects/sessions
+  const [renameEquip, setRenameEquip] = useState<{
+    type: "camera" | "telescope";
+    oldName: string;
+    newName: string;
+  } | null>(null);
   const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
   const [hasImportedData, setHasImportedData] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState(1);
@@ -11040,7 +11046,14 @@ export default function AstroTracker() {
                                       />
                                     </div>
                                     <div className="mt-1 flex items-center justify-between text-xs">
-                                      <span className="font-medium text-slate-700 dark:text-slate-200">{camera}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setRenameEquip({ type: "camera", oldName: camera, newName: camera })}
+                                        className="font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 hover:underline text-left"
+                                        title={'Renombrar'}
+                                      >
+                                        {camera}
+                                      </button>
                                       <span className="text-blue-700 dark:text-blue-300 tabular-nums">
                                         {count} lights · {pct}%
                                       </span>
@@ -11074,7 +11087,14 @@ export default function AstroTracker() {
                                       />
                                     </div>
                                     <div className="mt-1 flex items-center justify-between text-xs">
-                                      <span className="font-medium text-slate-700 dark:text-slate-200">{telescope}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => setRenameEquip({ type: "telescope", oldName: telescope, newName: telescope })}
+                                        className="font-medium text-slate-700 dark:text-slate-200 hover:text-purple-600 dark:hover:text-fuchsia-300 hover:underline text-left"
+                                        title={'Renombrar'}
+                                      >
+                                        {telescope}
+                                      </button>
                                       <span className="text-purple-700 dark:text-purple-300 tabular-nums">
                                         {data.lights} lights · {pct}%
                                       </span>
@@ -15692,6 +15712,126 @@ export default function AstroTracker() {
       </div>
 
 
+      {/* Rename equipment dialog (camera/telescope) */}
+      <Dialog open={!!renameEquip} onOpenChange={(o) => { if (!o) setRenameEquip(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {renameEquip?.type === "camera" ? "Renombrar cámara" : "Renombrar telescopio"}
+            </DialogTitle>
+            <DialogDescription>
+              Cambia el nombre en todos los proyectos y sesiones que lo usen.
+            </DialogDescription>
+          </DialogHeader>
+          {renameEquip && (
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs text-muted-foreground mb-1">Nombre actual</div>
+                <div className="px-3 py-2 rounded-md bg-muted text-sm font-medium break-all">
+                  {renameEquip.oldName}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nuevo nombre</label>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={renameEquip.newName}
+                    onChange={(e) => setRenameEquip({ ...renameEquip, newName: e.target.value })}
+                    className="flex-1 px-3 py-2 rounded-md border border-input bg-background text-sm"
+                    placeholder="Escribe un nombre…"
+                  />
+                  <Select
+                    value=""
+                    onValueChange={(v) => setRenameEquip({ ...renameEquip, newName: v })}
+                  >
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue placeholder="De tu equipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(renameEquip.type === "camera"
+                        ? cameras.filter((c) => c && c.trim() !== "")
+                        : telescopes.map((t) => t.name).filter((n) => n && n.trim() !== "")
+                      ).map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  Elige uno de tu equipo (Ajustes) o escribe un nombre nuevo.
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Btn outline onClick={() => setRenameEquip(null)}>Cancelar</Btn>
+                <Btn
+                  onClick={() => {
+                    const oldName = renameEquip.oldName;
+                    const newName = renameEquip.newName.trim();
+                    if (!newName || newName === oldName) {
+                      setRenameEquip(null);
+                      return;
+                    }
+                    const key = renameEquip.type;
+                    setObjects((prev) =>
+                      prev.map((o: any) => ({
+                        ...o,
+                        projects: (o.projects || []).map((p: any) => {
+                          const newProj = { ...p };
+                          if (p.equipment && p.equipment[key] === oldName) {
+                            newProj.equipment = { ...p.equipment, [key]: newName };
+                          }
+                          if (Array.isArray(p.sessions)) {
+                            newProj.sessions = p.sessions.map((s: any) => {
+                              let ns = s;
+                              if (s?.[key] === oldName) ns = { ...ns, [key]: newName };
+                              if (
+                                key === "camera" &&
+                                s?.fireCaptureData?.files &&
+                                Array.isArray(s.fireCaptureData.files)
+                              ) {
+                                const files = s.fireCaptureData.files.map((f: any) =>
+                                  f?.camera === oldName ? { ...f, camera: newName } : f,
+                                );
+                                ns = { ...ns, fireCaptureData: { ...s.fireCaptureData, files } };
+                              }
+                              return ns;
+                            });
+                          }
+                          return newProj;
+                        }),
+                      })),
+                    );
+                    // Ensure new name exists in user settings library
+                    if (key === "camera") {
+                      setCameras((prev) => {
+                        const clean = prev.filter((c) => c && c.trim() !== "");
+                        if (clean.some((c) => c === newName)) return prev;
+                        return [...clean, newName];
+                      });
+                    } else {
+                      setTelescopes((prev) => {
+                        const clean = prev.filter((t) => t.name && t.name.trim() !== "");
+                        if (clean.some((t) => t.name === newName)) return prev;
+                        return [...clean, { name: newName, focalLength: "" }];
+                      });
+                    }
+                    setRenameEquip(null);
+                    toast({
+                      title: "Renombrado",
+                      description: `Se ha renombrado a "${newName}" en todo el proyecto.`,
+                    });
+                  }}
+                >
+                  Cambiar el nombre
+                </Btn>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
