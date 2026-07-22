@@ -6211,6 +6211,17 @@ const generatePDFReport = async (
     </div>`;
   }
 
+  // SNR en Guiado
+  if (config.includeCharts.snrGuidingChart && snrGuidingData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">SNR en Guiado (media por sesión)</h2>
+      <div class="chart-container">
+        <canvas id="snrGuidingChart"></canvas>
+      </div>
+    </div>`;
+  }
+
   // Session table
   if (config.includeTable) {
     html += `
