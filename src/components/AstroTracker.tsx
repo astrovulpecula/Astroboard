@@ -8328,18 +8328,25 @@ export default function AstroTracker() {
       }
     }
 
-    // Camera usage
-    const cameraCounts: Record<string, number> = {};
+    // Camera usage (tracks both lights count and integration seconds)
+    const cameraCounts: Record<string, { seconds: number; lights: number }> = {};
     objects.forEach((obj) => {
       obj.projects.forEach((proj) => {
         proj.sessions.forEach((session: any) => {
           if (session.camera) {
-            cameraCounts[session.camera] = (cameraCounts[session.camera] || 0) + (session.lights || 0);
+            const lights = session.lights || 0;
+            const seconds = lights * (session.exposureSec || 0);
+            if (!cameraCounts[session.camera]) {
+              cameraCounts[session.camera] = { seconds: 0, lights: 0 };
+            }
+            cameraCounts[session.camera].seconds += seconds;
+            cameraCounts[session.camera].lights += lights;
           }
         });
       });
     });
-    const totalCameraLights = Object.values(cameraCounts).reduce((sum, count) => sum + count, 0);
+    const totalCameraLights = Object.values(cameraCounts).reduce((sum, d) => sum + d.lights, 0);
+    const totalCameraSeconds = Object.values(cameraCounts).reduce((sum, d) => sum + d.seconds, 0);
 
     // Telescope usage
     const telescopeCounts: Record<string, { seconds: number; lights: number }> = {};
@@ -8359,6 +8366,7 @@ export default function AstroTracker() {
       });
     });
     const totalTelescopeLights = Object.values(telescopeCounts).reduce((sum, data) => sum + data.lights, 0);
+    const totalTelescopeSeconds = Object.values(telescopeCounts).reduce((sum, data) => sum + data.seconds, 0);
 
     // Most photographed constellation
     const constellationCounts: Record<string, number> = {};
@@ -8485,8 +8493,10 @@ export default function AstroTracker() {
       maxStreak,
       cameraCounts,
       totalCameraLights,
+      totalCameraSeconds,
       telescopeCounts,
       totalTelescopeLights,
+      totalTelescopeSeconds,
       mostPhotographedConstellation,
       constellationCounts,
       onpCount,
@@ -11030,13 +11040,14 @@ export default function AstroTracker() {
                           </div>
                           <div className="space-y-4">
                             {Object.entries(globalMetrics.cameraCounts)
-                              .sort(([, a], [, b]) => b - a)
-                              .map(([camera, count]) => {
+                              .sort(([, a], [, b]) => b.seconds - a.seconds)
+                              .map(([camera, data]) => {
                                 const pctNum =
-                                  globalMetrics.totalCameraLights > 0
-                                    ? (count / globalMetrics.totalCameraLights) * 100
+                                  globalMetrics.totalCameraSeconds > 0
+                                    ? (data.seconds / globalMetrics.totalCameraSeconds) * 100
                                     : 0;
                                 const pct = pctNum.toFixed(1);
+                                const hours = data.seconds / 3600;
                                 return (
                                   <div key={camera}>
                                     <div className="h-3 w-full rounded-full bg-blue-100 dark:bg-blue-950/40 overflow-hidden">
@@ -11055,7 +11066,7 @@ export default function AstroTracker() {
                                         {camera}
                                       </button>
                                       <span className="text-blue-700 dark:text-blue-300 tabular-nums">
-                                        {count} lights · {pct}%
+                                        {hours.toFixed(1)} h · {pct}%
                                       </span>
                                     </div>
                                   </div>
@@ -11071,13 +11082,14 @@ export default function AstroTracker() {
                           <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">{t('metricTelescopeUsage')}</div>
                           <div className="space-y-4">
                             {Object.entries(globalMetrics.telescopeCounts)
-                              .sort(([, a], [, b]) => b.lights - a.lights)
+                              .sort(([, a], [, b]) => b.seconds - a.seconds)
                               .map(([telescope, data]) => {
                                 const pctNum =
-                                  globalMetrics.totalTelescopeLights > 0
-                                    ? (data.lights / globalMetrics.totalTelescopeLights) * 100
+                                  globalMetrics.totalTelescopeSeconds > 0
+                                    ? (data.seconds / globalMetrics.totalTelescopeSeconds) * 100
                                     : 0;
                                 const pct = pctNum.toFixed(1);
+                                const hours = data.seconds / 3600;
                                 return (
                                   <div key={telescope}>
                                     <div className="h-3 w-full rounded-full bg-purple-100 dark:bg-purple-950/40 overflow-hidden">
@@ -11096,7 +11108,7 @@ export default function AstroTracker() {
                                         {telescope}
                                       </button>
                                       <span className="text-purple-700 dark:text-purple-300 tabular-nums">
-                                        {data.lights} lights · {pct}%
+                                        {hours.toFixed(1)} h · {pct}%
                                       </span>
                                     </div>
                                   </div>
