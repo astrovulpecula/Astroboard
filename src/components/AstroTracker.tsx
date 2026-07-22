@@ -4973,9 +4973,18 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((s) => {
+      .map((s, idx) => {
         const a = s.phd2Analysis;
-        if (!a) return null;
+        if (!a) return {
+          session: idx + 1,
+          date: s.date,
+          name: s.name || s.date,
+          raRms: null,
+          decRms: null,
+          totalRms: null,
+          duration: 0,
+          frameCount: 0,
+        };
         const groups = Array.isArray(a.groups) ? a.groups : [];
         // Combine all frames of all groups belonging to the session
         const frames = groups.flatMap((g: any) => g.frames || []);
@@ -4993,9 +5002,19 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
           duration = a.totalDuration || 0;
           frameCount = (a.dataPoints || []).length;
         } else {
-          return null;
+          return {
+            session: idx + 1,
+            date: s.date,
+            name: s.name || s.date,
+            raRms: null,
+            decRms: null,
+            totalRms: null,
+            duration: 0,
+            frameCount: 0,
+          };
         }
         return {
+          session: idx + 1,
           date: s.date,
           name: s.name || s.date,
           raRms: Number(raRms.toFixed(3)),
@@ -5004,11 +5023,10 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
           duration,
           frameCount,
         };
-      })
-      .filter(Boolean) as any[];
+      }) as any[];
   }, [sessions]);
 
-  if (!data.length) return null;
+  if (!data.length || !data.some(d => d.totalRms !== null)) return null;
 
   const fmtDur = (sec: number) => {
     if (!sec) return "–";
@@ -5023,14 +5041,14 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `#${v}`} />
           <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `${v}"`} />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(_v, payload: any) => {
               const p = payload?.[0]?.payload;
               if (!p) return "";
-              return `${p.name} — ${p.date}`;
+              return `Sesión #${p.session} — ${p.name} (${p.date})`;
             }}
             formatter={(v: number, name: string, item: any) => {
               const p = item?.payload;
@@ -5044,9 +5062,9 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
             }}
           />
           <Legend wrapperStyle={{ color: "#e2e8f0" }} />
-          <Line type="monotone" dataKey="raRms" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 3 }} name="RA RMS" connectNulls />
-          <Line type="monotone" dataKey="decRms" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} name="DEC RMS" connectNulls />
-          <Line type="monotone" dataKey="totalRms" stroke="#fbbf24" strokeWidth={3} dot={{ fill: "#fbbf24", r: 4 }} name="RMS TOTAL" connectNulls />
+          <Line type="monotone" dataKey="raRms" stroke="#3b82f6" strokeWidth={2.5} dot={{ fill: "#3b82f6", r: 3 }} name="RA RMS" connectNulls={false} />
+          <Line type="monotone" dataKey="decRms" stroke="#ef4444" strokeWidth={2.5} dot={{ fill: "#ef4444", r: 3 }} name="DEC RMS" connectNulls={false} />
+          <Line type="monotone" dataKey="totalRms" stroke="#fbbf24" strokeWidth={3} dot={{ fill: "#fbbf24", r: 4 }} name="RMS TOTAL" connectNulls={false} />
         </LineChart>
       </SessionChartArea>
     </Card>
@@ -5059,21 +5077,29 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
     return sessions
       .slice()
       .sort((a, b) => a.date.localeCompare(b.date))
-      .map((s) => {
+      .map((s, idx) => {
         const a = s.phd2Analysis;
-        if (!a) return null;
-        const groups = Array.isArray(a.groups) ? a.groups : [];
+        const groups = a && Array.isArray(a.groups) ? a.groups : [];
         const snrs: number[] = [];
         for (const g of groups) {
           for (const f of (g.frames || [])) {
             if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
           }
         }
-        if (!snrs.length) return null;
+        if (!snrs.length) return {
+          session: idx + 1,
+          date: s.date,
+          name: s.name || s.date,
+          snr: null,
+          snrMin: null,
+          snrMax: null,
+          samples: 0,
+        };
         const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
         const min = Math.min(...snrs);
         const max = Math.max(...snrs);
         return {
+          session: idx + 1,
           date: s.date,
           name: s.name || s.date,
           snr: Number(mean.toFixed(2)),
@@ -5081,11 +5107,10 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
           snrMax: Number(max.toFixed(2)),
           samples: snrs.length,
         };
-      })
-      .filter(Boolean) as any[];
+      }) as any[];
   }, [sessions]);
 
-  if (!data.length) return null;
+  if (!data.length || !data.some(d => d.snr !== null)) return null;
 
   return (
     <Card className={SESSION_CHART_CARD_CLASS}>
@@ -5093,14 +5118,14 @@ const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
       <SessionChartArea>
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
-          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <XAxis dataKey="session" tickMargin={8} stroke="#ffffff" tickFormatter={(v) => `#${v}`} />
           <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" />
           <Tooltip
             contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
             labelFormatter={(_v, payload: any) => {
               const p = payload?.[0]?.payload;
               if (!p) return "";
-              return `${p.name} — ${p.date}`;
+              return `Sesión #${p.session} — ${p.name} (${p.date})`;
             }}
             formatter={(v: number, _name: string, item: any) => {
               const p = item?.payload;
@@ -5779,25 +5804,47 @@ const generatePDFReport = async (
     snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
   })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
 
-  // Mean guiding SNR per session (from PHD2 logs)
-  const snrGuidingData = (proj.sessions || [])
+  // Mean guiding SNR per session (from PHD2 logs) — one entry per session, null when no data
+  const sortedSessionsForGuiding = (proj.sessions || [])
     .slice()
-    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
-    .map((s: any) => {
-      const a = s.phd2Analysis;
-      if (!a) return null;
-      const groups = Array.isArray(a.groups) ? a.groups : [];
-      const snrs: number[] = [];
-      for (const g of groups) {
-        for (const f of (g.frames || [])) {
-          if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
-        }
+    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''));
+  const snrGuidingData = sortedSessionsForGuiding.map((s: any, idx: number) => {
+    const a = s.phd2Analysis;
+    const groups = a && Array.isArray(a.groups) ? a.groups : [];
+    const snrs: number[] = [];
+    for (const g of groups) {
+      for (const f of (g.frames || [])) {
+        if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
       }
-      if (!snrs.length) return null;
-      const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
-      return { date: s.date, snr: Number(mean.toFixed(2)) };
-    })
-    .filter(Boolean) as { date: string; snr: number }[];
+    }
+    const mean = snrs.length ? snrs.reduce((acc, v) => acc + v, 0) / snrs.length : null;
+    return { session: idx + 1, date: s.date, snr: mean !== null ? Number(mean.toFixed(2)) : null };
+  }) as { session: number; date: string; snr: number | null }[];
+  const hasGuidingSNR = snrGuidingData.some(d => d.snr !== null);
+
+  // Guiding RMS per session (RA / DEC / Total) — one entry per session, null when no data
+  const guidingEvolutionData = sortedSessionsForGuiding.map((s: any, idx: number) => {
+    const a = s.phd2Analysis;
+    const groups = a && Array.isArray(a.groups) ? a.groups : [];
+    const frames = groups.flatMap((g: any) => g.frames || []);
+    let raRms: number | null = null, decRms: number | null = null, totalRms: number | null = null;
+    if (frames.length) {
+      const n = frames.length;
+      raRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.ra * f.ra, 0) / n);
+      decRms = Math.sqrt(frames.reduce((acc: number, f: any) => acc + f.dec * f.dec, 0) / n);
+      totalRms = Math.sqrt(raRms * raRms + decRms * decRms);
+    } else if (a && a.medianRms !== undefined) {
+      totalRms = a.medianRms;
+    }
+    return {
+      session: idx + 1,
+      date: s.date,
+      raRms: raRms !== null ? Number(raRms.toFixed(3)) : null,
+      decRms: decRms !== null ? Number(decRms.toFixed(3)) : null,
+      totalRms: totalRms !== null ? Number(totalRms.toFixed(3)) : null,
+    };
+  });
+  const hasGuidingEvolution = guidingEvolutionData.some(d => d.totalRms !== null);
 
   const avgSNR = snrMeanData.length > 0 
     ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
@@ -6211,8 +6258,19 @@ const generatePDFReport = async (
     </div>`;
   }
 
+  // Evolución de guiado (RMS por sesión)
+  if (config.includeCharts.guidingEvolutionChart && hasGuidingEvolution) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Evolución de guiado (RMS por sesión)</h2>
+      <div class="chart-container">
+        <canvas id="guidingEvolutionChart"></canvas>
+      </div>
+    </div>`;
+  }
+
   // SNR en Guiado
-  if (config.includeCharts.snrGuidingChart && snrGuidingData.length > 0) {
+  if (config.includeCharts.snrGuidingChart && hasGuidingSNR) {
     html += `
     <div class="section">
       <h2 class="section-title">SNR en Guiado (media por sesión)</h2>
@@ -6466,8 +6524,41 @@ const generatePDFReport = async (
     makeLineChart('snrMeanChart', ${JSON.stringify(snrMeanData.map((d: any) => d.date))}, ${JSON.stringify(snrMeanData.map((d: any) => d.snr))}, 'SNR Medio', '#34d399', 'rgba(52, 211, 153, 0.1)');
     ` : ''}
 
-    ${config.includeCharts.snrGuidingChart && snrGuidingData.length > 0 ? `
-    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => d.date))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
+    ${config.includeCharts.snrGuidingChart && hasGuidingSNR ? `
+    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => `#${d.session}`))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
+    ` : ''}
+
+    ${config.includeCharts.guidingEvolutionChart && hasGuidingEvolution ? `
+    {
+      const el = document.getElementById('guidingEvolutionChart');
+      if (el) {
+        const allVals = [
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.raRms))}.filter(v=>v!=null),
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.decRms))}.filter(v=>v!=null),
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.totalRms))}.filter(v=>v!=null)
+        ];
+        const range = getYAxisRange(allVals);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(guidingEvolutionData.map(d => `#${d.session}`))},
+            datasets: [
+              { label: 'RA RMS', data: ${JSON.stringify(guidingEvolutionData.map(d => d.raRms))}, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3, spanGaps: false },
+              { label: 'DEC RMS', data: ${JSON.stringify(guidingEvolutionData.map(d => d.decRms))}, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, spanGaps: false },
+              { label: 'RMS Total', data: ${JSON.stringify(guidingEvolutionData.map(d => d.totalRms))}, borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.3, spanGaps: false, borderWidth: 3 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+            scales: {
+              y: { min: 0, max: range.max, ticks: { color: chartColor, font: { size: 10 }, callback: v => v + '"' }, grid: { color: gridColor } },
+              x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+            }
+          }
+        });
+      }
+    }
     ` : ''}
 
     ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
@@ -6783,6 +6874,7 @@ export default function AstroTracker() {
       snrMeanChart: true,
       snrRGBChart: true,
       snrGuidingChart: true,
+      guidingEvolutionChart: true,
     },
     includeTable: true,
     theme: 'dark' as 'dark' | 'light',
@@ -15687,7 +15779,8 @@ export default function AstroTracker() {
                     lightsChart: 'Iluminación por sesión',
                     snrMeanChart: 'SNR medio por sesión',
                     snrRGBChart: 'SNR RGB por sesión',
-                    snrGuidingChart: 'SNR en Guiado (media por sesión)'
+                    snrGuidingChart: 'SNR en Guiado (media por sesión)',
+                    guidingEvolutionChart: 'Evolución de guiado (RMS por sesión)'
                   }).map(([key, label]) => (
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox 
