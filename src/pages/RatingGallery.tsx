@@ -4,6 +4,7 @@ import { ArrowLeft, Star, Trash2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <div
@@ -74,8 +75,8 @@ export default function RatingGallery() {
   };
 
   // Function to delete image
-  const deleteImage = (objectId: string, projectId: string, keyName: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta imagen?")) return;
+  const deleteImage = async (objectId: string, projectId: string, keyName: string) => {
+    if (!(await confirmDialog({ title: "Eliminar imagen", description: "¿Estás seguro de que quieres eliminar esta imagen?", destructive: true, confirmText: "Eliminar" }))) return;
     
     setObjects((prevObjects: any[]) =>
       prevObjects.map((obj) =>
