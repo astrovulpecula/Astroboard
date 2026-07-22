@@ -5779,6 +5779,26 @@ const generatePDFReport = async (
     snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
   })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
 
+  // Mean guiding SNR per session (from PHD2 logs)
+  const snrGuidingData = (proj.sessions || [])
+    .slice()
+    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
+    .map((s: any) => {
+      const a = s.phd2Analysis;
+      if (!a) return null;
+      const groups = Array.isArray(a.groups) ? a.groups : [];
+      const snrs: number[] = [];
+      for (const g of groups) {
+        for (const f of (g.frames || [])) {
+          if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
+        }
+      }
+      if (!snrs.length) return null;
+      const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
+      return { date: s.date, snr: Number(mean.toFixed(2)) };
+    })
+    .filter(Boolean) as { date: string; snr: number }[];
+
   const avgSNR = snrMeanData.length > 0 
     ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
     : '-';
