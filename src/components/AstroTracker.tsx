@@ -6747,6 +6747,7 @@ export default function AstroTracker() {
       lightsChart: true,
       snrMeanChart: true,
       snrRGBChart: true,
+      snrGuidingChart: true,
     },
     includeTable: true,
     theme: 'dark' as 'dark' | 'light',
