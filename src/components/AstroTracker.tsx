@@ -10631,67 +10631,7 @@ export default function AstroTracker() {
                       </Card>
                     )}
 
-                    {/* RMS P50 Record (Lowest) */}
-                    <Card 
-                      className={`p-5 ${globalMetrics.minP50Rms > 0 ? 'cursor-pointer hover:shadow-lg ring-2 ring-emerald-500/70 dark:ring-emerald-400/70' : ''} transition-shadow`}
-                      onClick={() => {
-                        if (globalMetrics.minP50Rms > 0) {
-                          const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP50RmsProjectId));
-                          if (obj) {
-                            const proj = obj.projects.find((p: any) => p.id === globalMetrics.minP50RmsProjectId);
-                            if (proj) {
-                              setSelectedObjectId(obj.id);
-                              setSelectedProjectId(proj.id);
-                              setView("project");
-                            }
-                          }
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-sky-500/10">
-                          <Target className="w-6 h-6 text-sky-600 dark:text-sky-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricRmsP50')}</div>
-                          <div className="text-2xl font-bold">{globalMetrics.minP50Rms > 0 ? `${globalMetrics.minP50Rms.toFixed(2)}"` : '0.00"'}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {globalMetrics.minP50Rms > 0 ? `${globalMetrics.minP50RmsObject} · ${globalMetrics.minP50RmsProject}` : t('metricNoPhd2Data')}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* RMS P68 Record (Lowest) */}
-                    <Card 
-                      className={`p-5 ${globalMetrics.minP68Rms > 0 ? 'cursor-pointer hover:shadow-lg ring-2 ring-emerald-500/70 dark:ring-emerald-400/70' : ''} transition-shadow`}
-                      onClick={() => {
-                        if (globalMetrics.minP68Rms > 0) {
-                          const obj = objects.find(o => o.projects.some((p: any) => p.id === globalMetrics.minP68RmsProjectId));
-                          if (obj) {
-                            const proj = obj.projects.find((p: any) => p.id === globalMetrics.minP68RmsProjectId);
-                            if (proj) {
-                              setSelectedObjectId(obj.id);
-                              setSelectedProjectId(proj.id);
-                              setView("project");
-                            }
-                          }
-                        }
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 rounded-xl bg-violet-500/10">
-                          <Target className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div>
-                          <div className="text-sm text-slate-600 dark:text-slate-400">{t('metricRmsP68')}</div>
-                          <div className="text-2xl font-bold">{globalMetrics.minP68Rms > 0 ? `${globalMetrics.minP68Rms.toFixed(2)}"` : '0.00"'}</div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            {globalMetrics.minP68Rms > 0 ? `${globalMetrics.minP68RmsObject} · ${globalMetrics.minP68RmsProject}` : t('metricNoPhd2Data')}
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
+                    {/* RMS P50 / P68 highlights removed per user request */}
 
                     {/* Hours by Year */}
                     {visibleHighlights.hoursByYear && (() => {
