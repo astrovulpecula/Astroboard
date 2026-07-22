@@ -93,6 +93,8 @@ import { calculateAltAz } from "@/lib/astronomy-calculations";
 import { getMoonCoordinates } from "@/lib/moon-position";
 import { getNextEphemeris, formatSpanishDate, loadEphemeris, type Ephemeris } from "@/lib/ephemeris-data";
 import { useToast } from "@/hooks/use-toast";
+import { confirmDialog } from "@/components/ConfirmDialog";
+import { toast as globalToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import FitsAnalyzer, { FitsAnalysisResult } from "@/components/FitsAnalyzer";
