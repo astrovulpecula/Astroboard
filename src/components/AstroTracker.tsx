@@ -5053,6 +5053,69 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
+// PHD2 SNR Guiding Chart — Mean SNR per session (from PHD2 guiding logs)
+const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((s) => {
+        const a = s.phd2Analysis;
+        if (!a) return null;
+        const groups = Array.isArray(a.groups) ? a.groups : [];
+        const snrs: number[] = [];
+        for (const g of groups) {
+          for (const f of (g.frames || [])) {
+            if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
+          }
+        }
+        if (!snrs.length) return null;
+        const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
+        const min = Math.min(...snrs);
+        const max = Math.max(...snrs);
+        return {
+          date: s.date,
+          name: s.name || s.date,
+          snr: Number(mean.toFixed(2)),
+          snrMin: Number(min.toFixed(2)),
+          snrMax: Number(max.toFixed(2)),
+          samples: snrs.length,
+        };
+      })
+      .filter(Boolean) as any[];
+  }, [sessions]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className={SESSION_CHART_CARD_CLASS}>
+      <SectionTitle icon={Target} title="SNR en Guiado (media por sesión)" />
+      <SessionChartArea>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            labelFormatter={(_v, payload: any) => {
+              const p = payload?.[0]?.payload;
+              if (!p) return "";
+              return `${p.name} — ${p.date}`;
+            }}
+            formatter={(v: number, _name: string, item: any) => {
+              const p = item?.payload;
+              if (p) return [`${v.toFixed(2)} · min ${p.snrMin} · max ${p.snrMax} · ${p.samples} frames`, "SNR medio"];
+              return [v.toFixed(2), "SNR medio"];
+            }}
+          />
+          <Legend wrapperStyle={{ color: "#e2e8f0" }} />
+          <Line type="monotone" dataKey="snr" stroke="#22c55e" strokeWidth={2.5} dot={{ fill: "#22c55e", r: 4 }} name="SNR medio" connectNulls />
+        </LineChart>
+      </SessionChartArea>
+    </Card>
+  );
+};
+
 type TabType = {
   id: string;
   name: string;
@@ -5716,6 +5779,26 @@ const generatePDFReport = async (
     snrB: s.snrB !== '-' ? parseFloat(s.snrB) : null,
   })).filter(d => d.snrR !== null || d.snrG !== null || d.snrB !== null);
 
+  // Mean guiding SNR per session (from PHD2 logs)
+  const snrGuidingData = (proj.sessions || [])
+    .slice()
+    .sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
+    .map((s: any) => {
+      const a = s.phd2Analysis;
+      if (!a) return null;
+      const groups = Array.isArray(a.groups) ? a.groups : [];
+      const snrs: number[] = [];
+      for (const g of groups) {
+        for (const f of (g.frames || [])) {
+          if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
+        }
+      }
+      if (!snrs.length) return null;
+      const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
+      return { date: s.date, snr: Number(mean.toFixed(2)) };
+    })
+    .filter(Boolean) as { date: string; snr: number }[];
+
   const avgSNR = snrMeanData.length > 0 
     ? (snrMeanData.reduce((sum, d) => sum + (d.snr || 0), 0) / snrMeanData.length).toFixed(2)
     : '-';
@@ -6128,6 +6211,17 @@ const generatePDFReport = async (
     </div>`;
   }
 
+  // SNR en Guiado
+  if (config.includeCharts.snrGuidingChart && snrGuidingData.length > 0) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">SNR en Guiado (media por sesión)</h2>
+      <div class="chart-container">
+        <canvas id="snrGuidingChart"></canvas>
+      </div>
+    </div>`;
+  }
+
   // Session table
   if (config.includeTable) {
     html += `
@@ -6370,6 +6464,10 @@ const generatePDFReport = async (
 
     ${config.includeCharts.snrMeanChart && snrMeanData.length > 0 ? `
     makeLineChart('snrMeanChart', ${JSON.stringify(snrMeanData.map((d: any) => d.date))}, ${JSON.stringify(snrMeanData.map((d: any) => d.snr))}, 'SNR Medio', '#34d399', 'rgba(52, 211, 153, 0.1)');
+    ` : ''}
+
+    ${config.includeCharts.snrGuidingChart && snrGuidingData.length > 0 ? `
+    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => d.date))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
     ` : ''}
 
     ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
@@ -6684,6 +6782,7 @@ export default function AstroTracker() {
       lightsChart: true,
       snrMeanChart: true,
       snrRGBChart: true,
+      snrGuidingChart: true,
     },
     includeTable: true,
     theme: 'dark' as 'dark' | 'light',
@@ -13147,6 +13246,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.hfrChart !== false) && <FitsHFRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.phd2GuidingEvolutionChart !== false) && <PHD2GuidingEvolutionChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2SNRGuidingChart !== false) && <PHD2SNRGuidingChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
@@ -14957,6 +15057,7 @@ export default function AstroTracker() {
                     { key: "windChart", label: "Viento" },
                     { key: "focusChart", label: "Posición de enfoque" },
                     { key: "phd2GuidingEvolutionChart", label: "Evolución de guiado (RA/DEC/Total)" },
+                    { key: "phd2SNRGuidingChart", label: "SNR en Guiado (media por sesión)" },
                     { key: "snrChart", label: "SNR (media)" },
                     { key: "snrRGBChart", label: "SNR por canal (R/G/B)" },
                     { key: "acceptedRejectedChart", label: "Lights aceptados/rechazados" },
@@ -15585,7 +15686,8 @@ export default function AstroTracker() {
                     filterChart: 'Exposición por filtro',
                     lightsChart: 'Iluminación por sesión',
                     snrMeanChart: 'SNR medio por sesión',
-                    snrRGBChart: 'SNR RGB por sesión'
+                    snrRGBChart: 'SNR RGB por sesión',
+                    snrGuidingChart: 'SNR en Guiado (media por sesión)'
                   }).map(([key, label]) => (
                     <div key={key} className="flex items-center space-x-2">
                       <Checkbox 
