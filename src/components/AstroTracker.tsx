@@ -13210,6 +13210,7 @@ export default function AstroTracker() {
                 {((proj as any)?.chartVisibility?.focusChart !== false) && <FitsFocusChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.hfrChart !== false) && <FitsHFRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.phd2GuidingEvolutionChart !== false) && <PHD2GuidingEvolutionChart sessions={filtered} />}
+                {((proj as any)?.chartVisibility?.phd2SNRGuidingChart !== false) && <PHD2SNRGuidingChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrChart !== false) && <SNRChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.snrRGBChart !== false) && <SNRRGBChart sessions={filtered} />}
                 {((proj as any)?.chartVisibility?.acceptedRejectedChart !== false) && <AcceptedRejectedChart sessions={filtered} dateFormat={dateFormat} />}
