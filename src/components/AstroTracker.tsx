@@ -6466,6 +6466,10 @@ const generatePDFReport = async (
     makeLineChart('snrMeanChart', ${JSON.stringify(snrMeanData.map((d: any) => d.date))}, ${JSON.stringify(snrMeanData.map((d: any) => d.snr))}, 'SNR Medio', '#34d399', 'rgba(52, 211, 153, 0.1)');
     ` : ''}
 
+    ${config.includeCharts.snrGuidingChart && snrGuidingData.length > 0 ? `
+    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => d.date))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
+    ` : ''}
+
     ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
     {
       const el = document.getElementById('snrRGBChart');
