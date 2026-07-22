@@ -5053,6 +5053,69 @@ const PHD2GuidingEvolutionChart = ({ sessions }: { sessions: any[] }) => {
   );
 };
 
+// PHD2 SNR Guiding Chart — Mean SNR per session (from PHD2 guiding logs)
+const PHD2SNRGuidingChart = ({ sessions }: { sessions: any[] }) => {
+  const data = useMemo(() => {
+    return sessions
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((s) => {
+        const a = s.phd2Analysis;
+        if (!a) return null;
+        const groups = Array.isArray(a.groups) ? a.groups : [];
+        const snrs: number[] = [];
+        for (const g of groups) {
+          for (const f of (g.frames || [])) {
+            if (typeof f.snr === "number" && isFinite(f.snr)) snrs.push(f.snr);
+          }
+        }
+        if (!snrs.length) return null;
+        const mean = snrs.reduce((acc, v) => acc + v, 0) / snrs.length;
+        const min = Math.min(...snrs);
+        const max = Math.max(...snrs);
+        return {
+          date: s.date,
+          name: s.name || s.date,
+          snr: Number(mean.toFixed(2)),
+          snrMin: Number(min.toFixed(2)),
+          snrMax: Number(max.toFixed(2)),
+          samples: snrs.length,
+        };
+      })
+      .filter(Boolean) as any[];
+  }, [sessions]);
+
+  if (!data.length) return null;
+
+  return (
+    <Card className={SESSION_CHART_CARD_CLASS}>
+      <SectionTitle icon={Target} title="SNR en Guiado (media por sesión)" />
+      <SessionChartArea>
+        <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} />
+          <XAxis dataKey="date" tickMargin={8} stroke="#ffffff" />
+          <YAxis domain={[0, 'auto']} tickMargin={8} stroke="#ffffff" />
+          <Tooltip
+            contentStyle={{ backgroundColor: "#1e293b", border: "1px solid #334155" }}
+            labelFormatter={(_v, payload: any) => {
+              const p = payload?.[0]?.payload;
+              if (!p) return "";
+              return `${p.name} — ${p.date}`;
+            }}
+            formatter={(v: number, _name: string, item: any) => {
+              const p = item?.payload;
+              if (p) return [`${v.toFixed(2)} · min ${p.snrMin} · max ${p.snrMax} · ${p.samples} frames`, "SNR medio"];
+              return [v.toFixed(2), "SNR medio"];
+            }}
+          />
+          <Legend wrapperStyle={{ color: "#e2e8f0" }} />
+          <Line type="monotone" dataKey="snr" stroke="#22c55e" strokeWidth={2.5} dot={{ fill: "#22c55e", r: 4 }} name="SNR medio" connectNulls />
+        </LineChart>
+      </SessionChartArea>
+    </Card>
+  );
+};
+
 type TabType = {
   id: string;
   name: string;
