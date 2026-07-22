@@ -6258,8 +6258,19 @@ const generatePDFReport = async (
     </div>`;
   }
 
+  // Evolución de guiado (RMS por sesión)
+  if (config.includeCharts.guidingEvolutionChart && hasGuidingEvolution) {
+    html += `
+    <div class="section">
+      <h2 class="section-title">Evolución de guiado (RMS por sesión)</h2>
+      <div class="chart-container">
+        <canvas id="guidingEvolutionChart"></canvas>
+      </div>
+    </div>`;
+  }
+
   // SNR en Guiado
-  if (config.includeCharts.snrGuidingChart && snrGuidingData.length > 0) {
+  if (config.includeCharts.snrGuidingChart && hasGuidingSNR) {
     html += `
     <div class="section">
       <h2 class="section-title">SNR en Guiado (media por sesión)</h2>
@@ -6513,8 +6524,41 @@ const generatePDFReport = async (
     makeLineChart('snrMeanChart', ${JSON.stringify(snrMeanData.map((d: any) => d.date))}, ${JSON.stringify(snrMeanData.map((d: any) => d.snr))}, 'SNR Medio', '#34d399', 'rgba(52, 211, 153, 0.1)');
     ` : ''}
 
-    ${config.includeCharts.snrGuidingChart && snrGuidingData.length > 0 ? `
-    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => d.date))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
+    ${config.includeCharts.snrGuidingChart && hasGuidingSNR ? `
+    makeLineChart('snrGuidingChart', ${JSON.stringify(snrGuidingData.map((d: any) => `#${d.session}`))}, ${JSON.stringify(snrGuidingData.map((d: any) => d.snr))}, 'SNR Guiado', '#22c55e', 'rgba(34, 197, 94, 0.1)');
+    ` : ''}
+
+    ${config.includeCharts.guidingEvolutionChart && hasGuidingEvolution ? `
+    {
+      const el = document.getElementById('guidingEvolutionChart');
+      if (el) {
+        const allVals = [
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.raRms))}.filter(v=>v!=null),
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.decRms))}.filter(v=>v!=null),
+          ...${JSON.stringify(guidingEvolutionData.map(d => d.totalRms))}.filter(v=>v!=null)
+        ];
+        const range = getYAxisRange(allVals);
+        new Chart(el.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: ${JSON.stringify(guidingEvolutionData.map(d => `#${d.session}`))},
+            datasets: [
+              { label: 'RA RMS', data: ${JSON.stringify(guidingEvolutionData.map(d => d.raRms))}, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.3, spanGaps: false },
+              { label: 'DEC RMS', data: ${JSON.stringify(guidingEvolutionData.map(d => d.decRms))}, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.3, spanGaps: false },
+              { label: 'RMS Total', data: ${JSON.stringify(guidingEvolutionData.map(d => d.totalRms))}, borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.3, spanGaps: false, borderWidth: 3 }
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { labels: { color: chartColor, font: { size: 11 } } } },
+            scales: {
+              y: { min: 0, max: range.max, ticks: { color: chartColor, font: { size: 10 }, callback: v => v + '"' }, grid: { color: gridColor } },
+              x: { ticks: { color: chartColor, font: { size: 9 } }, grid: { color: gridColor } }
+            }
+          }
+        });
+      }
+    }
     ` : ''}
 
     ${config.includeCharts.snrRGBChart && snrRGBData.length > 0 ? `
