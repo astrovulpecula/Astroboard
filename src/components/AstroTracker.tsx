@@ -15021,6 +15021,7 @@ export default function AstroTracker() {
                     { key: "windChart", label: "Viento" },
                     { key: "focusChart", label: "Posición de enfoque" },
                     { key: "phd2GuidingEvolutionChart", label: "Evolución de guiado (RA/DEC/Total)" },
+                    { key: "phd2SNRGuidingChart", label: "SNR en Guiado (media por sesión)" },
                     { key: "snrChart", label: "SNR (media)" },
                     { key: "snrRGBChart", label: "SNR por canal (R/G/B)" },
                     { key: "acceptedRejectedChart", label: "Lights aceptados/rechazados" },
