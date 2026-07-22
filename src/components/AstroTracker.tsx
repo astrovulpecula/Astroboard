@@ -7553,8 +7553,8 @@ export default function AstroTracker() {
   );
 
   const delObj = useCallback(
-    (id: string) => {
-      if (!confirm("¿Eliminar este objeto?")) return;
+    async (id: string) => {
+      if (!(await confirmDialog({ title: "Eliminar objeto", description: "¿Eliminar este objeto?", destructive: true, confirmText: "Eliminar" }))) return;
       pendingChangesRef.current++; // Mark as user modification
       const newObjects = objects.filter((o) => o.id !== id);
       setObjects(newObjects);
@@ -7660,8 +7660,8 @@ export default function AstroTracker() {
 
   // Function to delete image (used in gallery)
   const deleteImageFromGallery = useCallback(
-    (objectId: string, projectId: string, keyName: string) => {
-      if (!confirm("¿Estás seguro de que quieres eliminar esta imagen?")) return;
+    async (objectId: string, projectId: string, keyName: string) => {
+      if (!(await confirmDialog({ title: "Eliminar imagen", description: "¿Estás seguro de que quieres eliminar esta imagen?", destructive: true, confirmText: "Eliminar" }))) return;
       
       setObjects((prevObjects) =>
         prevObjects.map((obj) =>
@@ -7837,8 +7837,8 @@ export default function AstroTracker() {
   );
 
   const deleteSession = useCallback(
-    (sid: string) => {
-      if (!confirm("¿Eliminar sesión?")) return;
+    async (sid: string) => {
+      if (!(await confirmDialog({ title: "Eliminar sesión", description: "¿Eliminar sesión?", destructive: true, confirmText: "Eliminar" }))) return;
       if (!obj || !proj) return;
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
@@ -7875,8 +7875,9 @@ export default function AstroTracker() {
   );
 
   const delProj = useCallback(
-    (pid: string) => {
-      if (!obj || !confirm("¿Eliminar proyecto?")) return;
+    async (pid: string) => {
+      if (!obj) return;
+      if (!(await confirmDialog({ title: "Eliminar proyecto", description: "¿Eliminar proyecto?", destructive: true, confirmText: "Eliminar" }))) return;
       pendingChangesRef.current++; // Mark as user modification
       setObjects(
         objects.map((o) => (o.id !== obj.id ? o : { ...o, projects: o.projects.filter((p) => p.id !== pid) })),
@@ -8288,8 +8289,8 @@ export default function AstroTracker() {
   }, [objects, proj]);
 
   const rm = useCallback(
-    (id: string) => {
-      if (!confirm("¿Eliminar esta pestaña de filtro?")) return;
+    async (id: string) => {
+      if (!(await confirmDialog({ title: "Eliminar pestaña", description: "¿Eliminar esta pestaña de filtro?", destructive: true, confirmText: "Eliminar" }))) return;
 
       const tabToRemove = tabs.find((t) => t.id === id);
       if (!tabToRemove) return;
@@ -9877,9 +9878,9 @@ export default function AstroTracker() {
                                   <button
                                     title={t('deleteAction')}
                                     className="absolute top-2 right-2 p-1.5 rounded-lg bg-background/80 backdrop-blur-sm border border-border hover:bg-destructive/10 transition-colors"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                       e.stopPropagation();
-                                      if (confirm(t('deletePlannedConfirm'))) {
+                                      if (await confirmDialog({ title: t('deleteAction'), description: t('deletePlannedConfirm'), destructive: true, confirmText: "Eliminar" })) {
                                         pendingChangesRef.current++; // Mark as user modification
                                         setPlannedProjects(plannedProjects.filter((p) => p.id !== planned.id));
                                       }
