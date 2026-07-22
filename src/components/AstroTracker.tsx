@@ -6557,6 +6557,12 @@ export default function AstroTracker() {
   const [telescopes, setTelescopes] = useState<{ name: string; focalLength: string }[]>([
     { name: "", focalLength: "" },
   ]);
+  // Rename equipment (camera/telescope) globally across all projects/sessions
+  const [renameEquip, setRenameEquip] = useState<{
+    type: "camera" | "telescope";
+    oldName: string;
+    newName: string;
+  } | null>(null);
   const [showInitialFilePrompt, setShowInitialFilePrompt] = useState(false);
   const [hasImportedData, setHasImportedData] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState(1);
