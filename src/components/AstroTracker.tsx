@@ -16003,22 +16003,8 @@ export default function AstroTracker() {
                       return;
                     }
                     const key = renameEquip.type;
-                    const norm = (v: any) =>
-                      typeof v === "string"
-                        ? v
-                            .normalize("NFKD")
-                            .replace(/[\u0300-\u036f]/g, "")
-                            .replace(/[\u2010-\u2015\u2212]/g, "-")
-                            .replace(/\s+/g, " ")
-                            .trim()
-                            .toLowerCase()
-                        : "";
-                    const compact = (v: any) => norm(v).replace(/[^a-z0-9]+/g, "");
                     const matchesName = (value: any) => {
-                      const valueNorm = norm(value);
-                      const oldNorm = norm(oldName);
-                      if (!valueNorm || !oldNorm) return false;
-                      return valueNorm === oldNorm || compact(value) === compact(oldName);
+                      return equipmentNamesMatch(value, oldName);
                     };
                     const renameArrayValues = (arr: any, nextName = newName) =>
                       Array.isArray(arr) ? arr.map((item) => (matchesName(item) ? nextName : item)) : arr;
