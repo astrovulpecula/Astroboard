@@ -11234,14 +11234,13 @@ export default function AstroTracker() {
                           </div>
                           <div className="space-y-4">
                             {Object.entries(globalMetrics.cameraCounts)
-                              .sort(([, a], [, b]) => b.seconds - a.seconds)
+                              .sort(([, a], [, b]) => b.lights - a.lights)
                               .map(([camera, data]) => {
                                 const pctNum =
-                                  globalMetrics.totalCameraSeconds > 0
-                                    ? (data.seconds / globalMetrics.totalCameraSeconds) * 100
+                                  globalMetrics.totalCameraLights > 0
+                                    ? (data.lights / globalMetrics.totalCameraLights) * 100
                                     : 0;
                                 const pct = pctNum.toFixed(1);
-                                const hours = data.seconds / 3600;
                                 return (
                                   <div key={camera}>
                                     <div className="h-3 w-full rounded-full bg-blue-100 dark:bg-blue-950/40 overflow-hidden">
@@ -11260,7 +11259,7 @@ export default function AstroTracker() {
                                         {camera}
                                       </button>
                                       <span className="text-blue-700 dark:text-blue-300 tabular-nums">
-                                        {hours.toFixed(1)} h · {pct}%
+                                        {data.lights} lights · {pct}%
                                       </span>
                                     </div>
                                   </div>
@@ -11276,14 +11275,13 @@ export default function AstroTracker() {
                           <div className="text-sm text-slate-600 dark:text-slate-400 mb-4">{t('metricTelescopeUsage')}</div>
                           <div className="space-y-4">
                             {Object.entries(globalMetrics.telescopeCounts)
-                              .sort(([, a], [, b]) => b.seconds - a.seconds)
+                              .sort(([, a], [, b]) => b.lights - a.lights)
                               .map(([telescope, data]) => {
                                 const pctNum =
-                                  globalMetrics.totalTelescopeSeconds > 0
-                                    ? (data.seconds / globalMetrics.totalTelescopeSeconds) * 100
+                                  globalMetrics.totalTelescopeLights > 0
+                                    ? (data.lights / globalMetrics.totalTelescopeLights) * 100
                                     : 0;
                                 const pct = pctNum.toFixed(1);
-                                const hours = data.seconds / 3600;
                                 return (
                                   <div key={telescope}>
                                     <div className="h-3 w-full rounded-full bg-purple-100 dark:bg-purple-950/40 overflow-hidden">
@@ -11302,7 +11300,7 @@ export default function AstroTracker() {
                                         {telescope}
                                       </button>
                                       <span className="text-purple-700 dark:text-purple-300 tabular-nums">
-                                        {hours.toFixed(1)} h · {pct}%
+                                        {data.lights} lights · {pct}%
                                       </span>
                                     </div>
                                   </div>
