@@ -209,6 +209,26 @@ const extractUploadTimestampFromImageSrc = (src: any): number => {
   }, 0);
 };
 
+const normalizeEquipmentName = (value: any): string =>
+  typeof value === "string"
+    ? value
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\u2010-\u2015\u2212]/g, "-")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase()
+    : "";
+
+const compactEquipmentName = (value: any): string => normalizeEquipmentName(value).replace(/[^a-z0-9]+/g, "");
+
+const equipmentNamesMatch = (a: any, b: any): boolean => {
+  const normA = normalizeEquipmentName(a);
+  const normB = normalizeEquipmentName(b);
+  if (!normA || !normB) return false;
+  return normA === normB || compactEquipmentName(a) === compactEquipmentName(b);
+};
+
 type ProjectActivityEntry = { ts: number; label: string };
 
 const appendProjectActivity = (project: any, labels: Array<string | ProjectActivityEntry | null | undefined>): any => {
