@@ -15983,25 +15983,28 @@ export default function AstroTracker() {
                       return;
                     }
                     const key = renameEquip.type;
+                    const norm = (v: any) =>
+                      typeof v === "string" ? v.trim().toLowerCase() : "";
+                    const oldKey = norm(oldName);
                     setObjects((prev) =>
                       prev.map((o: any) => ({
                         ...o,
                         projects: (o.projects || []).map((p: any) => {
                           const newProj = { ...p };
-                          if (p.equipment && p.equipment[key] === oldName) {
+                          if (p.equipment && norm(p.equipment[key]) === oldKey) {
                             newProj.equipment = { ...p.equipment, [key]: newName };
                           }
                           if (Array.isArray(p.sessions)) {
                             newProj.sessions = p.sessions.map((s: any) => {
                               let ns = s;
-                              if (s?.[key] === oldName) ns = { ...ns, [key]: newName };
+                              if (norm(s?.[key]) === oldKey) ns = { ...ns, [key]: newName };
                               if (
                                 key === "camera" &&
                                 s?.fireCaptureData?.files &&
                                 Array.isArray(s.fireCaptureData.files)
                               ) {
                                 const files = s.fireCaptureData.files.map((f: any) =>
-                                  f?.camera === oldName ? { ...f, camera: newName } : f,
+                                  norm(f?.camera) === oldKey ? { ...f, camera: newName } : f,
                                 );
                                 ns = { ...ns, fireCaptureData: { ...s.fireCaptureData, files } };
                               }
