@@ -209,6 +209,26 @@ const extractUploadTimestampFromImageSrc = (src: any): number => {
   }, 0);
 };
 
+const normalizeEquipmentName = (value: any): string =>
+  typeof value === "string"
+    ? value
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[\u2010-\u2015\u2212]/g, "-")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase()
+    : "";
+
+const compactEquipmentName = (value: any): string => normalizeEquipmentName(value).replace(/[^a-z0-9]+/g, "");
+
+const equipmentNamesMatch = (a: any, b: any): boolean => {
+  const normA = normalizeEquipmentName(a);
+  const normB = normalizeEquipmentName(b);
+  if (!normA || !normB) return false;
+  return normA === normB || compactEquipmentName(a) === compactEquipmentName(b);
+};
+
 type ProjectActivityEntry = { ts: number; label: string };
 
 const appendProjectActivity = (project: any, labels: Array<string | ProjectActivityEntry | null | undefined>): any => {
@@ -15983,33 +16003,76 @@ export default function AstroTracker() {
                       return;
                     }
                     const key = renameEquip.type;
-                    const norm = (v: any) =>
-                      typeof v === "string" ? v.trim().toLowerCase() : "";
-                    const oldKey = norm(oldName);
+                    const matchesName = (value: any) => {
+                      return equipmentNamesMatch(value, oldName);
+                    };
+                    const renameArrayValues = (arr: any, nextName = newName) =>
+                      Array.isArray(arr) ? arr.map((item) => (matchesName(item) ? nextName : item)) : arr;
+                    const renameSessionEquipment = (session: any) => {
+                      let nextSession = session;
+                      const applySessionPatch = (patch: any) => {
+                        nextSession = nextSession === session ? { ...session, ...patch } : { ...nextSession, ...patch };
+                      };
+
+                      if (matchesName(session?.[key])) {
+                        applySessionPatch({ [key]: newName });
+                      }
+
+                      if (session?.fitsAnalysis) {
+                        let nextFitsAnalysis = session.fitsAnalysis;
+                        const fitsFiles = Array.isArray(session.fitsAnalysis.files)
+                          ? session.fitsAnalysis.files.map((file: any) =>
+                              matchesName(file?.[key]) ? { ...file, [key]: newName } : file,
+                            )
+                          : session.fitsAnalysis.files;
+                        const fitsInfo = session.fitsAnalysis.extractedInfo
+                          ? {
+                              ...session.fitsAnalysis.extractedInfo,
+                              ...(key === "camera"
+                                ? { cameras: renameArrayValues(session.fitsAnalysis.extractedInfo.cameras) }
+                                : { telescopes: renameArrayValues(session.fitsAnalysis.extractedInfo.telescopes) }),
+                            }
+                          : session.fitsAnalysis.extractedInfo;
+                        nextFitsAnalysis = { ...session.fitsAnalysis, files: fitsFiles, extractedInfo: fitsInfo };
+                        applySessionPatch({ fitsAnalysis: nextFitsAnalysis });
+                      }
+
+                      if (key === "camera" && session?.fireCaptureData) {
+                        const fireCaptureFiles = Array.isArray(session.fireCaptureData.files)
+                          ? session.fireCaptureData.files.map((file: any) =>
+                              matchesName(file?.camera) ? { ...file, camera: newName } : file,
+                            )
+                          : session.fireCaptureData.files;
+                        const fireCaptureInfo = session.fireCaptureData.extractedInfo
+                          ? {
+                              ...session.fireCaptureData.extractedInfo,
+                              camera: matchesName(session.fireCaptureData.extractedInfo.camera)
+                                ? newName
+                                : session.fireCaptureData.extractedInfo.camera,
+                            }
+                          : session.fireCaptureData.extractedInfo;
+                        applySessionPatch({
+                          fireCaptureData: {
+                            ...session.fireCaptureData,
+                            files: fireCaptureFiles,
+                            extractedInfo: fireCaptureInfo,
+                          },
+                        });
+                      }
+
+                      return nextSession;
+                    };
+                    pendingChangesRef.current++;
                     setObjects((prev) =>
                       prev.map((o: any) => ({
                         ...o,
                         projects: (o.projects || []).map((p: any) => {
                           const newProj = { ...p };
-                          if (p.equipment && norm(p.equipment[key]) === oldKey) {
+                          if (p.equipment && matchesName(p.equipment[key])) {
                             newProj.equipment = { ...p.equipment, [key]: newName };
                           }
                           if (Array.isArray(p.sessions)) {
-                            newProj.sessions = p.sessions.map((s: any) => {
-                              let ns = s;
-                              if (norm(s?.[key]) === oldKey) ns = { ...ns, [key]: newName };
-                              if (
-                                key === "camera" &&
-                                s?.fireCaptureData?.files &&
-                                Array.isArray(s.fireCaptureData.files)
-                              ) {
-                                const files = s.fireCaptureData.files.map((f: any) =>
-                                  norm(f?.camera) === oldKey ? { ...f, camera: newName } : f,
-                                );
-                                ns = { ...ns, fireCaptureData: { ...s.fireCaptureData, files } };
-                              }
-                              return ns;
-                            });
+                            newProj.sessions = p.sessions.map(renameSessionEquipment);
                           }
                           return newProj;
                         }),
@@ -16018,15 +16081,20 @@ export default function AstroTracker() {
                     // Ensure new name exists in user settings library
                     if (key === "camera") {
                       setCameras((prev) => {
-                        const clean = prev.filter((c) => c && c.trim() !== "");
-                        if (clean.some((c) => c === newName)) return prev;
-                        return [...clean, newName];
+                        const renamed = prev
+                          .filter((c) => c && c.trim() !== "")
+                          .map((c) => (matchesName(c) ? newName : c));
+                        return Array.from(new Set(renamed.some((c) => c === newName) ? renamed : [...renamed, newName]));
                       });
                     } else {
                       setTelescopes((prev) => {
-                        const clean = prev.filter((t) => t.name && t.name.trim() !== "");
-                        if (clean.some((t) => t.name === newName)) return prev;
-                        return [...clean, { name: newName, focalLength: "" }];
+                        const renamed = prev
+                          .filter((t) => t.name && t.name.trim() !== "")
+                          .map((t) => (matchesName(t.name) ? { ...t, name: newName } : t));
+                        if (renamed.some((t) => t.name === newName)) {
+                          return renamed.filter((t, index, arr) => arr.findIndex((item) => item.name === t.name) === index);
+                        }
+                        return [...renamed, { name: newName, focalLength: "" }];
                       });
                     }
                     setRenameEquip(null);
